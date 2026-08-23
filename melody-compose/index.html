@@ -51,7 +51,7 @@
     <div class="notes" id="notes"><span class="small">録音後に「音階を解析」を押すと、検出した音がここに並びます。</span></div>
     <div class="small">音色を選んで「音色を試す」を押すと、録音前でも違いを確認できます。歌声の音程解析は単音メロディ向けです。</div>
   </section>
-  <div class="footer">録音データはこのブラウザ上で処理され、サーバーには送信しません。</div>
+  <div class="footer">録音は歌声優先モードです。メトロノームを鳴らしながら録音する場合はイヤホン推奨です。</div>
 </main>
 <script>
 const $=s=>document.querySelector(s);
@@ -72,7 +72,7 @@ function restartMetronome(){clearInterval(scheduler);scheduler=null;if(!metroOn)
 metroBtn.onclick=()=>{if(metroOn){stopMetronome()}else{metroOn=true;metroBtn.classList.add('active');metroBtn.textContent='♪ メトロノーム ON';restartMetronome()}};
 $('#tap').onclick=()=>{const t=performance.now();taps=taps.filter(x=>t-x<3000);taps.push(t);if(taps.length>1){let total=0;for(let i=1;i<taps.length;i++)total+=taps[i]-taps[i-1];setBpm(60000/(total/(taps.length-1)))}};
 function fmt(ms){let s=ms/1000,m=Math.floor(s/60),ss=Math.floor(s%60),d=Math.floor((s%1)*10);return String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0')+'.'+d}
-async function prepareMic(){if(stream)return stream;stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});const ctx=ensureAudio();const src=ctx.createMediaStreamSource(stream);analyser=ctx.createAnalyser();analyser.fftSize=256;src.connect(analyser);return stream}
+async function prepareMic(){if(stream)return stream;stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});const ctx=ensureAudio();const src=ctx.createMediaStreamSource(stream);analyser=ctx.createAnalyser();analyser.fftSize=256;src.connect(analyser);return stream}
 function animateWave(){if(!recording||!analyser)return;const data=new Uint8Array(analyser.frequencyBinCount);analyser.getByteFrequencyData(data);const bars=[...wave.children];bars.forEach((bar,i)=>{const v=data[Math.floor(i*data.length/bars.length)]||0;bar.style.height=(8+v/255*66)+'px';bar.classList.add('live')});raf=requestAnimationFrame(animateWave)}
 async function beginRecord(){try{await prepareMic()}catch(e){statusEl.textContent='マイクを許可してください';recordLabel.textContent='録音する';return}chunks=[];currentBlob=null;detected=[];notesEl.innerHTML='<span class="small">録音後に解析できます。</span>';playNotes.disabled=true;mediaRecorder=new MediaRecorder(stream);mediaRecorder.ondataavailable=e=>{if(e.data.size)chunks.push(e.data)};mediaRecorder.onstop=()=>{currentBlob=new Blob(chunks,{type:mediaRecorder.mimeType||'audio/webm'});if(currentUrl)URL.revokeObjectURL(currentUrl);currentUrl=URL.createObjectURL(currentBlob);audioEl.src=currentUrl;audioEl.hidden=false;analyzeBtn.disabled=false;saveTake.disabled=false;redo.disabled=false;statusEl.textContent='録音できました。再生または音階解析ができます。'};mediaRecorder.start();recording=true;recStart=performance.now();recordBtn.classList.add('recording');recordLabel.textContent='停止';statusEl.textContent='録音中 — メロディを歌ってください';recTimer=setInterval(()=>timer.textContent=fmt(performance.now()-recStart),100);animateWave()}
 function stopRecord(){if(!recording)return;recording=false;clearInterval(recTimer);cancelAnimationFrame(raf);mediaRecorder.stop();recordBtn.classList.remove('recording');recordLabel.textContent='もう一度録音';[...wave.children].forEach(x=>x.classList.remove('live'))}
