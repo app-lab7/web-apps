@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ToDo Sync</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f5f7fb;--panel:#fff;--line:#e5e7eb;--text:#1f2937;--muted:#6b7280;--accent:#2563eb;--danger:#dc2626;--warn:#d97706;--ok:#15803d;--shadow:0 10px 30px rgba(15,23,42,.07)}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
+button,input,select{font:inherit}.wrap{max-width:1160px;margin:auto;padding:24px 18px 56px}.hidden{display:none!important}
+.top{display:flex;gap:16px;justify-content:space-between;align-items:flex-end;margin-bottom:18px}h1{margin:0 0 4px;font-size:28px}.sub,.small{color:var(--muted);font-size:13px}
+.btn,.field{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px}.btn{cursor:pointer;font-weight:700}.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.ghost{background:#fff}
+.auth{max-width:440px;margin:8vh auto;background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:18px;padding:24px}.auth h2{margin:0 0 6px}.stack{display:grid;gap:10px;margin-top:18px}.msg{font-size:13px;min-height:18px;color:#b91c1c}.msg.ok{color:#15803d}
+.userbar,.addbox,.card,.panel{background:#fff;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:14px}
+.userbar{display:flex;align-items:center;gap:10px;padding:12px 14px;margin-bottom:14px}.spacer{flex:1}.sync{font-size:12px;color:var(--muted)}
+.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.card{padding:15px}.klabel{font-size:12px;color:var(--muted);font-weight:700}.kpi{font-size:27px;font-weight:800;margin-top:3px}
+.addbox{display:grid;grid-template-columns:minmax(220px,1fr) 150px 140px auto;gap:10px;padding:14px}.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:14px 0}.tabs{display:flex;gap:5px;background:#e9edf5;padding:4px;border-radius:10px}.tab{border:0;background:transparent;padding:8px 12px;border-radius:8px;font-weight:700;cursor:pointer}.tab.active{background:#fff;box-shadow:0 1px 4px #0002}.search{margin-left:auto}
+.panel{overflow:hidden}table{width:100%;border-collapse:collapse}th,td{padding:13px 12px;border-bottom:1px solid var(--line);text-align:left}th{font-size:12px;color:var(--muted);background:#fafafa}.task{font-weight:750}.meta{font-size:12px;color:var(--muted);margin-top:3px}.done{opacity:.48}.done .task{text-decoration:line-through}
+.badge{display:inline-block;padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}.high{background:#fee2e2;color:#991b1b}.mid{background:#fef3c7;color:#92400e}.low{background:#e0f2fe;color:#075985}
+.red{color:var(--danger);font-weight:800}.orange{color:var(--warn);font-weight:800}.green{color:var(--ok);font-weight:800}.icon{border:0;background:none;font-size:18px;cursor:pointer;color:#6b7280}
+.empty{text-align:center;padding:46px;color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap}.file{display:none}.note{margin-top:10px;color:var(--muted);font-size:12px}
+@media(max-width:760px){.top{flex-direction:column;align-items:flex-start}.summary{grid-template-columns:1fr 1fr}.addbox{grid-template-columns:1fr 1fr}.addbox .taskin,.addbox .primary{grid-column:1/-1}.panel{overflow:auto}table{min-width:720px}.search{margin-left:0;width:100%}.userbar{align-items:flex-start;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<section id="auth" class="auth">
+  <h2>ToDo Sync</h2>
+  <p class="small">ログインすると、自分のToDoだけをPC・スマホで同期できます。</p>
+  <div class="stack">
+    <input id="email" class="field" type="email" placeholder="メールアドレス">
+    <input id="password" class="field" type="password" placeholder="パスワード（6文字以上）">
+    <button class="btn primary" id="loginBtn">ログイン</button>
+    <button class="btn ghost" id="signupBtn">新規登録</button>
+    <div id="authMsg" class="msg"></div>
+  </div>
+</section>
+<section id="app" class="hidden">
+  <div class="top">
+    <div><h1>ToDo Sync</h1><div class="sub">自分専用のToDoを、端末をまたいで同期。</div></div>
+    <div class="actions"><label class="btn" for="excelFile">Excel読込</label><input id="excelFile" class="file" type="file" accept=".xlsx,.xls"><button class="btn" id="exportBtn">Excel書出</button></div>
+  </div>
+  <div class="userbar"><strong id="userEmail"></strong><span class="sync" id="syncState">同期済み</span><div class="spacer"></div><button class="btn" id="logoutBtn">ログアウト</button></div>
+  <div class="summary">
+    <div class="card"><div class="klabel">未完了</div><div class="kpi" id="openK">0</div></div>
+    <div class="card"><div class="klabel">今日まで</div><div class="kpi" id="todayK">0</div></div>
+    <div class="card"><div class="klabel">3日以内</div><div class="kpi" id="soonK">0</div></div>
+    <div class="card"><div class="klabel">完了</div><div class="kpi" id="doneK">0</div></div>
+  </div>
+  <div class="addbox"><input id="task" class="field taskin" placeholder="やることを入力…"><input id="due" class="field" type="date"><select id="priority" class="field"><option>中</option><option>高</option><option>低</option></select><button class="btn primary" id="addBtn">＋ タスク追加</button></div>
+  <div class="toolbar">
+    <div class="tabs"><button class="tab active" data-filter="all">すべて</button><button class="tab" data-filter="today">今日</button><button class="tab" data-filter="week">今週</button><button class="tab" data-filter="done">完了</button></div>
+    <select id="sort" class="field"><option value="smart">おすすめ順</option><option value="due">締切順</option><option value="priority">優先度順</option><option value="created">追加順</option></select>
+    <input id="search" class="field search" placeholder="検索">
+  </div>
+  <div class="panel"><table><thead><tr><th>完了</th><th>優先度</th><th>タスク</th><th>締切</th><th>残日数</th><th></th></tr></thead><tbody id="tbody"></tbody></table><div id="empty" class="empty hidden">タスクはありません。</div></div>
+  <div class="note">保存先：Firebase Firestore。ログイン中のユーザー本人のToDoだけ読み書きできます。</div>
+</section>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-app.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-auth.js";
+import { getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.2.1/firebase-firestore.js";
+const firebaseConfig={apiKey:"AIzaSyB2DxyfSoNEiEPRCWHPLcLz8z1rpBL78sE",authDomain:"todo-sync-4e467.firebaseapp.com",projectId:"todo-sync-4e467",storageBucket:"todo-sync-4e467.firebasestorage.app",messagingSenderId:"771396467067",appId:"1:771396467067:web:6c668c3eb48f07aa05e5de",measurementId:"G-9TD79EZQ05"};
+const fbApp=initializeApp(firebaseConfig),auth=getAuth(fbApp),db=getFirestore(fbApp),$=id=>document.getElementById(id);let user=null,tasks=[],filter='all',unsubscribe=null;
+function authMsg(t,ok=false){$('authMsg').textContent=t;$('authMsg').className=ok?'msg ok':'msg'}function setSync(t){$('syncState').textContent=t}function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}function dateOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate())}function daysLeft(s){if(!s)return null;return Math.round((dateOnly(new Date(s+'T00:00:00'))-dateOnly(new Date()))/86400000)}function pRank(p){return p==='高'?3:p==='中'?2:1}function todoRef(){return collection(db,'users',user.uid,'todos')}
+$('signupBtn').onclick=async()=>{const email=$('email').value.trim(),password=$('password').value;if(!email||password.length<6){authMsg('メールアドレスと6文字以上のパスワードを入力してください。');return}try{await createUserWithEmailAndPassword(auth,email,password);authMsg('登録しました。',true)}catch(e){authMsg(errorText(e.code))}};
+$('loginBtn').onclick=async()=>{try{await signInWithEmailAndPassword(auth,$('email').value.trim(),$('password').value)}catch(e){authMsg(errorText(e.code))}};$('logoutBtn').onclick=()=>signOut(auth);$('password').addEventListener('keydown',e=>{if(e.key==='Enter')$('loginBtn').click()});
+function errorText(code){const map={'auth/email-already-in-use':'このメールアドレスはすでに登録されています。','auth/invalid-email':'メールアドレスの形式を確認してください。','auth/weak-password':'パスワードは6文字以上にしてください。','auth/invalid-credential':'メールアドレスまたはパスワードが違います。','auth/too-many-requests':'試行回数が多すぎます。少し時間をおいてください。','auth/operation-not-allowed':'Firebase側でメール/パスワードログインが有効になっていません。'};return map[code]||('エラー: '+code)}
+onAuthStateChanged(auth,u=>{user=u;if(unsubscribe){unsubscribe();unsubscribe=null}if(u){$('auth').classList.add('hidden');$('app').classList.remove('hidden');$('userEmail').textContent=u.email||'ログイン中';subscribeTodos()}else{tasks=[];$('app').classList.add('hidden');$('auth').classList.remove('hidden');render()}});
+function subscribeTodos(){setSync('同期中…');unsubscribe=onSnapshot(todoRef(),snap=>{tasks=snap.docs.map(d=>({id:d.id,...d.data()}));render();setSync('同期済み')},err=>{console.error(err);setSync('同期エラー');alert('Firestoreに接続できませんでした。ルール設定を確認してください。')})}
+$('addBtn').onclick=addTask;$('task').addEventListener('keydown',e=>{if(e.key==='Enter')addTask()});async function addTask(){const name=$('task').value.trim();if(!name||!user)return;setSync('保存中…');try{await addDoc(todoRef(),{task:name,due_date:$('due').value||null,priority:$('priority').value,done:false,created_at:serverTimestamp(),updated_at:serverTimestamp()});$('task').value='';$('task').focus()}catch(e){console.error(e);alert('保存できませんでした。');setSync('保存エラー')}}
+window.toggleTodo=async(id,val)=>{try{await updateDoc(doc(db,'users',user.uid,'todos',id),{done:val,updated_at:serverTimestamp()})}catch(e){console.error(e);alert('更新できませんでした。')}};window.deleteTodo=async(id)=>{if(!confirm('このタスクを削除しますか？'))return;try{await deleteDoc(doc(db,'users',user.uid,'todos',id))}catch(e){console.error(e);alert('削除できませんでした。')}};
+function visible(t){const q=$('search').value.trim().toLowerCase(),n=daysLeft(t.due_date);if(q&&!String(t.task||'').toLowerCase().includes(q))return false;if(filter==='done')return !!t.done;if(filter==='today')return !t.done&&n!==null&&n<=0;if(filter==='week')return !t.done&&n!==null&&n>=0&&n<=7;return true}function createdMs(t){if(t.created_at?.toMillis)return t.created_at.toMillis();return 0}function sorted(a){const mode=$('sort').value;return [...a].sort((x,y)=>{if(x.done!==y.done)return x.done?1:-1;const dx=daysLeft(x.due_date)??9999,dy=daysLeft(y.due_date)??9999;if(mode==='created')return createdMs(y)-createdMs(x);if(mode==='due')return dx-dy;if(mode==='priority')return pRank(y.priority)-pRank(x.priority)||dx-dy;const score=t=>{let s=pRank(t.priority)*10,n=daysLeft(t.due_date);if(n!==null){if(n<0)s+=50;else if(n===0)s+=45;else if(n<=3)s+=30;else if(n<=7)s+=15}return s};return score(y)-score(x)||dx-dy})}
+function dueText(t){if(t.done)return '<span class="meta">完了</span>';const n=daysLeft(t.due_date);if(n===null)return '<span class="meta">期限なし</span>';if(n<0)return `<span class="red">${-n}日超過</span>`;if(n===0)return '<span class="red">今日まで</span>';if(n<=3)return `<span class="orange">あと${n}日</span>`;return `<span class="green">あと${n}日</span>`}function fmt(s){if(!s)return '—';const d=new Date(s+'T00:00:00'),w='日月火水木金土'[d.getDay()];return `${d.getMonth()+1}/${d.getDate()} (${w})`}
+function render(){if(!$('tbody'))return;const list=sorted(tasks.filter(visible));$('tbody').innerHTML=list.map(t=>`<tr class="${t.done?'done':''}"><td><input type="checkbox" ${t.done?'checked':''} onchange="toggleTodo('${t.id}',this.checked)"></td><td><span class="badge ${t.priority==='高'?'high':t.priority==='低'?'low':'mid'}">${esc(t.priority||'中')}</span></td><td><div class="task">${esc(t.task)}</div></td><td>${fmt(t.due_date)}</td><td>${dueText(t)}</td><td><button class="icon" onclick="deleteTodo('${t.id}')">×</button></td></tr>`).join('');$('empty').classList.toggle('hidden',list.length>0);const open=tasks.filter(t=>!t.done),done=tasks.filter(t=>t.done);$('openK').textContent=open.length;$('todayK').textContent=open.filter(t=>{let n=daysLeft(t.due_date);return n!==null&&n<=0}).length;$('soonK').textContent=open.filter(t=>{let n=daysLeft(t.due_date);return n!==null&&n>0&&n<=3}).length;$('doneK').textContent=done.length}
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;render()});$('sort').onchange=render;$('search').oninput=render;
+function excelSerialToISO(v){if(v===''||v==null)return '';if(typeof v==='number'){const p=XLSX.SSF.parse_date_code(v);return p?`${p.y}-${String(p.m).padStart(2,'0')}-${String(p.d).padStart(2,'0')}`:''}const d=new Date(v);return isNaN(d)?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
+$('excelFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f||!user)return;const wb=XLSX.read(await f.arrayBuffer(),{type:'array'});const sheetName=wb.SheetNames.includes('優先度入れてみた')?'優先度入れてみた':wb.SheetNames[0];const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{defval:''});let count=0;setSync('Excel取込中…');for(const r of rows){const name=String(r['タスク']||'').trim();if(!name)continue;let p=r['優先度'];if(typeof p==='number')p=p<=3?'高':p<=7?'中':'低';if(!['高','中','低'].includes(p))p='中';await addDoc(todoRef(),{task:name,due_date:excelSerialToISO(r['締切日'])||null,priority:p,done:r['完了']===1||r['完了']==='1'||r['完了']===true,created_at:serverTimestamp(),updated_at:serverTimestamp()});count++}setSync('同期済み');alert(`${count}件を取り込みました。`);e.target.value=''});
+$('exportBtn').onclick=()=>{const rows=tasks.map(t=>({'完了':t.done?1:'','優先度':t.priority||'中','タスク':t.task||'','締切日':t.due_date?new Date(t.due_date+'T00:00:00'):'','残日数':t.done?'':daysLeft(t.due_date)}));const ws=XLSX.utils.json_to_sheet(rows,{header:['完了','優先度','タスク','締切日','残日数']});ws['!cols']=[{wch:8},{wch:10},{wch:42},{wch:16},{wch:10}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'ToDoリスト');XLSX.writeFile(wb,'ToDoリスト.xlsx')};
+</script>
+</body>
+</html>
