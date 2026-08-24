@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SyncNotes</title>
+<style>
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:#0f172a;color:#fff}.shell{height:100%;display:flex;flex-direction:column}.bar{height:48px;flex:0 0 auto;display:flex;align-items:center;gap:8px;padding:6px 10px;background:#111827;border-bottom:1px solid #263244}.brand{font-weight:800;margin-right:auto}.bar button,.bar a{height:34px;border:0;border-radius:7px;padding:0 12px;font-weight:700;text-decoration:none;display:inline-flex;align-items:center;cursor:pointer}.send{background:#2563eb;color:#fff}.editor{background:#fff;color:#111827}.status{font-size:12px;color:#cbd5e1;white-space:nowrap}.frame{width:100%;flex:1;border:0;background:#fff}.notice{position:fixed;right:14px;top:58px;background:#111827;color:#fff;padding:10px 13px;border-radius:8px;box-shadow:0 8px 24px #0006;opacity:0;pointer-events:none;transition:.15s;z-index:5}.notice.show{opacity:1}@media(max-width:700px){.brand{font-size:13px}.bar{height:auto;min-height:48px;flex-wrap:wrap}.status{width:100%;order:3}.frame{min-height:0}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="bar">
+    <div class="brand">SyncNotes</div>
+    <span class="status" id="status">文書エディターと連携できます</span>
+    <a class="editor" href="../image-print/">文書エディター</a>
+    <button class="send" id="sendBtn">現在の文書をメモへ</button>
+  </div>
+  <iframe id="syncFrame" class="frame" src="https://harmonious-nasturtium-2838aa.netlify.app/" title="SyncNotes"></iframe>
+</div>
+<div class="notice" id="notice"></div>
+<script>
+(() => {
+  const TARGET_ORIGIN = 'https://harmonious-nasturtium-2838aa.netlify.app';
+  const frame = document.getElementById('syncFrame');
+  const status = document.getElementById('status');
+  const notice = document.getElementById('notice');
+  let pending = null;
+
+  function show(msg){notice.textContent=msg;notice.classList.add('show');clearTimeout(notice._t);notice._t=setTimeout(()=>notice.classList.remove('show'),2200)}
+  function htmlToText(html){const div=document.createElement('div');div.innerHTML=html||'';div.querySelectorAll('br').forEach(x=>x.replaceWith('\n'));div.querySelectorAll('p,div,li,h1,h2,h3').forEach(x=>x.append('\n'));return (div.innerText||div.textContent||'').replace(/\n{3,}/g,'\n\n').trim()}
+  function getEditorPayload(){
+    const keys=['wordLikeEditorV6','wordLikeEditorV5','wordLikeEditorV4','wordLikeEditorV3'];
+    let data=null;
+    for(const key of keys){try{const raw=localStorage.getItem(key);if(raw){data=JSON.parse(raw);break}}catch(e){}}
+    if(!data||!Array.isArray(data.pages))return null;
+    const pageTexts=data.pages.map(htmlToText).filter(Boolean);
+    const content=pageTexts.join('\n\n──────── ページ区切り ────────\n\n').trim();
+    if(!content)return null;
+    const firstLine=content.split(/\n/).map(s=>s.trim()).find(Boolean)||'文書エディター';
+    return {title:firstLine.slice(0,80),content,source:'word-editor',sentAt:new Date().toISOString()};
+  }
+  function sendPayload(payload){pending=payload;status.textContent='SyncNotesへ送信中…';frame.contentWindow.postMessage({type:'syncnotes-import',payload},TARGET_ORIGIN);setTimeout(()=>{if(pending)frame.contentWindow.postMessage({type:'syncnotes-import',payload:pending},TARGET_ORIGIN)},1200)}
+  document.getElementById('sendBtn').onclick=()=>{const p=getEditorPayload();if(!p){show('文書エディターに送れる本文がありません');return}sendPayload(p)};
+  frame.addEventListener('load',()=>{status.textContent='SyncNotesを開きました';if(pending)setTimeout(()=>sendPayload(pending),500)});
+  window.addEventListener('message',e=>{if(e.origin!==TARGET_ORIGIN)return;const d=e.data;if(!d||d.type!=='syncnotes-import-result')return;if(d.ok){pending=null;status.textContent='SyncNotesに保存しました';show('メモとして保存しました')}else{status.textContent='保存に失敗しました';show('SyncNotesへの保存に失敗しました')}});
+  if(new URLSearchParams(location.search).get('send')==='1'){frame.addEventListener('load',()=>{const p=getEditorPayload();if(p)setTimeout(()=>sendPayload(p),700)},{once:true})}
+})();
+</script>
+</body>
+</html>
