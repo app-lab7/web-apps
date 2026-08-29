@@ -1881,7 +1881,14 @@
 
   // ---- Export / Import ----
   document.getElementById("export-btn").addEventListener("click", function () {
-    var blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+    var backup = {
+      version: 2,
+      items: items,
+      folders: folders,
+      // パスワードそのものは保存しない。ロックの照合用データだけを引き継ぐ。
+      folderLocks: folderLocks
+    };
+    var blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
     var url = URL.createObjectURL(blob);
     var a = document.createElement("a");
     var d = new Date();
@@ -1906,11 +1913,13 @@
     reader.onload = function () {
       try {
         var data = JSON.parse(reader.result);
-        if (!Array.isArray(data)) throw new Error("invalid");
+        // 旧形式（動画の配列のみ）も読み込み可能にする。
+        var backupItems = Array.isArray(data) ? data : data && Array.isArray(data.items) ? data.items : null;
+        if (!backupItems) throw new Error("invalid");
         var existingIds = {};
         items.forEach(function (it) { existingIds[it.id] = true; });
         var added = 0;
-        data.forEach(function (it) {
+        backupItems.forEach(function (it) {
           if (it && it.url && !existingIds[it.id]) {
             items.push({
               id: it.id || uid(),
@@ -1933,6 +1942,24 @@
             added++;
           }
         });
+        if (!Array.isArray(data)) {
+          (Array.isArray(data.folders) ? data.folders : []).forEach(function (folder) {
+            if (typeof folder === "string" && folder.trim() && folders.indexOf(folder) === -1) folders.push(folder);
+          });
+          var importedLocks = data.folderLocks;
+          if (importedLocks && typeof importedLocks === "object" && !Array.isArray(importedLocks)) {
+            Object.keys(importedLocks).forEach(function (folder) {
+              if (typeof importedLocks[folder] === "string" && importedLocks[folder]) {
+                folderLocks[folder] = importedLocks[folder];
+                if (folders.indexOf(folder) === -1) folders.push(folder);
+              }
+            });
+            // 移行先では必ず再ロックする。
+            unlockedFolders = {};
+            saveUnlockedFolders();
+          }
+          saveFolders();
+        }
         items.sort(function (a, b) { return b.addedAt - a.addedAt; });
         save();
         render();
