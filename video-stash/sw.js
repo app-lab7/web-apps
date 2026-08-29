@@ -1,4 +1,4 @@
-const CACHE = 'video-memo-v44';
+const CACHE = 'video-memo-v45';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
