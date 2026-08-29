@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0f1115">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>動画リンクメモ</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --surface: #171a21;
+    --surface-2: #1f232c;
+    --border: #2a2f3a;
+    --text: #f0f1f4;
+    --text-dim: #9aa1ad;
+    --accent: #6c8cff;
+    --accent-2: #ff6cab;
+    --x-color: #e8eaed;
+    --danger: #ff6b6b;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  #app {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: env(safe-area-inset-top) 16px calc(env(safe-area-inset-bottom) + 24px) 16px;
+    min-height: 100vh;
+  }
+  header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: linear-gradient(var(--bg) 85%, transparent);
+    padding: 18px 0 8px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .subtitle {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    margin: 0 0 14px;
+    line-height: 1.5;
+  }
+  .privacy-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: #8de3a8;
+    background: rgba(141, 227, 168, 0.08);
+    border: 1px solid rgba(141, 227, 168, 0.25);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .privacy-badge svg { width: 12px; height: 12px; flex-shrink: 0; }
+
+  /* Add form */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  #add-form { margin-bottom: 18px; }
+  #add-form.collapsed .form-fields { display: none; }
+  .toggle-add {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-add .plus {
+    font-size: 18px;
+    color: var(--accent);
+    transition: transform 0.2s ease;
+  }
+  #add-form:not(.collapsed) .toggle-add .plus { transform: rotate(45deg); }
+  .toggle-add-title { font-weight: 600; font-size: 15px; }
+  .form-fields { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  label {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-bottom: 4px;
+    display: block;
+  }
+  input[type=text], input[type=url], textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: inherit;
+    resize: vertical;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  textarea { min-height: 54px; }
+  .field-row { display: flex; flex-direction: column; }
+  .x-hint {
+    display: none;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    align-items: center;
+    gap: 5px;
+  }
+  .x-hint.show { display: flex; }
+  .preview-status {
+    display: none;
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .preview-status.show { display: block; }
+  .x-hint .x-badge {
+    background: var(--x-color);
+    color: #000;
+    font-weight: 700;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .tag-input-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .chip.active {
+    background: rgba(108, 140, 255, 0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .chip .x-mark { margin-left: 2px; opacity: 0.6; }
+  #save-btn {
+    background: var(--accent);
+    color: #0b0d12;
+    border: none;
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  #save-btn:active { transform: scale(0.98); }
+  .error-msg {
+    color: var(--danger);
+    font-size: 12.5px;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 2px 2px 12px;
+    margin-bottom: 4px;
+    scrollbar-width: none;
+  }
+  .filter-bar::-webkit-scrollbar { display: none; }
+  .filter-chip {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .filter-chip.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #0b0d12;
+    font-weight: 600;
+  }
+  .filter-label {
+    display: block;
+    margin: 2px 2px 5px;
+    color: var(--text-dim);
+    font-size: 11px;
+  }
+  .folder-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 2px 2px 5px;
+  }
+  .folder-heading .filter-label { margin: 0; }
+  .new-folder-btn {
+    border: none;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 3px 1px;
+  }
+  .search-input {
+    margin: 0 0 10px;
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  .view-size-bar {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    margin: 0 0 12px;
+  }
+  .view-size-btn {
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface);
+    color: var(--text-dim);
+    padding: 8px 4px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .view-size-btn.active { background: var(--accent); border-color: var(--accent); color: #0b0d12; font-weight: 700; }
+  .inline-audio-toggle { width: 100%; margin: -4px 0 12px; }
+  .inline-audio-toggle.active { background: linear-gradient(110deg, #7ef3bc, #89c8ff); border-color: transparent; color: #082018; font-weight: 700; }
+  .batch-bar {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 10px;
+  }
+  .batch-bar .ghost-btn { flex: 1; }
+  .batch-bar .ghost-btn:disabled { opacity: 0.45; cursor: default; }
+  .select-check { width: 19px; height: 19px; margin: 2px 2px 0 0; accent-color: var(--accent); }
+
+  /* List */
+  #list { display: flex; flex-direction: column; gap: 10px; }
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .item-preview {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: block;
+  }
+  .item-preview.hidden { display: none; }
+  .twivideo-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    background: linear-gradient(135deg, #111827, #1d2e4d);
+    color: #f0f1f4;
+    text-decoration: none;
+  }
+  .twivideo-card .play-mark {
+    display: grid;
+    place-items: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #0b0d12;
+    font-size: 20px;
+    padding-left: 2px;
+  }
+  .twivideo-card strong { display: block; font-size: 16px; }
+  .twivideo-card span:last-child { display: block; margin-top: 3px; color: #b7c2d9; font-size: 12px; }
+  .item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .item-title-link {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 15.5px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+  .item-title-link:active { opacity: 0.7; }
+  .item-domain {
+    font-size: 12px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .x-tag-badge {
+    background: var(--x-color);
+    color: #000;
+    font-weight: 700;
+    font-size: 10px;
+    padding: 1px 5px;
+    border-radius: 4px;
+  }
+  .item-memo {
+    font-size: 13.5px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    white-space: pre-wrap;
+  }
+  .item-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .item-tag {
+    font-size: 11.5px;
+    color: var(--accent);
+    background: rgba(108, 140, 255, 0.1);
+    padding: 3px 9px;
+    border-radius: 999px;
+  }
+  .item-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2px;
+  }
+  .item-date { font-size: 11px; color: #6b7280; }
+  .item-btns { display: flex; gap: 14px; }
+  .icon-btn {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 2px;
+  }
+  .icon-btn.delete { color: var(--danger); opacity: 0.85; }
+
+  .empty-state {
+    text-align: center;
+    padding: 50px 16px;
+    color: var(--text-dim);
+  }
+  .empty-state .big { font-size: 34px; margin-bottom: 8px; }
+  .empty-state p { font-size: 13.5px; line-height: 1.6; margin: 4px 0; }
+
+  footer {
+    margin-top: 28px;
+    text-align: center;
+  }
+  .footer-btns { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
+  .ghost-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .bookmarklet-help {
+    margin: 4px auto 14px;
+    padding: 11px 12px;
+    max-width: 470px;
+    text-align: left;
+    background: rgba(108, 140, 255, 0.08);
+    border: 1px solid rgba(108, 140, 255, 0.22);
+    border-radius: 10px;
+  }
+  .bookmarklet-help summary { cursor: pointer; color: var(--text); font-size: 12.5px; font-weight: 600; }
+  .bookmarklet-help p { color: var(--text-dim); font-size: 11.5px; line-height: 1.55; margin: 9px 0; }
+  .bookmarklet-help .ghost-btn { width: 100%; }
+  footer .note { font-size: 11px; color: #565c68; line-height: 1.6; }
+  #import-file { display: none; }
+
+  .toast {
+    position: fixed;
+    bottom: calc(env(safe-area-inset-bottom) + 20px);
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: #232833;
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.25s ease;
+    z-index: 100;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.4);
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* Cover picker */
+  .cover-modal, .edit-modal, .player-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    padding: max(18px, env(safe-area-inset-top)) 16px max(18px, env(safe-area-inset-bottom));
+    background: rgba(0, 0, 0, 0.72);
+    align-items: flex-end;
+  }
+  .cover-modal.show, .edit-modal.show, .player-modal.show { display: flex; }
+  .cover-sheet, .edit-sheet {
+    width: min(640px, 100%);
+    margin: 0 auto;
+    padding: 18px;
+    background: #1b1f28;
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    box-shadow: 0 -12px 42px rgba(0, 0, 0, 0.45);
+  }
+  .cover-sheet h2 { margin: 0 0 7px; font-size: 17px; }
+  .cover-sheet p { margin: 0 0 13px; color: var(--text-dim); font-size: 13px; line-height: 1.55; }
+  .cover-preview {
+    display: none;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    margin: 0 0 12px;
+  }
+  .cover-preview.show { display: block; }
+  .cover-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .cover-btn {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 11px 8px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    cursor: pointer;
+  }
+  .cover-btn.primary { background: var(--accent); border-color: var(--accent); color: #0b0d12; }
+  .cover-btn.wide { grid-column: 1 / -1; }
+  #cover-file { display: none; }
+  .edit-sheet { max-height: calc(100dvh - 36px); overflow: auto; }
+  .edit-sheet h2 { margin: 0 0 6px; font-size: 17px; }
+  .edit-sheet > p { margin: 0 0 14px; color: var(--text-dim); font-size: 13px; }
+  .edit-fields { display: grid; gap: 10px; }
+  .edit-fields label { display: grid; gap: 5px; color: var(--text-dim); font-size: 12px; font-weight: 600; }
+  .edit-fields input, .edit-fields textarea { width: 100%; font: inherit; color: var(--text); padding: 10px 11px; }
+  .edit-fields textarea { min-height: 86px; resize: vertical; }
+  .player-sheet { width: min(680px, 100%); margin: 0 auto; padding: 14px; background: #11131b; border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 -12px 42px rgba(0,0,0,.45); }
+  .player-modal.pos-top { align-items: flex-start; }
+  .player-modal.pos-center { align-items: center; }
+  .player-modal.pos-bottom { align-items: flex-end; }
+  .player-position { display: flex; justify-content: flex-end; gap: 6px; margin-bottom: 8px; }
+  .player-position button { border: 1px solid var(--border); border-radius: 999px; padding: 5px 9px; background: var(--surface-2); color: var(--text-dim); font: inherit; font-size: 11px; }
+  .player-position button.active { background: var(--accent); border-color: var(--accent); color: #100b1c; }
+  .player-title { margin: 8px 2px 3px; font-size: 15px; line-height: 1.4; }
+  .player-meta { color: var(--text-dim); font-size: 12px; margin: 0 2px 12px; }
+  .player-frame { display: block; width: 100%; aspect-ratio: 16 / 9; border: 0; border-radius: 12px; background: #000; }
+  .inline-player { display:block; width:100%; aspect-ratio:16 / 9; border:0; border-radius:12px; background:#000; }
+  .shorts-preview {
+    width: min(100%, 300px);
+    aspect-ratio: 9 / 16;
+    margin-inline: auto;
+  }
+  .shorts-badge {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    z-index: 2;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #ff3158;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .02em;
+  }
+  .inline-native-video { max-width: 100%; min-height: 180px; object-fit: contain; }
+  .inline-native-video.video-ratio-ready { min-height: 0; }
+  .inline-twivideo-player.portrait { width: min(100%, 410px); aspect-ratio: 9 / 16; margin-inline: auto; }
+  .duration-badge { position:absolute; right:8px; top:8px; z-index:2; padding:3px 6px; border-radius:6px; background:rgba(0,0,0,.72); color:#fff; font-size:11px; font-weight:700; }
+  .player-actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .player-actions button { min-height: 42px; }
+
+  /* Compact, glass-style interface */
+  :root { --bg: #0b0b12; --surface: rgba(24, 25, 38, 0.8); --surface-2: #202230; --border: rgba(255,255,255,0.1); --accent: #9b8cff; --accent-2: #ff7eb6; --radius: 18px; }
+  html, body { background: radial-gradient(circle at 8% -10%, #342768 0, transparent 36%), radial-gradient(circle at 95% 8%, #4a1d55 0, transparent 30%), var(--bg); }
+  #app { max-width: 680px; padding: calc(env(safe-area-inset-top) + 8px) 14px calc(env(safe-area-inset-bottom) + 22px); }
+  header { position: static; background: none; padding: 6px 2px 12px; }
+  .app-topline { display: flex; align-items: center; justify-content: space-between; }
+  h1 { margin: 0; font-size: 20px; letter-spacing: -0.5px; }
+  h1 span { font-size: 18px; }
+  .local-pill { border: 1px solid rgba(162,255,207,0.25); border-radius: 999px; background: rgba(105,230,170,0.1); color: #a9f4c7; padding: 4px 8px; font-size: 10px; }
+  .card, .item, .tools-panel { background: linear-gradient(140deg, rgba(34,35,51,0.88), rgba(20,21,31,0.8)); border-color: var(--border); box-shadow: 0 8px 24px rgba(0,0,0,0.16); }
+  #add-form { margin-bottom: 9px; padding: 13px 14px; }
+  .toggle-add-title { font-size: 14px; }
+  .toggle-add .plus { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: rgba(155,140,255,0.14); font-size: 17px; }
+  input[type=text], input[type=url], input[type=search], textarea { background: rgba(13,14,23,0.65); border-color: rgba(255,255,255,0.09); border-radius: 12px; }
+  #save-btn { border-radius: 12px; background: linear-gradient(110deg, var(--accent), #c58cff); box-shadow: 0 6px 18px rgba(155,140,255,0.22); }
+  .tools-panel { margin: 0 0 14px; border: 1px solid var(--border); border-radius: 15px; overflow: hidden; }
+  .tools-panel summary { display: flex; justify-content: space-between; align-items: center; cursor: pointer; list-style: none; padding: 11px 13px; color: #d7d3ff; font-size: 13px; font-weight: 650; }
+  .tools-panel summary::-webkit-details-marker { display: none; }
+  .tools-chevron { transition: transform .2s ease; }
+  .tools-panel[open] .tools-chevron { transform: rotate(180deg); }
+  .tools-content { padding: 2px 12px 12px; border-top: 1px solid var(--border); }
+  .search-input { margin-top: 10px; }
+  .view-size-btn, .filter-chip, .ghost-btn { background: rgba(255,255,255,0.045); border-color: rgba(255,255,255,0.1); }
+  .view-size-btn.active, .filter-chip.active { background: linear-gradient(110deg, var(--accent), #c58cff); border-color: transparent; color: #120d1f; }
+  .filter-bar { padding-bottom: 7px; }
+  .batch-bar { margin-bottom: 12px; }
+  .item { border-radius: 18px; padding: 12px; gap: 7px; transition: transform .18s ease, border-color .18s ease; }
+  .item:active { transform: scale(0.992); border-color: rgba(190,180,255,0.4); }
+  .item-preview { border-radius: 13px; }
+  .item-title-link { font-size: 15px; }
+  .item-domain, .item-memo { font-size: 12px; }
+  .view-small { padding: 11px 13px; }
+  .view-small .item-title-link { display: inline-block; padding: 2px 0; font-size: 14px; }
+  .item-tag { background: rgba(155,140,255,0.13); color: #c9c0ff; }
+  footer { margin-top: 20px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="app-topline">
+      <h1><span>🎬</span> Video stash</h1>
+      <span class="local-pill">この端末</span>
+    </div>
+  </header>
+
+  <div id="add-form" class="card collapsed">
+    <div class="toggle-add" id="toggle-add">
+      <span class="toggle-add-title">＋ 動画リンクを追加</span>
+      <span class="plus">＋</span>
+    </div>
+    <div class="form-fields">
+      <div class="field-row">
+        <label for="input-url">動画のURL <span style="color:var(--danger)">*</span></label>
+        <input type="url" id="input-url" placeholder="https://... または https://x.com/.../status/...">
+        <div class="x-hint" id="x-hint"><span class="x-badge">X</span> X(旧Twitter)のリンクと認識しました。自動でタグを付けます。</div>
+        <div class="preview-status" id="preview-status"></div>
+      </div>
+      <div class="field-row">
+        <label for="input-title">タイトル・メモしたい一言（任意）</label>
+        <input type="text" id="input-title" placeholder="例：あとで見る料理動画">
+      </div>
+      <div class="field-row">
+        <label for="input-memo">メモ（任意）</label>
+        <textarea id="input-memo" placeholder="感想や理由などを自由に"></textarea>
+      </div>
+      <div class="field-row">
+        <label for="input-tags">タグ（カンマ区切り、任意）</label>
+        <input type="text" id="input-tags" placeholder="例：後で見る, お気に入り">
+      </div>
+      <div class="field-row">
+        <label for="input-folder">保存先フォルダ</label>
+        <input type="text" id="input-folder" list="folder-suggestions" value="未分類" placeholder="例：料理、音楽、あとで見る">
+        <datalist id="folder-suggestions"></datalist>
+      </div>
+      <div class="error-msg" id="error-msg">動画のURLを入力してください。</div>
+      <button id="save-btn">保存する</button>
+    </div>
+  </div>
+
+  <details class="tools-panel">
+    <summary><span>⌕ 検索・整理・表示</span><span class="tools-chevron">⌄</span></summary>
+    <div class="tools-content">
+      <input class="search-input" type="search" id="search-input" placeholder="タグ・タイトル・メモを検索">
+      <div class="view-size-bar" aria-label="表示サイズ">
+        <button class="view-size-btn" data-view="large">大<br>サムネあり</button>
+        <button class="view-size-btn" data-view="medium">中<br>サムネなし</button>
+        <button class="view-size-btn" data-view="small">小<br>名前のみ</button>
+      </div>
+      <button class="ghost-btn inline-audio-toggle" id="inline-audio-toggle" type="button">🔇 同時音声：オフ</button>
+      <div class="batch-bar">
+        <button class="ghost-btn" id="toggle-select-btn">複数選択</button>
+        <button class="ghost-btn" id="batch-move-btn" disabled>選択をフォルダへ移動</button>
+      </div>
+  <div class="folder-heading"><span class="filter-label">フォルダ</span><span><button class="new-folder-btn" id="folder-lock-btn">🔒 ロック設定</button><button class="new-folder-btn" id="new-folder-btn">＋ フォルダ作成</button></span></div>
+      <div class="filter-bar" id="folder-bar"></div>
+      <span class="filter-label">タグ</span>
+      <div class="filter-bar" id="filter-bar"></div>
+    </div>
+  </details>
+
+  <div id="list"></div>
+
+  <footer>
+    <div class="footer-btns">
+      <button class="ghost-btn" id="export-btn">バックアップを書き出す</button>
+      <button class="ghost-btn" id="import-btn">読み込む</button>
+    </div>
+    <input type="file" id="import-file" accept="application/json">
+    <p class="note">リンクとメモはこの端末のブラウザ内(localStorage)だけに保存します。<br>サムネイル表示のため、保存したURLはプレビュー取得サービスへ送信されます。</p>
+  </footer>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="cover-modal" id="cover-modal" aria-hidden="true">
+  <div class="cover-sheet" role="dialog" aria-modal="true" aria-labelledby="cover-title">
+    <h2 id="cover-title">この場面を表紙にする</h2>
+    <p>「動画を開く」で好きな場面を止めてスクリーンショットを撮り、写真から選んでください。表紙画像はこの端末だけに保存されます。</p>
+    <img class="cover-preview" id="cover-preview" alt="選んだ表紙画像のプレビュー">
+    <div class="cover-actions">
+      <button class="cover-btn" id="open-source-video">動画を開く</button>
+      <label class="cover-btn" for="cover-file">写真から選ぶ</label>
+      <input type="file" id="cover-file" accept="image/*">
+      <button class="cover-btn primary wide" id="save-cover" disabled>この画像を表紙にする</button>
+      <button class="cover-btn wide" id="cancel-cover">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="edit-modal" id="edit-modal" aria-hidden="true">
+  <div class="edit-sheet" role="dialog" aria-modal="true" aria-labelledby="edit-title">
+    <h2 id="edit-title">リンクを編集</h2>
+    <p>内容をまとめて確認・変更できます。</p>
+    <div class="edit-fields">
+      <label>URL<input type="url" id="edit-url" inputmode="url"></label>
+      <label>タイトル<input type="text" id="edit-item-title"></label>
+      <label>チャンネル名<input type="text" id="edit-channel" placeholder="YouTubeなど"></label>
+      <label>メモ<textarea id="edit-memo"></textarea></label>
+      <label>再生位置メモ（例：12:34 ここ重要）<textarea id="edit-time-notes"></textarea></label>
+      <label>再生位置を追加
+        <span style="display:flex;gap:7px;"><select id="note-min"></select><select id="note-sec"></select><input type="text" id="note-text" placeholder="メモ内容" style="min-width:0;"><button type="button" class="cover-btn" id="add-time-note" style="padding:6px 9px;">追加</button></span>
+      </label>
+      <label>タグ（カンマ区切り）<input type="text" id="edit-tags"></label>
+      <label>保存先フォルダ<input type="text" id="edit-folder" placeholder="未分類"></label>
+    </div>
+    <div class="cover-actions" style="margin-top:14px;">
+      <button class="cover-btn primary wide" id="save-edit">変更を保存</button>
+      <button class="cover-btn wide" id="cancel-edit">キャンセル</button>
+    </div>
+  </div>
+</div>
+
+<div class="player-modal" id="player-modal" aria-hidden="true">
+  <div class="player-sheet" role="dialog" aria-modal="true" aria-labelledby="player-title">
+    <div class="player-position" aria-label="再生画面の位置">
+      <button type="button" data-player-position="top">上</button>
+      <button type="button" data-player-position="center">中央</button>
+      <button type="button" data-player-position="bottom">下</button>
+    </div>
+    <iframe class="player-frame" id="player-frame" title="YouTube プレーヤー" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+    <h2 class="player-title" id="player-title"></h2>
+    <p class="player-meta" id="player-meta"></p>
+    <div class="player-actions">
+      <button class="cover-btn" id="player-prev">← 前へ</button>
+      <button class="cover-btn" id="player-next">次へ →</button>
+      <button class="cover-btn" id="player-close">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<div class="player-modal" id="viewer-modal" aria-hidden="true">
+  <div class="player-sheet" role="dialog" aria-modal="true" aria-labelledby="viewer-title">
+    <iframe class="player-frame" id="viewer-frame" title="リンク先ビューア" sandbox="allow-scripts allow-forms allow-popups allow-same-origin"></iframe>
+    <h2 class="player-title" id="viewer-title">アプリ内で開く</h2>
+    <p class="player-meta">表示されないサイトは、埋め込みが許可されていません。</p>
+    <div class="player-actions" style="grid-template-columns:1fr 1fr;">
+      <a class="cover-btn" id="viewer-external" target="_blank" rel="noopener noreferrer" style="text-decoration:none;">元サイトを開く</a>
+      <button class="cover-btn" id="viewer-close">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var STORAGE_KEY = "video-memo-items-v1";
+  var FOLDERS_KEY = "video-memo-folders-v1";
+  var FOLDER_LOCKS_KEY = "video-memo-folder-locks-v1";
+  var UNLOCKED_FOLDERS_SESSION_KEY = "video-memo-unlocked-folders-v1";
+  var VIEW_MODE_KEY = "video-memo-view-mode-v1";
+  var PLAYER_POSITION_KEY = "video-memo-player-position-v1";
+  var INLINE_MULTI_AUDIO_KEY = "video-memo-inline-multi-audio-v1";
+  var items = [];
+  var folders = [];
+  var folderLocks = {};
+  var unlockedFolders = {};
+  var activeFilter = null;
+  var activeFolder = null;
+  var searchQuery = "";
+  var viewMode = "large";
+  var selectionMode = false;
+  var selectedIds = {};
+  var coverTargetId = null;
+  var pendingCoverData = "";
+  var editTargetId = null;
+  var playerQueue = [];
+  var playerIndex = -1;
+  var playerStartTime = 0;
+  var playerPosition = localStorage.getItem(PLAYER_POSITION_KEY) || "bottom";
+  var inlinePlayers = {};
+  var inlineTwivideoSources = {};
+  var inlineTwivideoFallbacks = {};
+  var inlineTwivideoReady = {};
+  var inlineAudioId = null;
+  var inlineMultiAudio = localStorage.getItem(INLINE_MULTI_AUDIO_KEY) === "true";
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      items = raw ? JSON.parse(raw) : [];
+      items.forEach(function (it) {
+        if (!it.folder) it.folder = "未分類";
+      });
+      var savedFolders = localStorage.getItem(FOLDERS_KEY);
+      folders = savedFolders ? JSON.parse(savedFolders) : [];
+      if (!Array.isArray(folders)) folders = [];
+      if (folders.indexOf("未分類") === -1) folders.unshift("未分類");
+      var savedLocks = localStorage.getItem(FOLDER_LOCKS_KEY);
+      folderLocks = savedLocks ? JSON.parse(savedLocks) : {};
+      if (!folderLocks || typeof folderLocks !== "object") folderLocks = {};
+      unlockedFolders = JSON.parse(sessionStorage.getItem(UNLOCKED_FOLDERS_SESSION_KEY) || "{}");
+      if (!unlockedFolders || typeof unlockedFolders !== "object") unlockedFolders = {};
+      var savedViewMode = localStorage.getItem(VIEW_MODE_KEY);
+      viewMode = ["large", "medium", "small"].indexOf(savedViewMode) !== -1 ? savedViewMode : "large";
+    } catch (e) {
+      items = [];
+    }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  }
+
+  function saveFolders() {
+    localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders));
+    localStorage.setItem(FOLDER_LOCKS_KEY, JSON.stringify(folderLocks));
+  }
+
+  function isFolderProtected(folder) {
+    return !!folderLocks[folder];
+  }
+
+  function saveUnlockedFolders() {
+    sessionStorage.setItem(UNLOCKED_FOLDERS_SESSION_KEY, JSON.stringify(unlockedFolders));
+  }
+
+  function hashPassword(value) {
+    if (window.crypto && crypto.subtle) {
+      return crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)).then(function (buffer) {
+        return Array.prototype.map.call(new Uint8Array(buffer), function (byte) { return byte.toString(16).padStart(2, "0"); }).join("");
+      });
+    }
+    return Promise.resolve(btoa(unescape(encodeURIComponent(value))));
+  }
+
+  async function unlockFolder(folder) {
+    if (!isFolderProtected(folder) || unlockedFolders[folder]) return true;
+    var password = prompt("「" + folder + "」のパスワード");
+    if (password === null) return false;
+    if (await hashPassword(password) !== folderLocks[folder]) {
+      showToast("パスワードが違います");
+      return false;
+    }
+    unlockedFolders[folder] = true;
+    saveUnlockedFolders();
+    return true;
+  }
+
+  function saveViewMode() {
+    localStorage.setItem(VIEW_MODE_KEY, viewMode);
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  }
+
+  function isXUrl(url) {
+    return /^https?:\/\/(www\.)?(x\.com|twitter\.com|mobile\.twitter\.com)\//i.test(url.trim());
+  }
+
+  function getDomain(url) {
+    try {
+      var u = new URL(url);
+      return u.hostname.replace(/^www\./, "");
+    } catch (e) {
+      return url;
+    }
+  }
+
+  function getYouTubeId(url) {
+    try {
+      var u = new URL(url);
+      var id = "";
+      if (u.hostname === "youtu.be") id = u.pathname.split("/")[1];
+      if (/^(www\.|m\.)?youtube\.com$/.test(u.hostname)) {
+        id = u.searchParams.get("v") || (u.pathname.match(/^\/(shorts|embed)\/([^/?#]+)/) || [])[2];
+      }
+      return id || "";
+    } catch (e) { return ""; }
+  }
+
+  function isYouTubeShortUrl(url) {
+    try {
+      var u = new URL(url);
+      return /^(www\.|m\.)?youtube\.com$/.test(u.hostname) && /^\/shorts\/[^/?#]+/.test(u.pathname);
+    } catch (e) { return false; }
+  }
+
+  function getYouTubeThumbnail(url) {
+    var id = getYouTubeId(url);
+    return id ? "https://i.ytimg.com/vi/" + encodeURIComponent(id) + "/hqdefault.jpg" : "";
+  }
+
+  function isYouTubeUrl(url) {
+    return !!getYouTubeThumbnail(url);
+  }
+
+  function getPreviewUrl(url) {
+    var youtube = getYouTubeThumbnail(url);
+    if (youtube) return youtube;
+    return "https://api.microlink.io/?url=" + encodeURIComponent(url) +
+      "&screenshot=true&meta=false&embed=screenshot.url&viewport.width=1200&viewport.height=675";
+  }
+
+  function isTwivideoVideoUrl(url) {
+    try {
+      var u = new URL(url);
+      return /(^|\.)twivideo\.net$/i.test(u.hostname) && /\/api\/video\.php$/i.test(u.pathname);
+    } catch (e) { return false; }
+  }
+
+  function isTwivideoUrl(url) {
+    try {
+      return /(^|\.)twivideo\.net$/i.test(new URL(url).hostname);
+    } catch (e) { return false; }
+  }
+
+  function getTwivideoId(url) {
+    try {
+      var u = new URL(url);
+      return /(^|\.)twivideo\.net$/i.test(u.hostname) ? u.searchParams.get("id") || "" : "";
+    } catch (e) { return ""; }
+  }
+
+  function isTwivideoPlayableUrl(url) {
+    return isTwivideoVideoUrl(url) || !!getTwivideoId(url);
+  }
+
+  function getTwivideoPlaybackUrl(url) {
+    var id = getTwivideoId(url);
+    return id ? "https://twivideo.net/api/video.php?id=" + encodeURIComponent(id) : url;
+  }
+
+  function getCloudinaryFrame(videoUrl, seconds) {
+    var time = Math.max(0, Number(seconds) || 0).toFixed(1);
+    return "https://res.cloudinary.com/avn6v71w/video/fetch/so_" + time +
+      ",w_640,h_360,c_fill,f_jpg/" + encodeURIComponent(videoUrl);
+  }
+
+  async function tryAutomaticTwivideoCover(url) {
+    try {
+      var response = await fetch("/.netlify/functions/resolve-twivideo?url=" + encodeURIComponent(url));
+      var result = await response.json();
+      return result.videoUrl ? getCloudinaryFrame(result.videoUrl, 0) : "";
+    } catch (e) {
+      return "";
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function formatDate(ts) {
+    var d = new Date(ts);
+    return d.getFullYear() + "/" + String(d.getMonth() + 1).padStart(2, "0") + "/" + String(d.getDate()).padStart(2, "0");
+  }
+  function formatDuration(seconds) { seconds = Math.round(Number(seconds) || 0); var h = Math.floor(seconds / 3600), m = Math.floor(seconds % 3600 / 60), s = seconds % 60; return (h ? h + ":" + String(m).padStart(2,"0") : m) + ":" + String(s).padStart(2,"0"); }
+
+  function showToast(msg) {
+    var t = document.getElementById("toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(showToast._timer);
+    showToast._timer = setTimeout(function () {
+      t.classList.remove("show");
+    }, 1800);
+  }
+
+  function receiveBookmarkletFrame() {
+    var params = new URLSearchParams(location.search);
+    var videoUrl = params.get("coverVideo");
+    var sourceUrl = params.get("coverSource");
+    if (!videoUrl || !sourceUrl) return;
+    try {
+      if (new URL(videoUrl).hostname !== "video.twimg.com") throw new Error("invalid");
+      var sourceId = getTwivideoId(sourceUrl);
+      var item = items.find(function (it) {
+        return it.url === sourceUrl || (sourceId && getTwivideoId(it.url) === sourceId);
+      });
+      if (!item) {
+        item = {
+          id: uid(),
+          url: sourceUrl,
+          title: "TWIVIDEO動画",
+          memo: "",
+          tags: [],
+          folder: "未分類",
+          domain: getDomain(sourceUrl),
+          isX: false,
+          thumbnailUrl: "",
+          videoFrameUrl: "",
+          videoFrameTime: 0,
+          thumbnailAttempts: 0,
+          thumbnailLastAttempt: 0,
+          addedAt: Date.now()
+        };
+        items.unshift(item);
+      }
+      item.videoFrameUrl = videoUrl;
+      item.videoFrameTime = Number(params.get("coverTime")) || 0;
+      save();
+      showToast("動画と表紙を追加しました");
+    } catch (e) {
+      showToast("動画の場面を取得できませんでした");
+    }
+    history.replaceState(null, "", location.pathname + location.hash);
+  }
+
+  function closeCoverPicker() {
+    coverTargetId = null;
+    pendingCoverData = "";
+    document.getElementById("cover-modal").classList.remove("show");
+    document.getElementById("cover-modal").setAttribute("aria-hidden", "true");
+    document.getElementById("cover-preview").classList.remove("show");
+    document.getElementById("cover-preview").removeAttribute("src");
+    document.getElementById("cover-file").value = "";
+    document.getElementById("save-cover").disabled = true;
+  }
+
+  function openEditModal(id) {
+    var item = items.find(function (it) { return it.id === id; });
+    if (!item) return;
+    editTargetId = id;
+    document.getElementById("edit-url").value = item.url || "";
+    document.getElementById("edit-item-title").value = item.title || "";
+    document.getElementById("edit-channel").value = item.channelName || "";
+    document.getElementById("edit-memo").value = item.memo || "";
+    document.getElementById("edit-time-notes").value = item.timeNotes || "";
+    document.getElementById("edit-tags").value = (item.tags || []).join(", ");
+    document.getElementById("edit-folder").value = item.folder || "未分類";
+    document.getElementById("edit-modal").classList.add("show");
+    document.getElementById("edit-modal").setAttribute("aria-hidden", "false");
+    setTimeout(function () { document.getElementById("edit-item-title").focus(); }, 50);
+  }
+
+  function closeEditModal() {
+    editTargetId = null;
+    document.getElementById("edit-modal").classList.remove("show");
+    document.getElementById("edit-modal").setAttribute("aria-hidden", "true");
+  }
+
+  function openPlayer(id, startTime) {
+    playerQueue = items.filter(function (it) {
+      var folder = it.folder || "未分類";
+      return !!getYouTubeId(it.url) && (!isFolderProtected(folder) || unlockedFolders[folder]);
+    });
+    playerIndex = playerQueue.findIndex(function (it) { return it.id === id; });
+    if (playerIndex < 0) return;
+    playerStartTime = Number(startTime) || 0;
+    document.getElementById("player-modal").classList.add("show");
+    document.getElementById("player-modal").setAttribute("aria-hidden", "false");
+    setPlayerPosition(playerPosition);
+    renderPlayer(true);
+  }
+
+  function findRenderedItem(id) {
+    return Array.prototype.find.call(document.querySelectorAll("#list .item"), function (item) {
+      return item.getAttribute("data-id") === id;
+    });
+  }
+
+  function createInlineYouTubePlayer(item, startTime) {
+    var frame = document.createElement("iframe");
+    frame.className = "inline-player inline-youtube-player";
+    if (isYouTubeShortUrl(item.url)) frame.classList.add("shorts-preview");
+    frame.setAttribute("data-inline-id", item.id);
+    frame.src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(getYouTubeId(item.url)) +
+      "?autoplay=1&mute=" + (inlineMultiAudio || inlineAudioId === item.id ? "0" : "1") +
+      "&start=" + (Number(startTime) || 0) + "&rel=0&enablejsapi=1&origin=" + encodeURIComponent(location.origin);
+    frame.setAttribute("allow", "autoplay; encrypted-media; picture-in-picture");
+    frame.allowFullscreen = true;
+    return frame;
+  }
+
+  function insertInlineYouTubePlayer(id, startTime) {
+    var item = items.find(function (candidate) { return candidate.id === id; });
+    var rendered = findRenderedItem(id);
+    var preview = rendered && rendered.querySelector(".item-preview");
+    if (!item || !preview) return false;
+    preview.parentNode.replaceChild(createInlineYouTubePlayer(item, startTime), preview);
+    var button = rendered.querySelector(".player-btn");
+    if (button) button.textContent = "停止";
+    return true;
+  }
+
+  function removeInlineYouTubePlayer(id) {
+    var item = items.find(function (candidate) { return candidate.id === id; });
+    var rendered = findRenderedItem(id);
+    var frame = rendered && rendered.querySelector(".inline-youtube-player");
+    if (!item || !frame) return false;
+    var image = document.createElement("img");
+    image.className = "item-preview";
+    image.src = item.thumbnailUrl || getPreviewUrl(item.url);
+    image.alt = "リンク先のプレビュー";
+    image.loading = "lazy";
+    image.referrerPolicy = "no-referrer";
+    frame.parentNode.replaceChild(image, frame);
+    var button = rendered.querySelector(".player-btn");
+    if (button) button.textContent = "再生";
+    return true;
+  }
+
+  function playInline(id, startTime) {
+    inlinePlayers[id] = Number(startTime) || 0;
+    inlineAudioId = id;
+    var item = items.find(function (it) { return it.id === id; });
+    if (item && isYouTubeUrl(item.url) && viewMode === "large" && insertInlineYouTubePlayer(id, startTime)) {
+      syncInlinePlayerAudio();
+      return;
+    }
+    if (item && isTwivideoPlayableUrl(item.url)) {
+      inlineTwivideoSources[id] = getTwivideoPlaybackUrl(item.url);
+      delete inlineTwivideoFallbacks[id];
+      delete inlineTwivideoReady[id];
+      setTimeout(function () {
+        if (Object.prototype.hasOwnProperty.call(inlinePlayers, id) && !inlineTwivideoReady[id]) {
+          delete inlineTwivideoSources[id];
+          inlineTwivideoFallbacks[id] = true;
+          render();
+        }
+      }, 5000);
+    }
+    if (viewMode !== "large") { viewMode = "large"; saveViewMode(); }
+    render();
+  }
+
+  function fitInlineNativeVideo(video) {
+    var width = Number(video.videoWidth) || 0;
+    var height = Number(video.videoHeight) || 0;
+    if (!width || !height) return;
+    var ratio = width / height;
+    var availableWidth = video.parentElement ? video.parentElement.clientWidth : window.innerWidth;
+    var maxHeight = Math.max(260, window.innerHeight * 0.78);
+    var fittedWidth = Math.min(availableWidth, maxHeight * ratio);
+    video.style.width = Math.max(1, fittedWidth) + "px";
+    video.style.aspectRatio = ratio;
+    video.classList.add("video-ratio-ready");
+  }
+
+  function prepareInlineNativeVideo(video) {
+    if (video.getAttribute("data-inline-prepared") === "true") return;
+    video.setAttribute("data-inline-prepared", "true");
+    function prepare() {
+      inlineTwivideoReady[video.getAttribute("data-inline-id")] = true;
+      var start = Number(video.getAttribute("data-inline-start")) || 0;
+      fitInlineNativeVideo(video);
+      if (start > 0) {
+        try { video.currentTime = Math.min(start, Math.max(0, (video.duration || start) - 0.05)); } catch (e) {}
+      }
+      video.play().catch(function () {});
+    }
+    video.addEventListener("loadedmetadata", prepare, { once: true });
+    video.addEventListener("error", function () {
+      var id = video.getAttribute("data-inline-id");
+      if (Object.prototype.hasOwnProperty.call(inlinePlayers, id)) {
+        delete inlineTwivideoSources[id];
+        inlineTwivideoFallbacks[id] = true;
+        render();
+      }
+    }, { once: true });
+    if (video.readyState >= 1) prepare();
+  }
+
+  function stopInline(id) {
+    var item = items.find(function (candidate) { return candidate.id === id; });
+    delete inlinePlayers[id];
+    delete inlineTwivideoSources[id];
+    delete inlineTwivideoFallbacks[id];
+    delete inlineTwivideoReady[id];
+    if (inlineAudioId === id) inlineAudioId = null;
+    if (item && isYouTubeUrl(item.url) && removeInlineYouTubePlayer(id)) {
+      syncInlinePlayerAudio();
+      return;
+    }
+    render();
+  }
+
+  function setPlayerPosition(position) {
+    playerPosition = ["top", "center", "bottom"].indexOf(position) !== -1 ? position : "bottom";
+    localStorage.setItem(PLAYER_POSITION_KEY, playerPosition);
+    var modal = document.getElementById("player-modal");
+    modal.classList.remove("pos-top", "pos-center", "pos-bottom");
+    modal.classList.add("pos-" + playerPosition);
+    Array.prototype.forEach.call(document.querySelectorAll("[data-player-position]"), function (button) {
+      button.classList.toggle("active", button.getAttribute("data-player-position") === playerPosition);
+    });
+  }
+
+  function renderPlayer(autoplay) {
+    var item = playerQueue[playerIndex];
+    if (!item) return closePlayer();
+    var videoId = getYouTubeId(item.url);
+    document.getElementById("player-title").textContent = item.title || "YouTube動画";
+    document.getElementById("player-meta").textContent = (item.channelName || "YouTube") + " ・ " + (playerIndex + 1) + " / " + playerQueue.length;
+    document.getElementById("player-prev").disabled = playerIndex === 0;
+    document.getElementById("player-next").disabled = playerIndex >= playerQueue.length - 1;
+    var src = "https://www.youtube-nocookie.com/embed/" + encodeURIComponent(videoId) + "?autoplay=" + (autoplay ? "1" : "0") + "&start=" + playerStartTime + "&enablejsapi=1&rel=0&origin=" + encodeURIComponent(location.origin);
+    var frame = document.getElementById("player-frame");
+    frame.src = src;
+    frame.onload = function () {
+      requestPlayerDuration();
+      frame.contentWindow.postMessage(JSON.stringify({ event: "command", func: "addEventListener", args: ["onStateChange"] }), "https://www.youtube-nocookie.com");
+      frame.contentWindow.postMessage(JSON.stringify({ event: "command", func: "addEventListener", args: ["onReady"] }), "https://www.youtube-nocookie.com");
+    };
+    playerStartTime = 0;
+  }
+
+  function requestPlayerDuration() {
+    var frame = document.getElementById("player-frame");
+    if (frame.contentWindow) frame.contentWindow.postMessage(JSON.stringify({ event: "command", func: "getDuration", args: [] }), "https://www.youtube-nocookie.com");
+  }
+
+  function closePlayer() {
+    document.getElementById("player-frame").removeAttribute("src");
+    document.getElementById("player-modal").classList.remove("show");
+    document.getElementById("player-modal").setAttribute("aria-hidden", "true");
+    playerQueue = [];
+    playerIndex = -1;
+  }
+
+  function openViewer(item) {
+    document.getElementById("viewer-title").textContent = item.title || item.url;
+    document.getElementById("viewer-frame").src = item.url;
+    document.getElementById("viewer-external").href = item.url;
+    document.getElementById("viewer-modal").classList.add("show", "pos-center");
+    document.getElementById("viewer-modal").setAttribute("aria-hidden", "false");
+  }
+
+  function closeViewer() {
+    document.getElementById("viewer-frame").removeAttribute("src");
+    document.getElementById("viewer-modal").classList.remove("show", "pos-center");
+    document.getElementById("viewer-modal").setAttribute("aria-hidden", "true");
+  }
+
+  function playNext(autoplay) {
+    if (playerIndex >= 0 && playerIndex < playerQueue.length - 1) {
+      playerIndex++;
+      renderPlayer(autoplay);
+    }
+  }
+
+  window.addEventListener("message", function (event) {
+    if (event.origin !== "https://www.youtube-nocookie.com") return;
+    try {
+      var data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data && data.event === "onReady") requestPlayerDuration();
+      if (data && data.event === "onStateChange" && data.info === 0) playNext(true);
+      var duration = data && data.info && (data.info.duration || data.info.videoData && data.info.videoData.duration);
+      if (duration && playerQueue[playerIndex]) { playerQueue[playerIndex].duration = Number(duration); save(); render(); }
+    } catch (e) {}
+  });
+
+  function openCoverPicker(id) {
+    coverTargetId = id;
+    pendingCoverData = "";
+    var item = items.find(function (it) { return it.id === id; });
+    var preview = document.getElementById("cover-preview");
+    if (item && item.thumbnailUrl && item.thumbnailUrl.indexOf("data:image/") === 0) {
+      pendingCoverData = item.thumbnailUrl;
+      preview.src = pendingCoverData;
+      preview.classList.add("show");
+      document.getElementById("save-cover").disabled = false;
+    }
+    document.getElementById("cover-modal").classList.add("show");
+    document.getElementById("cover-modal").setAttribute("aria-hidden", "false");
+  }
+
+  function imageFileToCover(file) {
+    return new Promise(function (resolve, reject) {
+      if (!file || !file.type || file.type.indexOf("image/") !== 0) {
+        reject(new Error("画像を選んでください"));
+        return;
+      }
+      var objectUrl = URL.createObjectURL(file);
+      var image = new Image();
+      image.onload = function () {
+        var width = 640, height = 360;
+        var sourceRatio = image.naturalWidth / image.naturalHeight;
+        var targetRatio = width / height;
+        var sx = 0, sy = 0, sw = image.naturalWidth, sh = image.naturalHeight;
+        if (sourceRatio > targetRatio) {
+          sw = image.naturalHeight * targetRatio;
+          sx = (image.naturalWidth - sw) / 2;
+        } else {
+          sh = image.naturalWidth / targetRatio;
+          sy = (image.naturalHeight - sh) / 2;
+        }
+        var canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(image, sx, sy, sw, sh, 0, 0, width, height);
+        URL.revokeObjectURL(objectUrl);
+        resolve(canvas.toDataURL("image/jpeg", 0.82));
+      };
+      image.onerror = function () {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("画像を読み込めませんでした"));
+      };
+      image.src = objectUrl;
+    });
+  }
+
+  // ---- Add form ----
+  var addForm = document.getElementById("add-form");
+  var toggleAdd = document.getElementById("toggle-add");
+  var urlInput = document.getElementById("input-url");
+  var titleInput = document.getElementById("input-title");
+  var memoInput = document.getElementById("input-memo");
+  var tagsInput = document.getElementById("input-tags");
+  var folderInput = document.getElementById("input-folder");
+  var xHint = document.getElementById("x-hint");
+  var previewStatus = document.getElementById("preview-status");
+  var errorMsg = document.getElementById("error-msg");
+  var saveBtn = document.getElementById("save-btn");
+  var titleRequest = 0;
+  var autoChannelName = "";
+
+  function normalizedUrl(value) {
+    var url = value.trim();
+    return url && !/^https?:\/\//i.test(url) ? "https://" + url : url;
+  }
+
+  async function fillAutoTitle() {
+    var url = normalizedUrl(urlInput.value);
+    if (!url || (titleInput.value.trim() && (!isYouTubeUrl(url) || autoChannelName))) return;
+    var requestId = ++titleRequest;
+    previewStatus.textContent = isYouTubeUrl(url) ? "動画名・チャンネル名を取得中…" : "動画名を取得中…";
+    previewStatus.classList.add("show");
+    try {
+      var response;
+      var result;
+      if (isYouTubeUrl(url)) {
+        response = await fetch("https://www.youtube.com/oembed?format=json&url=" + encodeURIComponent(url));
+        result = await response.json();
+        if (requestId !== titleRequest) return;
+        if (result && (result.title || result.author_name)) {
+          if (!titleInput.value.trim() && result.title) titleInput.value = result.title;
+          autoChannelName = result.author_name || "";
+          previewStatus.textContent = "動画名・チャンネル名を自動入力しました";
+        } else {
+          previewStatus.textContent = "動画情報を取得できませんでした";
+        }
+        return;
+      }
+      response = await fetch("https://api.microlink.io/?url=" + encodeURIComponent(url));
+      var result = await response.json();
+      if (requestId !== titleRequest) return;
+      if (result.status === "success" && result.data && result.data.title) {
+        titleInput.value = result.data.title;
+        previewStatus.textContent = "動画名を自動入力しました";
+      } else {
+        previewStatus.textContent = "動画名を取得できませんでした";
+      }
+    } catch (e) {
+      if (requestId === titleRequest) previewStatus.textContent = "動画名を取得できませんでした";
+    }
+  }
+
+  toggleAdd.addEventListener("click", function () {
+    addForm.classList.toggle("collapsed");
+    if (!addForm.classList.contains("collapsed")) {
+      setTimeout(function () { urlInput.focus(); }, 50);
+    }
+  });
+
+  urlInput.addEventListener("input", function () {
+    titleRequest++;
+    autoChannelName = "";
+    xHint.classList.toggle("show", isXUrl(urlInput.value));
+    errorMsg.classList.remove("show");
+    previewStatus.classList.remove("show");
+  });
+
+  urlInput.addEventListener("blur", fillAutoTitle);
+  document.getElementById("search-input").addEventListener("input", function (e) {
+    searchQuery = e.target.value.trim().toLowerCase();
+    render();
+  });
+  document.getElementById("new-folder-btn").addEventListener("click", async function () {
+    var folder = prompt("新しいフォルダ名");
+    if (folder === null) return;
+    folder = folder.trim();
+    if (!folder) return;
+    if (folders.indexOf(folder) === -1) {
+      var password = prompt("フォルダのパスワード（不要なら空欄）");
+      if (password === null) return;
+      folders.push(folder);
+      if (password) {
+        folderLocks[folder] = await hashPassword(password);
+        unlockedFolders[folder] = true;
+      }
+      saveFolders();
+      render();
+      showToast(password ? "ロック付きフォルダを作成しました" : "フォルダを作成しました");
+    } else {
+      showToast("そのフォルダは作成済みです");
+    }
+  });
+  document.getElementById("folder-lock-btn").addEventListener("click", async function () {
+    var folder = prompt("ロックを設定するフォルダ名");
+    if (folder === null) return;
+    folder = folder.trim();
+    if (!folder || folders.indexOf(folder) === -1) {
+      showToast("作成済みのフォルダ名を入力してください");
+      return;
+    }
+    var password = prompt("新しいパスワード（空欄でロック解除）");
+    if (password === null) return;
+    if (password) {
+      folderLocks[folder] = await hashPassword(password);
+      unlockedFolders[folder] = true;
+      showToast("フォルダをロックしました");
+    } else {
+      delete folderLocks[folder];
+      delete unlockedFolders[folder];
+      showToast("フォルダのロックを解除しました");
+    }
+    saveFolders();
+    render();
+  });
+  Array.prototype.forEach.call(document.querySelectorAll(".view-size-btn"), function (button) {
+    button.addEventListener("click", function () {
+      viewMode = button.getAttribute("data-view");
+      saveViewMode();
+      render();
+    });
+  });
+  function updateInlineAudioToggle() {
+    var button = document.getElementById("inline-audio-toggle");
+    if (!button) return;
+    button.textContent = inlineMultiAudio ? "🔊 同時音声：オン" : "🔇 同時音声：オフ";
+    button.classList.toggle("active", inlineMultiAudio);
+  }
+
+  function syncInlinePlayerAudio() {
+    Array.prototype.forEach.call(document.querySelectorAll(".inline-youtube-player"), function (frame) {
+      var audible = inlineMultiAudio || frame.getAttribute("data-inline-id") === inlineAudioId;
+      try {
+        frame.contentWindow.postMessage(JSON.stringify({ event: "command", func: audible ? "unMute" : "mute", args: [] }), "https://www.youtube-nocookie.com");
+      } catch (e) {}
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".inline-native-video"), function (video) {
+      var audible = inlineMultiAudio || video.getAttribute("data-inline-id") === inlineAudioId;
+      video.muted = !audible;
+      if (audible) video.play().catch(function () {});
+    });
+  }
+
+  document.getElementById("inline-audio-toggle").addEventListener("click", function () {
+    inlineMultiAudio = !inlineMultiAudio;
+    localStorage.setItem(INLINE_MULTI_AUDIO_KEY, String(inlineMultiAudio));
+    updateInlineAudioToggle();
+    syncInlinePlayerAudio();
+    showToast(inlineMultiAudio ? "同時音声をオンにしました" : "同時音声をオフにしました");
+  });
+  document.getElementById("toggle-select-btn").addEventListener("click", function () {
+    selectionMode = !selectionMode;
+    if (!selectionMode) selectedIds = {};
+    render();
+  });
+  document.getElementById("batch-move-btn").addEventListener("click", function () {
+    var ids = Object.keys(selectedIds);
+    if (!ids.length) return;
+    var folder = prompt(ids.length + "件の移動先フォルダ名");
+    if (folder === null) return;
+    folder = folder.trim();
+    if (!folder) return;
+    if (folders.indexOf(folder) === -1) folders.push(folder);
+    items.forEach(function (it) {
+      if (selectedIds[it.id]) it.folder = folder;
+    });
+    saveFolders();
+    save();
+    selectedIds = {};
+    selectionMode = false;
+    render();
+    showToast(ids.length + "件を「" + folder + "」へ移動しました");
+  });
+
+  saveBtn.addEventListener("click", async function () {
+    var url = normalizedUrl(urlInput.value);
+    if (!url) {
+      errorMsg.classList.add("show");
+      urlInput.focus();
+      return;
+    }
+    await fillAutoTitle();
+    var tags = tagsInput.value
+      .split(",")
+      .map(function (t) { return t.trim(); })
+      .filter(function (t) { return t.length > 0; });
+    var folder = folderInput.value.trim() || "未分類";
+    if (folders.indexOf(folder) === -1) {
+      folders.push(folder);
+      saveFolders();
+    }
+
+    var fromX = isXUrl(url);
+    if (fromX && tags.indexOf("X") === -1) {
+      tags.unshift("X");
+    }
+
+    var item = {
+      id: uid(),
+      url: url,
+      title: titleInput.value.trim(),
+      channelName: autoChannelName,
+      memo: memoInput.value.trim(),
+      tags: tags,
+      folder: folder,
+      domain: getDomain(url),
+      isX: fromX,
+      thumbnailUrl: "",
+      thumbnailAttempts: 0,
+      thumbnailLastAttempt: 0,
+      addedAt: Date.now()
+    };
+    items.unshift(item);
+    save();
+
+    urlInput.value = "";
+    titleInput.value = "";
+    autoChannelName = "";
+    memoInput.value = "";
+    tagsInput.value = "";
+    folderInput.value = "未分類";
+    xHint.classList.remove("show");
+    previewStatus.classList.remove("show");
+    addForm.classList.add("collapsed");
+
+    render();
+    showToast("保存しました");
+  });
+
+  // ---- Filter bar ----
+  function allTags() {
+    var set = {};
+    items.forEach(function (it) {
+      (it.tags || []).forEach(function (t) { set[t] = true; });
+    });
+    return Object.keys(set).sort();
+  }
+
+  function allFolders() {
+    var set = {};
+    folders.forEach(function (folder) { set[folder] = true; });
+    items.forEach(function (it) { set[it.folder || "未分類"] = true; });
+    return Object.keys(set).sort();
+  }
+
+  function renderFolderBar() {
+    var bar = document.getElementById("folder-bar");
+    var folders = allFolders();
+    var suggestions = document.getElementById("folder-suggestions");
+    suggestions.innerHTML = folders.map(function (folder) {
+      return '<option value="' + escapeHtml(folder) + '"></option>';
+    }).join("");
+    var html = "";
+    folders.forEach(function (folder) {
+      html += '<div class="filter-chip' + (activeFolder === folder ? " active" : "") + '" data-folder="' + escapeHtml(folder) + '">' + (isFolderProtected(folder) ? "🔒 " : "") + escapeHtml(folder) + "</div>";
+    });
+    bar.innerHTML = html;
+    Array.prototype.forEach.call(bar.querySelectorAll(".filter-chip"), function (chip) {
+      chip.addEventListener("click", async function () {
+        var folder = chip.getAttribute("data-folder");
+        if (activeFolder !== folder && !(await unlockFolder(folder))) return;
+        activeFolder = activeFolder === folder ? null : folder;
+        render();
+      });
+    });
+  }
+
+  function renderFilterBar() {
+    var bar = document.getElementById("filter-bar");
+    var tags = allTags();
+    if (tags.length === 0) {
+      bar.innerHTML = "";
+      bar.style.display = "none";
+      return;
+    }
+    bar.style.display = "flex";
+    var html = '<div class="filter-chip' + (activeFilter === null ? " active" : "") + '" data-tag="">すべて</div>';
+    tags.forEach(function (t) {
+      html += '<div class="filter-chip' + (activeFilter === t ? " active" : "") + '" data-tag="' + escapeHtml(t) + '">' + escapeHtml(t) + "</div>";
+    });
+    bar.innerHTML = html;
+    Array.prototype.forEach.call(bar.querySelectorAll(".filter-chip"), function (chip) {
+      chip.addEventListener("click", function () {
+        var tag = chip.getAttribute("data-tag");
+        activeFilter = tag === "" ? null : tag;
+        render();
+      });
+    });
+  }
+
+  // ---- List ----
+  function render() {
+    renderFolderBar();
+    renderFilterBar();
+    Array.prototype.forEach.call(document.querySelectorAll(".view-size-btn"), function (button) {
+      button.classList.toggle("active", button.getAttribute("data-view") === viewMode);
+    });
+    updateInlineAudioToggle();
+    document.getElementById("toggle-select-btn").textContent = selectionMode ? "選択をやめる" : "複数選択";
+    var selectedCount = Object.keys(selectedIds).length;
+    var batchMoveButton = document.getElementById("batch-move-btn");
+    batchMoveButton.disabled = selectedCount === 0;
+    batchMoveButton.textContent = selectedCount ? selectedCount + "件をフォルダへ移動" : "選択をフォルダへ移動";
+    var list = document.getElementById("list");
+    var filtered = items.filter(function (it) {
+      var itemFolder = it.folder || "未分類";
+      var matchesFolder = activeFolder === null ? !isFolderProtected(itemFolder) : itemFolder === activeFolder;
+      var matchesTag = activeFilter === null || (it.tags || []).indexOf(activeFilter) !== -1;
+      var haystack = [it.title, it.memo, it.url, it.folder].concat(it.tags || []).join(" ").toLowerCase();
+      return matchesFolder && matchesTag && (!searchQuery || haystack.indexOf(searchQuery) !== -1);
+    }).sort(function (a, b) { return Number(!!b.favorite) - Number(!!a.favorite) || b.addedAt - a.addedAt; });
+
+    if (items.length === 0) {
+      list.innerHTML =
+        '<div class="empty-state"><div class="big">📼</div>' +
+        "<p>まだ保存された動画リンクはありません。</p>" +
+        "<p>上の「＋ 動画リンクを追加」から追加してみましょう。</p></div>";
+      return;
+    }
+    if (filtered.length === 0) {
+      list.innerHTML = '<div class="empty-state"><div class="big">🔍</div><p>条件に合うリンクはありません。</p></div>';
+      return;
+    }
+
+    var html = "";
+    filtered.forEach(function (it) {
+      var displayTitle = it.title || it.url;
+      var isYouTube = isYouTubeUrl(it.url);
+      var isYouTubeShort = isYouTubeShortUrl(it.url);
+      var isTwivideo = isTwivideoPlayableUrl(it.url);
+      var isPlayable = isYouTube || isTwivideo;
+      var isInline = isPlayable && Object.prototype.hasOwnProperty.call(inlinePlayers, it.id);
+      var previewHtml = viewMode === "large" ? (isInline
+        ? (isYouTube
+          ? '<iframe class="inline-player inline-youtube-player' + (isYouTubeShort ? ' shorts-preview' : '') + '" data-inline-id="' + escapeHtml(it.id) + '" src="https://www.youtube-nocookie.com/embed/' + encodeURIComponent(getYouTubeId(it.url)) + '?autoplay=1&mute=' + (inlineMultiAudio || inlineAudioId === it.id ? '0' : '1') + '&start=' + inlinePlayers[it.id] + '&rel=0&enablejsapi=1&origin=' + encodeURIComponent(location.origin) + '" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>'
+          : inlineTwivideoSources[it.id]
+          ? '<video class="inline-player inline-native-video" src="' + escapeHtml(inlineTwivideoSources[it.id]) + '" data-inline-id="' + escapeHtml(it.id) + '" data-inline-start="' + escapeHtml(inlinePlayers[it.id]) + '" controls autoplay playsinline preload="metadata" referrerpolicy="no-referrer"' + (inlineMultiAudio || inlineAudioId === it.id ? "" : " muted") + '></video>'
+          : '<iframe class="inline-player inline-twivideo-player' + (it.twivideoPortrait ? ' portrait' : '') + '" src="' + escapeHtml(getTwivideoPlaybackUrl(it.url)) + '" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="TWIVIDEO動画"></iframe>')
+        : it.videoFrameUrl
+        ? '<video class="item-preview item-video-frame" src="' + escapeHtml(it.videoFrameUrl) + '" data-frame-time="' + escapeHtml(it.videoFrameTime || 0) + '" muted playsinline preload="auto" aria-label="動画の表紙"></video>'
+        : it.thumbnailUrl
+        ? '<img class="item-preview' + (isYouTubeShort ? ' shorts-preview' : '') + '" src="' + escapeHtml(it.thumbnailUrl) + '" alt="設定した表紙" loading="lazy" referrerpolicy="no-referrer">'
+        : isTwivideoUrl(it.url)
+        ? '<a class="item-preview twivideo-card" href="' + escapeHtml(it.url) + '" target="_blank" rel="noopener noreferrer" aria-label="X動画を開く"><span class="play-mark">▶</span><span><strong>𝕏 動画</strong><span>TWIVIDEO・タップして開く</span></span></a>'
+        : '<img class="item-preview' + (isYouTubeShort ? ' shorts-preview' : '') + '" src="' + escapeHtml(getPreviewUrl(it.url)) + '" alt="リンク先のプレビュー" loading="lazy" referrerpolicy="no-referrer">') : "";
+      var tagsHtml = (it.tags || [])
+        .map(function (t) { return '<span class="item-tag">' + escapeHtml(t) + "</span>"; })
+        .join("");
+      var timeNotesHtml = (it.timeNotes || "").split(/\n+/).filter(function (line) { return line.trim(); }).map(function (line) {
+        var m = line.match(/^\s*(\d{1,2}:\d{2}(?::\d{2})?)\s*(.*)$/);
+        if (!m) return '<span class="item-tag">' + escapeHtml(line) + '</span>';
+        var p = m[1].split(":").map(Number), seconds = p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p[0] * 60 + p[1];
+        return isYouTube ? '<button class="item-tag time-note-btn" data-time="' + seconds + '">▶ ' + escapeHtml(m[1] + (m[2] ? " " + m[2] : "")) + '</button>' : '<span class="item-tag">' + escapeHtml(line) + '</span>';
+      }).join("");
+      html +=
+        '<div class="item view-' + viewMode + (isYouTubeShort ? ' is-short' : '') + '" data-id="' + it.id + '">' +
+        (viewMode === "large" && isYouTubeShort ? '<span class="shorts-badge">Shorts</span>' : "") +
+        (viewMode === "large" && it.duration ? '<span class="duration-badge">' + formatDuration(it.duration) + '</span>' : "") +
+        previewHtml +
+        '<div class="item-top">' +
+        '<div style="flex:1; min-width:0;">' +
+        (selectionMode ? '<input class="select-check" type="checkbox" data-select-id="' + it.id + '"' + (selectedIds[it.id] ? " checked" : "") + ' aria-label="このデータを選択">' : "") +
+        (isPlayable
+          ? '<a class="item-title-link player-link" href="' + escapeHtml(it.url) + '" data-play-id="' + escapeHtml(it.id) + '">' + escapeHtml(displayTitle) + "</a>"
+          : '<a class="item-title-link" href="' + escapeHtml(it.url) + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(displayTitle) + "</a>") +
+        (viewMode === "small" ? "" :
+        '<div class="item-domain">' +
+        (it.isX ? '<span class="x-tag-badge">X</span>' : "") +
+        escapeHtml(it.domain) + (it.channelName ? " ・ " + escapeHtml(it.channelName) : "") +
+        "</div>" +
+        '<div class="item-tags"><span class="item-tag">📁 ' + escapeHtml(it.folder || "未分類") + "</span></div>"
+        ) +
+        "</div>" +
+        "</div>" +
+        (viewMode === "small" ? "" : (it.memo ? '<div class="item-memo">' + escapeHtml(it.memo) + "</div>" : "")) +
+        (viewMode === "small" ? "" : (tagsHtml ? '<div class="item-tags">' + tagsHtml + "</div>" : "")) +
+        (viewMode === "small" ? "" : (timeNotesHtml ? '<div class="item-tags">' + timeNotesHtml + "</div>" : "")) +
+        (viewMode === "small" ? "" :
+        '<div class="item-actions">' +
+        '<span class="item-date">' + formatDate(it.addedAt) + "</span>" +
+        '<div class="item-btns">' +
+        '<button class="icon-btn favorite-btn">' + (it.favorite ? '★' : '☆') + '</button>' +
+        (isPlayable ? '<button class="icon-btn player-btn">' + (isInline ? '停止' : '再生') + '</button>' : "") +
+        (isTwivideo ? '<button class="icon-btn twivideo-aspect-btn">' + (it.twivideoPortrait ? '横表示' : '縦表示') + '</button>' : "") +
+        (!isPlayable ? '<button class="icon-btn viewer-btn">アプリ内で開く</button>' : "") +
+        '<button class="icon-btn cover-btn-trigger">表紙を設定</button>' +
+        '<button class="icon-btn edit-btn">編集</button>' +
+        '<button class="icon-btn delete delete-btn">削除</button>' +
+        "</div>" +
+        "</div>" +
+        "</div>") +
+        "</div>";
+    });
+    var activeMedia = {};
+    Array.prototype.forEach.call(list.querySelectorAll(".inline-player"), function (media) {
+      var owner = media.closest(".item");
+      var id = owner && owner.getAttribute("data-id");
+      var item = items.find(function (candidate) { return candidate.id === id; });
+      var isActive = id && Object.prototype.hasOwnProperty.call(inlinePlayers, id);
+      var keepFallback = !inlineTwivideoFallbacks[id] || media.classList.contains("inline-twivideo-player");
+      if (isActive && keepFallback && item && !isYouTubeUrl(item.url)) activeMedia[id] = media;
+    });
+    list.innerHTML = html;
+    Object.keys(activeMedia).forEach(function (id) {
+      var targetItem = Array.prototype.find.call(list.querySelectorAll(".item"), function (item) {
+        return item.getAttribute("data-id") === id;
+      });
+      var placeholder = targetItem && targetItem.querySelector(".inline-player");
+      if (placeholder) placeholder.parentNode.replaceChild(activeMedia[id], placeholder);
+    });
+
+    Array.prototype.forEach.call(list.querySelectorAll(".select-check"), function (checkbox) {
+      checkbox.addEventListener("change", function () {
+        var id = checkbox.getAttribute("data-select-id");
+        if (checkbox.checked) selectedIds[id] = true;
+        else delete selectedIds[id];
+        render();
+      });
+    });
+
+    Array.prototype.forEach.call(list.querySelectorAll(".item-preview"), function (img) {
+      img.addEventListener("error", function () { img.classList.add("hidden"); });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll(".favorite-btn"), function (btn) {
+      btn.addEventListener("click", function (e) { var item = items.find(function (it) { return it.id === e.target.closest(".item").getAttribute("data-id"); }); if (item) { item.favorite = !item.favorite; save(); render(); } });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll(".time-note-btn"), function (btn) {
+      btn.addEventListener("click", function (e) { playInline(e.target.closest(".item").getAttribute("data-id"), Number(e.target.getAttribute("data-time")) || 0); });
+    });
+
+    Array.prototype.forEach.call(list.querySelectorAll(".item-video-frame"), function (video) {
+      function showFrame() {
+        var seconds = Math.max(0, Number(video.getAttribute("data-frame-time")) || 0);
+        try {
+          video.currentTime = Math.min(seconds, Math.max(0, (video.duration || seconds) - 0.05));
+        } catch (e) {}
+      }
+      video.addEventListener("loadedmetadata", showFrame, { once: true });
+      video.addEventListener("seeked", function () { video.pause(); }, { once: true });
+      video.addEventListener("error", function () { video.classList.add("hidden"); });
+      if (video.readyState >= 1) showFrame();
+    });
+
+    Array.prototype.forEach.call(list.querySelectorAll(".inline-native-video"), prepareInlineNativeVideo);
+
+    Array.prototype.forEach.call(list.querySelectorAll(".twivideo-aspect-btn"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        var id = e.target.closest(".item").getAttribute("data-id");
+        var item = items.find(function (it) { return it.id === id; });
+        if (!item) return;
+        item.twivideoPortrait = !item.twivideoPortrait;
+        save();
+        render();
+        showToast(item.twivideoPortrait ? "縦長表示にしました" : "横長表示にしました");
+      });
+    });
+
+    items.filter(function (it) {
+      return isTwivideoVideoUrl(it.url) && !it.thumbnailUrl && !it.videoFrameUrl && (it.thumbnailAttempts || 0) < 3 &&
+        (!it.thumbnailLastAttempt || Date.now() - it.thumbnailLastAttempt > 25000);
+    }).forEach(function (it) {
+      it.thumbnailAttempts = (it.thumbnailAttempts || 0) + 1;
+      it.thumbnailLastAttempt = Date.now();
+      save();
+      tryAutomaticTwivideoCover(it.url).then(function (thumbnailUrl) {
+        if (thumbnailUrl) {
+          it.thumbnailUrl = thumbnailUrl;
+          save();
+          render();
+        } else if ((it.thumbnailAttempts || 0) < 3) {
+          setTimeout(render, 26000);
+        }
+      });
+    });
+
+    Array.prototype.forEach.call(list.querySelectorAll(".delete-btn"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        var id = e.target.closest(".item").getAttribute("data-id");
+        if (confirm("このリンクを削除しますか？")) {
+          items = items.filter(function (it) { return it.id !== id; });
+          save();
+          render();
+          showToast("削除しました");
+        }
+      });
+    });
+
+    Array.prototype.forEach.call(list.querySelectorAll(".edit-btn"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        var id = e.target.closest(".item").getAttribute("data-id");
+        openEditModal(id);
+      });
+    });
+
+    Array.prototype.forEach.call(list.querySelectorAll(".cover-btn-trigger"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        var id = e.target.closest(".item").getAttribute("data-id");
+        openCoverPicker(id);
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll(".player-btn, .player-link"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        e.preventDefault();
+        var id = e.target.closest(".item").getAttribute("data-id");
+        if (Object.prototype.hasOwnProperty.call(inlinePlayers, id)) stopInline(id);
+        else playInline(id);
+      });
+    });
+    Array.prototype.forEach.call(list.querySelectorAll(".viewer-btn"), function (btn) {
+      btn.addEventListener("click", function (e) {
+        var id = e.target.closest(".item").getAttribute("data-id");
+        var item = items.find(function (it) { return it.id === id; });
+        if (item) openViewer(item);
+      });
+    });
+  }
+
+  // ---- Cover picker ----
+  document.getElementById("open-source-video").addEventListener("click", function () {
+    var item = items.find(function (it) { return it.id === coverTargetId; });
+    if (item) window.open(item.url, "_blank", "noopener,noreferrer");
+  });
+
+  document.getElementById("cover-file").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    imageFileToCover(file).then(function (dataUrl) {
+      pendingCoverData = dataUrl;
+      var preview = document.getElementById("cover-preview");
+      preview.src = dataUrl;
+      preview.classList.add("show");
+      document.getElementById("save-cover").disabled = false;
+    }).catch(function () {
+      showToast("画像を読み込めませんでした");
+    });
+  });
+
+  document.getElementById("save-cover").addEventListener("click", function () {
+    var item = items.find(function (it) { return it.id === coverTargetId; });
+    if (!item || !pendingCoverData) return;
+    item.thumbnailUrl = pendingCoverData;
+    try {
+      save();
+    } catch (e) {
+      showToast("画像が大きすぎて保存できませんでした");
+      return;
+    }
+    closeCoverPicker();
+    render();
+    showToast("表紙を設定しました");
+  });
+
+  document.getElementById("cancel-cover").addEventListener("click", closeCoverPicker);
+  document.getElementById("cover-modal").addEventListener("click", function (e) {
+    if (e.target.id === "cover-modal") closeCoverPicker();
+  });
+
+  document.getElementById("save-edit").addEventListener("click", function () {
+    var item = items.find(function (it) { return it.id === editTargetId; });
+    if (!item) return;
+    var url = normalizedUrl(document.getElementById("edit-url").value);
+    if (!url) {
+      showToast("URLを入力してください");
+      document.getElementById("edit-url").focus();
+      return;
+    }
+    var folder = document.getElementById("edit-folder").value.trim() || "未分類";
+    item.url = url;
+    item.title = document.getElementById("edit-item-title").value.trim();
+    item.channelName = document.getElementById("edit-channel").value.trim();
+    item.memo = document.getElementById("edit-memo").value.trim();
+    item.timeNotes = document.getElementById("edit-time-notes").value.trim();
+    item.tags = document.getElementById("edit-tags").value.split(",").map(function (tag) { return tag.trim(); }).filter(function (tag) { return tag; });
+    item.folder = folder;
+    item.domain = getDomain(url);
+    item.isX = isXUrl(url);
+    if (folders.indexOf(folder) === -1) {
+      folders.push(folder);
+      saveFolders();
+    }
+    if (item.isX && item.tags.indexOf("X") === -1) item.tags.unshift("X");
+    save();
+    closeEditModal();
+    render();
+    showToast("更新しました");
+  });
+  (function () {
+    var min = document.getElementById("note-min"), sec = document.getElementById("note-sec");
+    for (var i = 0; i < 100; i++) min.add(new Option(String(i).padStart(2, "0") + "分", i));
+    for (var j = 0; j < 60; j++) sec.add(new Option(String(j).padStart(2, "0") + "秒", j));
+    document.getElementById("add-time-note").addEventListener("click", function () {
+      var text = document.getElementById("note-text").value.trim();
+      var line = String(min.value).padStart(2, "0") + ":" + String(sec.value).padStart(2, "0") + (text ? " " + text : "");
+      var area = document.getElementById("edit-time-notes");
+      area.value = area.value ? area.value + "\n" + line : line;
+      document.getElementById("note-text").value = "";
+    });
+  })();
+  document.getElementById("cancel-edit").addEventListener("click", closeEditModal);
+  document.getElementById("edit-modal").addEventListener("click", function (e) {
+    if (e.target.id === "edit-modal") closeEditModal();
+  });
+  document.getElementById("player-close").addEventListener("click", closePlayer);
+  Array.prototype.forEach.call(document.querySelectorAll("[data-player-position]"), function (button) {
+    button.addEventListener("click", function () { setPlayerPosition(button.getAttribute("data-player-position")); });
+  });
+  document.getElementById("player-prev").addEventListener("click", function () { if (playerIndex > 0) { playerIndex--; renderPlayer(true); } });
+  document.getElementById("player-next").addEventListener("click", function () { playNext(true); });
+  document.getElementById("player-modal").addEventListener("click", function (e) { if (e.target.id === "player-modal") closePlayer(); });
+  document.getElementById("viewer-close").addEventListener("click", closeViewer);
+  document.getElementById("viewer-modal").addEventListener("click", function (e) { if (e.target.id === "viewer-modal") closeViewer(); });
+
+  // ---- Export / Import ----
+  document.getElementById("export-btn").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(items, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var d = new Date();
+    var stamp = d.getFullYear() + String(d.getMonth() + 1).padStart(2, "0") + String(d.getDate()).padStart(2, "0");
+    a.href = url;
+    a.download = "video-memo-backup-" + stamp + ".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    showToast("書き出しました");
+  });
+
+  document.getElementById("import-btn").addEventListener("click", function () {
+    document.getElementById("import-file").click();
+  });
+
+  document.getElementById("import-file").addEventListener("change", function (e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var data = JSON.parse(reader.result);
+        if (!Array.isArray(data)) throw new Error("invalid");
+        var existingIds = {};
+        items.forEach(function (it) { existingIds[it.id] = true; });
+        var added = 0;
+        data.forEach(function (it) {
+          if (it && it.url && !existingIds[it.id]) {
+            items.push({
+              id: it.id || uid(),
+              url: it.url,
+              title: it.title || "",
+              channelName: it.channelName || "",
+              memo: it.memo || "",
+              tags: Array.isArray(it.tags) ? it.tags : [],
+              folder: it.folder || "未分類",
+              domain: it.domain || getDomain(it.url),
+              isX: !!it.isX,
+              thumbnailUrl: it.thumbnailUrl || "",
+              videoFrameUrl: it.videoFrameUrl || "",
+              videoFrameTime: Number(it.videoFrameTime) || 0,
+              thumbnailAttempts: Number(it.thumbnailAttempts) || 0,
+              thumbnailLastAttempt: Number(it.thumbnailLastAttempt) || 0,
+              twivideoPortrait: !!it.twivideoPortrait,
+              addedAt: it.addedAt || Date.now()
+            });
+            added++;
+          }
+        });
+        items.sort(function (a, b) { return b.addedAt - a.addedAt; });
+        save();
+        render();
+        showToast(added + "件読み込みました");
+      } catch (err) {
+        showToast("読み込みに失敗しました");
+      }
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  load();
+  receiveBookmarkletFrame();
+  render();
+})();
+</script>
+<script>
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    window.addEventListener('load', function () { navigator.serviceWorker.register('./sw.js'); });
+  }
+</script>
+</body>
+</html>
