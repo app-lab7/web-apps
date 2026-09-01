@@ -29,7 +29,26 @@ let state=JSON.parse(localStorage.getItem(KEY)||'null')||{volume:.8,items:[{id:c
 let ctx=null,wakeLock=null,lastKey='';
 const $=s=>document.querySelector(s),days=['日','月','火','水','木','金','土'];
 function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
-function bell(){if(!ctx)return;const now=ctx.currentTime;[0,1.05,2.1].forEach((d,i)=>{const g=ctx.createGain(),o=ctx.createOscillator(),o2=ctx.createOscillator();o.frequency.value=659.25;o2.frequency.value=987.77;g.gain.setValueAtTime(0,now+d);g.gain.linearRampToValueAtTime(state.volume*.2,now+d+.03);g.gain.exponentialRampToValueAtTime(.001,now+d+.9);o.connect(g);o2.connect(g);g.connect(ctx.destination);o.start(now+d);o2.start(now+d);o.stop(now+d+1);o2.stop(now+d+1)})}
+function bell(){
+  if(!ctx)return;
+  const start=ctx.currentTime+.05;
+  const E=329.63,C=261.63,D=293.66,G=196.00;
+  const melody=[E,C,D,G, G,D,E,C, E,D,C,E, E,C,D,G];
+  const beat=.52;
+  melody.forEach((freq,i)=>{
+    const at=start+i*beat;
+    const master=ctx.createGain();
+    master.gain.setValueAtTime(.0001,at);
+    master.gain.exponentialRampToValueAtTime(Math.max(.001,state.volume*.34),at+.018);
+    master.gain.exponentialRampToValueAtTime(.0001,at+.95);
+    master.connect(ctx.destination);
+    [[1,'sine',1],[2.01,'sine',.28],[3.98,'sine',.1]].forEach(([ratio,type,level])=>{
+      const osc=ctx.createOscillator(),gain=ctx.createGain();
+      osc.type=type;osc.frequency.setValueAtTime(freq*ratio,at);gain.gain.value=level;
+      osc.connect(gain);gain.connect(master);osc.start(at);osc.stop(at+1);
+    });
+  });
+}
 async function enable(){ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();await ctx.resume();bell();$('#audioStatus').textContent='音声：有効';$('#audioStatus').className='pill ok';await keepAwake()}
 async function keepAwake(){try{if('wakeLock'in navigator){wakeLock=await navigator.wakeLock.request('screen');$('#wakeStatus').textContent='画面維持：有効';$('#wakeStatus').className='pill ok'}else{$('#wakeStatus').textContent='自動ロックを「なし」に';}}catch(e){$('#wakeStatus').textContent='自動ロックを確認';}}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ctx)keepAwake()});
