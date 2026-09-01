@@ -26,35 +26,24 @@
 <script>
 const KEY='classroom_chime_v1';
 let state=JSON.parse(localStorage.getItem(KEY)||'null')||{volume:.8,items:[{id:crypto.randomUUID(),label:'授業開始',time:'17:00',days:[1,2,3,4,5],on:true}]};
-let ctx=null,wakeLock=null,lastKey='';
+let chimeAudio=null,wakeLock=null,lastKey='';
 const $=s=>document.querySelector(s),days=['日','月','火','水','木','金','土'];
 function save(){localStorage.setItem(KEY,JSON.stringify(state));render()}
-function bell(){
-  if(!ctx)return;
-  const start=ctx.currentTime+.05;
-  const E=329.63,C=261.63,D=293.66,G=196.00;
-  const melody=[E,C,D,G, G,D,E,C, E,D,C,E, E,C,D,G];
-  const beat=.52;
-  melody.forEach((freq,i)=>{
-    const at=start+i*beat;
-    const master=ctx.createGain();
-    master.gain.setValueAtTime(.0001,at);
-    master.gain.exponentialRampToValueAtTime(Math.max(.001,state.volume*.34),at+.018);
-    master.gain.exponentialRampToValueAtTime(.0001,at+.95);
-    master.connect(ctx.destination);
-    [[1,'sine',1],[2.01,'sine',.28],[3.98,'sine',.1]].forEach(([ratio,type,level])=>{
-      const osc=ctx.createOscillator(),gain=ctx.createGain();
-      osc.type=type;osc.frequency.setValueAtTime(freq*ratio,at);gain.gain.value=level;
-      osc.connect(gain);gain.connect(master);osc.start(at);osc.stop(at+1);
-    });
-  });
+function makeSchoolChime(){
+  const rate=22050,beat=.72,tail=1.55,notes=[329.63,261.63,293.66,196,196,293.66,329.63,261.63,329.63,293.66,261.63,329.63,329.63,261.63,293.66,196];
+  const length=Math.ceil((notes.length*beat+tail)*rate),pcm=new Int16Array(length);
+  notes.forEach((freq,i)=>{const begin=Math.floor(i*beat*rate),end=Math.min(length,begin+Math.floor(tail*rate));for(let n=begin;n<end;n++){const t=(n-begin)/rate,attack=Math.min(1,t/.018),decay=Math.exp(-2.5*t),strike=Math.exp(-35*t);const tone=Math.sin(2*Math.PI*freq*t)+.32*Math.sin(2*Math.PI*freq*2.01*t)+.13*Math.sin(2*Math.PI*freq*3.98*t)+.06*Math.sin(2*Math.PI*freq*6.02*t);const v=(tone*.42*attack*decay+Math.sin(2*Math.PI*freq*7.1*t)*.05*strike)*.72;pcm[n]=Math.max(-32767,Math.min(32767,pcm[n]+v*32767))}});
+  const buffer=new ArrayBuffer(44+pcm.length*2),view=new DataView(buffer),write=(o,s)=>{for(let i=0;i<s.length;i++)view.setUint8(o+i,s.charCodeAt(i))};write(0,'RIFF');view.setUint32(4,36+pcm.length*2,true);write(8,'WAVE');write(12,'fmt ');view.setUint32(16,16,true);view.setUint16(20,1,true);view.setUint16(22,1,true);view.setUint32(24,rate,true);view.setUint32(28,rate*2,true);view.setUint16(32,2,true);view.setUint16(34,16,true);write(36,'data');view.setUint32(40,pcm.length*2,true);for(let i=0;i<pcm.length;i++)view.setInt16(44+i*2,pcm[i],true);
+  return URL.createObjectURL(new Blob([buffer],{type:'audio/wav'}));
 }
-async function enable(){ctx=ctx||new (window.AudioContext||window.webkitAudioContext)();await ctx.resume();bell();$('#audioStatus').textContent='音声：有効';$('#audioStatus').className='pill ok';await keepAwake()}
+function prepareAudio(){if(!chimeAudio){chimeAudio=new Audio(makeSchoolChime());chimeAudio.preload='auto';chimeAudio.playsInline=true}chimeAudio.volume=state.volume;return chimeAudio}
+async function bell(){const audio=prepareAudio();audio.pause();audio.currentTime=0;await audio.play()}
+async function enable(){try{await bell();$('#audioStatus').textContent='音声：有効';$('#audioStatus').className='pill ok';await keepAwake()}catch(e){$('#audioStatus').textContent='音声を再確認';$('#audioStatus').className='pill warn';alert('音を再生できませんでした。iPadの消音設定と音量を確認し、もう一度押してください。')}}
 async function keepAwake(){try{if('wakeLock'in navigator){wakeLock=await navigator.wakeLock.request('screen');$('#wakeStatus').textContent='画面維持：有効';$('#wakeStatus').className='pill ok'}else{$('#wakeStatus').textContent='自動ロックを「なし」に';}}catch(e){$('#wakeStatus').textContent='自動ロックを確認';}}
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&ctx)keepAwake()});
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&chimeAudio)keepAwake()});
 function render(){state.items.sort((a,b)=>a.time.localeCompare(b.time));$('#volume').value=state.volume;const box=$('#schedule');box.innerHTML='';if(!state.items.length)box.innerHTML='<div class="empty">まだ予定がありません</div>';state.items.forEach(item=>{const row=document.createElement('div');row.className='row';row.innerHTML=`<input class="label" value="${item.label.replaceAll('&','&amp;').replaceAll('"','&quot;')}"><input class="tm" type="time" value="${item.time}"><button class="toggle">${item.on?'ON':'OFF'}</button><button class="del danger">削除</button><div class="days"></div>`;const ds=row.querySelector('.days');days.forEach((d,i)=>{const b=document.createElement('button');b.textContent=d;b.style.padding='7px 10px';b.style.marginRight='5px';b.style.opacity=item.days.includes(i)?'1':'.35';b.onclick=()=>{item.days=item.days.includes(i)?item.days.filter(x=>x!==i):[...item.days,i];save()};ds.appendChild(b)});row.querySelector('.label').onchange=e=>{item.label=e.target.value;save()};row.querySelector('.tm').onchange=e=>{item.time=e.target.value;save()};row.querySelector('.toggle').onclick=()=>{item.on=!item.on;save()};row.querySelector('.del').onclick=()=>{state.items=state.items.filter(x=>x.id!==item.id);save()};box.appendChild(row)})}
-function tick(){const n=new Date();$('#time').textContent=n.toLocaleTimeString('ja-JP',{hour12:false});$('#date').textContent=n.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'long'});const hm=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;const key=`${n.toDateString()}-${hm}`;const due=state.items.find(x=>x.on&&x.days.includes(n.getDay())&&x.time===hm);if(due&&key!==lastKey){lastKey=key;bell()}let next=null;for(let plus=0;plus<8;plus++){const d=new Date(n);d.setDate(n.getDate()+plus);for(const x of state.items){if(!x.on||!x.days.includes(d.getDay()))continue;const [h,m]=x.time.split(':').map(Number),at=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m);if(at>n&&(!next||at<next.at))next={at,x}}}$('#next').textContent=next?`${next.x.label}　${next.at.toLocaleDateString('ja-JP',{weekday:'short'})} ${next.x.time}`:'予定はありません'}
-$('#enable').onclick=enable;$('#test').onclick=()=>ctx?bell():enable();$('#dim').onclick=()=>document.documentElement.classList.toggle('dim');$('#fullscreen').onclick=()=>document.documentElement.requestFullscreen?.();$('#add').onclick=()=>{state.items.push({id:crypto.randomUUID(),label:'チャイム',time:'12:00',days:[1,2,3,4,5],on:true});save()};$('#volume').oninput=e=>{state.volume=Number(e.target.value);localStorage.setItem(KEY,JSON.stringify(state))};render();tick();setInterval(tick,1000);
+function tick(){const n=new Date();$('#time').textContent=n.toLocaleTimeString('ja-JP',{hour12:false});$('#date').textContent=n.toLocaleDateString('ja-JP',{year:'numeric',month:'long',day:'numeric',weekday:'long'});const hm=`${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}`;const key=`${n.toDateString()}-${hm}`;const due=state.items.find(x=>x.on&&x.days.includes(n.getDay())&&x.time===hm);if(due&&key!==lastKey){lastKey=key;bell().catch(()=>{$('#audioStatus').textContent='音声：再有効化が必要';$('#audioStatus').className='pill warn'})}let next=null;for(let plus=0;plus<8;plus++){const d=new Date(n);d.setDate(n.getDate()+plus);for(const x of state.items){if(!x.on||!x.days.includes(d.getDay()))continue;const [h,m]=x.time.split(':').map(Number),at=new Date(d.getFullYear(),d.getMonth(),d.getDate(),h,m);if(at>n&&(!next||at<next.at))next={at,x}}}$('#next').textContent=next?`${next.x.label}　${next.at.toLocaleDateString('ja-JP',{weekday:'short'})} ${next.x.time}`:'予定はありません'}
+$('#enable').onclick=enable;$('#test').onclick=enable;$('#dim').onclick=()=>document.documentElement.classList.toggle('dim');$('#fullscreen').onclick=()=>document.documentElement.requestFullscreen?.();$('#add').onclick=()=>{state.items.push({id:crypto.randomUUID(),label:'チャイム',time:'12:00',days:[1,2,3,4,5],on:true});save()};$('#volume').oninput=e=>{state.volume=Number(e.target.value);if(chimeAudio)chimeAudio.volume=state.volume;localStorage.setItem(KEY,JSON.stringify(state))};render();tick();setInterval(tick,1000);
 if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js');
 </script>
 </body>
