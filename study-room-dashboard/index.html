@@ -86,7 +86,8 @@
     ];
     const DEFAULT_API_URL = 'https://study-room-dashboard.baystars1899.chatgpt.site/api/logs';
     const nameKey=v=>String(v??'').normalize('NFKC').replace(/[\s　]+/g,'');
-    let records = initialRecords.map(normalize);
+    // 初回は保存済みのサンプルを表示せず、取得した最新データだけを表示する。
+    let records = [];
     const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const fmtDate=s=>{if(!s)return '—';const [y,m,d]=String(s).slice(0,10).split('-');return `${Number(m)}/${Number(d)}`};
     const fmtTime=n=>{n=Math.round(Number(n)||0);const h=Math.floor(n/60),m=n%60;return h?`${h}時間${m?`${m}分`:''}`:`${m}分`};
