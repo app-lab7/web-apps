@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1459d9">
+  <title>自習室ログ集計</title>
+  <style>
+    :root{--blue:#1459d9;--blue2:#eaf1ff;--ink:#182033;--muted:#667085;--line:#dfe5ef;--bg:#f4f7fb;--card:#fff;--green:#16805c;--shadow:0 8px 28px rgba(26,48,89,.08)}
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;font-size:16px;line-height:1.55}
+    button,input,select{font:inherit} button{cursor:pointer}
+    .top{background:#0d2864;color:#fff;padding:16px 22px;box-shadow:0 3px 14px rgba(10,32,80,.18)}
+    .top-inner{max-width:1240px;margin:auto;display:flex;align-items:center;justify-content:space-between;gap:16px}
+    h1{font-size:1.28rem;margin:0;font-weight:760;letter-spacing:.02em}.updated{font-size:.82rem;color:#d8e4ff;text-align:right}
+    main{max-width:1240px;margin:0 auto;padding:22px}
+    .toolbar{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;box-shadow:var(--shadow);display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;align-items:end}
+    label{font-size:.82rem;font-weight:700;color:#4d5970;display:block;margin-bottom:5px}.control{min-width:0}
+    input,select{width:100%;height:44px;border:1px solid #cbd4e2;border-radius:9px;background:#fff;color:var(--ink);padding:0 11px;outline:none}
+    input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(20,89,217,.12)}
+    .actions{display:flex;gap:8px}.btn{height:44px;border:0;border-radius:9px;padding:0 15px;font-weight:720;white-space:nowrap}.btn-primary{background:var(--blue);color:#fff}.btn-sub{background:#eef3fb;color:#29406d}.btn:hover{filter:brightness(.97)}.btn:disabled{cursor:wait;opacity:.72}
+    .filter-meta{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;gap:14px;padding-top:2px;color:var(--muted);font-size:.86rem}
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:18px 0}
+    .stat{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:17px 18px;box-shadow:var(--shadow)}
+    .stat-label{color:var(--muted);font-size:.84rem;font-weight:700}.stat-value{font-size:1.72rem;font-weight:800;letter-spacing:-.03em;margin-top:5px}.stat-value small{font-size:.85rem;font-weight:700;color:var(--muted);margin-left:4px}
+    .grid{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.75fr);gap:16px;margin-bottom:16px}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);padding:18px;min-width:0}
+    .card h2{font-size:1rem;margin:0 0 14px}.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.subtle{font-size:.8rem;color:var(--muted)}
+    .daily-chart{height:232px;display:flex;align-items:flex-end;gap:10px;padding:16px 4px 28px;border-bottom:1px solid var(--line);position:relative;overflow-x:auto}
+    .bar-wrap{height:100%;min-width:44px;flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}.bar{width:min(34px,72%);background:linear-gradient(180deg,#3d7cf2,var(--blue));border-radius:7px 7px 2px 2px;min-height:3px;transition:.2s}.bar-value{font-size:.72rem;font-weight:750;color:#35507e;margin-bottom:5px}.bar-label{position:absolute;bottom:-24px;font-size:.7rem;color:var(--muted);white-space:nowrap}
+    .rank-list{display:flex;flex-direction:column;gap:10px}.rank-row{display:grid;grid-template-columns:30px minmax(80px,1fr) 70px;align-items:center;gap:8px}.rank-no{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:var(--blue2);color:var(--blue);font-size:.78rem;font-weight:800}.rank-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700}.rank-time{text-align:right;font-variant-numeric:tabular-nums;font-weight:800}.rank-track{grid-column:2/4;background:#edf1f7;height:6px;border-radius:8px;overflow:hidden;margin-top:-3px}.rank-fill{height:100%;background:#2e70e8;border-radius:8px}
+    .subject-list{display:flex;flex-wrap:wrap;gap:9px}.subject{border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:110px;flex:1}.subject-name{font-size:.82rem;color:var(--muted);font-weight:700}.subject-time{font-weight:800;margin-top:2px}
+    .table-card{padding:0;overflow:hidden}.table-title{padding:17px 18px;border-bottom:1px solid var(--line)}.table-wrap{overflow:auto;max-height:520px}
+    table{width:100%;border-collapse:collapse;min-width:850px}th,td{padding:11px 13px;border-bottom:1px solid #edf0f5;text-align:left;font-size:.86rem;vertical-align:top}th{position:sticky;top:0;background:#f7f9fc;color:#536078;font-size:.77rem;z-index:1}tbody tr:hover{background:#f8fbff}.num{text-align:right;font-variant-numeric:tabular-nums}.memo{max-width:250px;white-space:normal}.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+    dialog{border:0;border-radius:16px;padding:0;width:min(610px,calc(100vw - 28px));box-shadow:0 24px 80px rgba(15,31,65,.28)}dialog::backdrop{background:rgba(12,25,53,.48)}
+    .modal-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.modal-head h2{margin:0;font-size:1.05rem}.close{border:0;background:#eef2f7;width:36px;height:36px;border-radius:9px;font-size:1.25rem}
+    .modal-body{padding:20px}.modal-body p{margin:0 0 14px;color:#556176;font-size:.9rem}.api-row{display:flex;gap:8px}.api-row input{flex:1}.notice{margin-top:12px;border-radius:9px;padding:10px 12px;font-size:.84rem;background:#f2f5fa;color:#566176}.status{margin-top:12px;font-size:.86rem;font-weight:700}.status.ok{color:var(--green)}.status.err{color:#c63d3d}
+    @media(max-width:900px){.toolbar{grid-template-columns:repeat(2,1fr)}.actions{grid-column:1/-1}.stats{grid-template-columns:repeat(2,1fr)}.grid{grid-template-columns:1fr}.top-inner{align-items:flex-start}}
+    @media(max-width:560px){.top{padding:14px 16px}h1{font-size:1.12rem}.updated{font-size:.7rem}main{padding:14px}.toolbar{grid-template-columns:1fr;padding:13px}.actions{grid-column:auto}.actions .btn{flex:1;padding:0 10px}.filter-meta{align-items:flex-start;flex-direction:column;gap:5px}.stats{gap:9px;margin:13px 0}.stat{padding:14px}.stat-value{font-size:1.35rem}.card{padding:15px}.daily-chart{height:205px}.grid{gap:12px}.modal-body{padding:16px}.api-row{flex-direction:column}}
+  </style>
+</head>
+<body>
+  <header class="top"><div class="top-inner"><h1>自習室ログ集計</h1><div class="updated" id="updatedAt">データ確認中</div></div></header>
+  <main>
+    <section class="toolbar" aria-label="絞り込み">
+      <div class="control"><label for="from">開始日</label><input type="date" id="from"></div>
+      <div class="control"><label for="to">終了日</label><input type="date" id="to"></div>
+      <div class="control"><label for="student">生徒</label><select id="student"><option value="">全員</option></select></div>
+      <div class="control"><label for="grade">学年</label><select id="grade"><option value="">すべて</option></select></div>
+      <div class="control"><label for="subject">科目</label><select id="subject"><option value="">すべて</option></select></div>
+      <div class="filter-meta"><span id="matchCount">0件を表示</span><div class="actions"><button class="btn btn-sub" id="resetBtn">絞り込み解除</button><button class="btn btn-primary" id="syncBtn">データ更新</button></div></div>
+    </section>
+
+    <section class="stats" aria-label="集計結果">
+      <article class="stat"><div class="stat-label">合計自習時間</div><div class="stat-value" id="totalTime">0<small>分</small></div></article>
+      <article class="stat"><div class="stat-label">記録件数</div><div class="stat-value" id="sessionCount">0<small>件</small></div></article>
+      <article class="stat"><div class="stat-label">平均集中度</div><div class="stat-value" id="focusAvg">—</div></article>
+      <article class="stat"><div class="stat-label">平均達成度</div><div class="stat-value" id="goalAvg">—</div></article>
+    </section>
+
+    <section class="grid">
+      <article class="card"><div class="card-head"><h2>日別の自習時間</h2><span class="subtle">分</span></div><div class="daily-chart" id="dailyChart"></div></article>
+      <article class="card"><h2>生徒別 自習時間</h2><div class="rank-list" id="ranking"></div></article>
+    </section>
+    <section class="card" style="margin-bottom:16px"><h2>科目別</h2><div class="subject-list" id="subjectSummary"></div></section>
+    <section class="card table-card"><div class="table-title card-head"><h2 style="margin:0">利用明細</h2><span class="subtle">新しい日付順</span></div><div class="table-wrap"><table><thead><tr><th>日付</th><th>名前</th><th>学年</th><th>科目</th><th>入室</th><th>退室</th><th class="num">自習分数</th><th class="num">集中度</th><th class="num">達成度</th><th>学習内容・コメント</th></tr></thead><tbody id="logBody"></tbody></table><div class="empty" id="empty" hidden>該当する記録がありません。</div></div></section>
+  </main>
+
+  <script>
+    const initialRecords = [
+      {date:'2026-07-06',name:'本田',grade:'中1',subject:'英語',start:'21:58',end:'23:26',minutes:88,focus:3,goal:3,study:'',comment:'',sent:'2026-07-06T23:26:51'},
+      {date:'2026-07-06',name:'本田',grade:'中1',subject:'英語',start:'23:24',end:'23:29',minutes:4,focus:4,goal:3,study:'',comment:'',sent:'2026-07-06T23:29:48'},
+      {date:'2026-07-06',name:'本田大崇',grade:'中1',subject:'英語',start:'23:32',end:'23:35',minutes:2,focus:3,goal:3,study:'',comment:'',sent:'2026-07-06T23:35:47'},
+      {date:'2026-07-06',name:'本田大崇',grade:'中1',subject:'英語',start:'23:37',end:'23:37',minutes:0,focus:3,goal:3,study:'',comment:'',sent:'2026-07-06T23:37:15'},
+      {date:'2026-07-06',name:'本田大崇',grade:'中1',subject:'英語',start:'23:59',end:'23:59',minutes:0,focus:3,goal:3,study:'',comment:'',sent:'2026-07-07T00:00:04'},
+      {date:'2026-07-07',name:'本田大崇',grade:'中1',subject:'英語',start:'00:04',end:'00:05',minutes:1,focus:3,goal:3,study:'',comment:'',sent:'2026-07-07T00:05:52'},
+      {date:'2026-07-07',name:'本田大崇',grade:'中1',subject:'英語',start:'00:06',end:'00:20',minutes:14,focus:3,goal:3,study:'',comment:'',sent:'2026-07-07T00:20:45'},
+      {date:'2026-07-07',name:'本田大崇',grade:'高3',subject:'英語',start:'01:08',end:'01:08',minutes:0,focus:3,goal:3,study:'',comment:'',sent:'2026-07-07T01:08:32'},
+      {date:'2026-07-07',name:'あああ',grade:'中1',subject:'英語',start:'01:14',end:'01:22',minutes:8,focus:3,goal:3,study:'',comment:'',sent:'2026-07-07T01:22:09'},
+      {date:'2026-07-07',name:'ああああ',grade:'中1',subject:'英語',start:'16:42',end:'16:42',minutes:0,focus:3,goal:3,study:'',comment:'',sent:'2026-07-07T16:42:47'},
+      {date:'2026-07-07',name:'小池恒史郎',grade:'高1',subject:'英語',start:'20:33',end:'20:34',minutes:0,focus:3,goal:3,study:'教科書2ページ読んだ',comment:'テストが嫌いです',sent:'2026-07-07T20:33:53'},
+      {date:'2026-09-03',name:'動作テスト2',grade:'中1',subject:'英語',start:'15:09',end:'15:09',minutes:0,focus:3,goal:3,study:'',comment:'',sent:'2026-09-03T15:09:45'},
+      {date:'2026-09-10',name:'動作テスト2',grade:'中1',subject:'英語',start:'15:58',end:'15:58',minutes:0,focus:3,goal:3,study:'',comment:'',sent:'2026-09-10T15:58:57'}
+    ];
+    const DEFAULT_API_URL = 'https://study-room-dashboard.baystars1899.chatgpt.site/api/logs';
+    let records = initialRecords;
+    const $=id=>document.getElementById(id), esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const fmtDate=s=>{if(!s)return '—';const [y,m,d]=String(s).slice(0,10).split('-');return `${Number(m)}/${Number(d)}`};
+    const fmtTime=n=>{n=Math.round(Number(n)||0);const h=Math.floor(n/60),m=n%60;return h?`${h}時間${m?`${m}分`:''}`:`${m}分`};
+    function normalize(r){const pick=(...ks)=>{for(const k of ks)if(r[k]!==undefined&&r[k]!==null)return r[k];return ''};const timeVal=v=>{const s=String(v||'');const iso=s.match(/T(\d{2}:\d{2})/);const plain=s.match(/(^|\s)(\d{1,2}:\d{2})/);return iso?iso[1]:(plain?plain[2].padStart(5,'0'):s.slice(0,5))};let date=pick('date','日付');if(date instanceof Date)date=date.toISOString();date=String(date).slice(0,10).replaceAll('/','-');return {date,name:String(pick('name','名前')),grade:String(pick('grade','学年')),subject:String(pick('subject','科目')),start:timeVal(pick('start','startTime','入室時間')),end:timeVal(pick('end','endTime','退室時間')),minutes:Number(pick('minutes','自習分数'))||0,focus:Number(pick('focus','集中度'))||0,goal:Number(pick('goal','achievement','達成度'))||0,study:String(pick('study','content','学習内容')),comment:String(pick('comment','コメント')),sent:String(pick('sent','送信日時'))};}
+    function unique(key){return [...new Set(records.map(r=>r[key]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'ja',{numeric:true}))}
+    function fillSelect(id,key,first){const el=$(id),current=el.value;el.innerHTML=`<option value="">${first}</option>`+unique(key).map(v=>`<option>${esc(v)}</option>`).join('');if([...el.options].some(o=>o.value===current))el.value=current}
+    function filtered(){const from=$('from').value,to=$('to').value,student=$('student').value,grade=$('grade').value,subject=$('subject').value;return records.filter(r=>(!from||r.date>=from)&&(!to||r.date<=to)&&(!student||r.name===student)&&(!grade||r.grade===grade)&&(!subject||r.subject===subject))}
+    function groupSum(rows,key){const o={};rows.forEach(r=>{const k=r[key]||'未入力';o[k]=(o[k]||0)+r.minutes});return Object.entries(o).sort((a,b)=>b[1]-a[1])}
+    function render(){const rows=filtered();$('matchCount').textContent=`${rows.length}件を表示（全${records.length}件）`;const total=rows.reduce((s,r)=>s+r.minutes,0);$('totalTime').innerHTML=`${esc(fmtTime(total))}`;$('sessionCount').innerHTML=`${rows.length}<small>件</small>`;const avg=k=>{const a=rows.map(r=>r[k]).filter(n=>n>0);return a.length?(a.reduce((s,n)=>s+n,0)/a.length).toFixed(1):'—'};$('focusAvg').textContent=avg('focus');$('goalAvg').textContent=avg('goal');
+      const daily=groupSum(rows,'date').sort((a,b)=>a[0].localeCompare(b[0])).slice(-14),max=Math.max(1,...daily.map(x=>x[1]));$('dailyChart').innerHTML=daily.length?daily.map(([d,n])=>`<div class="bar-wrap" title="${esc(d)} ${n}分"><span class="bar-value">${Math.round(n)}</span><div class="bar" style="height:${Math.max(3,n/max*100)}%"></div><span class="bar-label">${fmtDate(d)}</span></div>`).join(''):'<div class="empty">表示する記録がありません</div>';
+      const rank=groupSum(rows,'name'),rmax=Math.max(1,...rank.map(x=>x[1]));$('ranking').innerHTML=rank.length?rank.slice(0,8).map(([n,t],i)=>`<div class="rank-row"><span class="rank-no">${i+1}</span><span class="rank-name" title="${esc(n)}">${esc(n)}</span><span class="rank-time">${esc(fmtTime(t))}</span><div class="rank-track"><div class="rank-fill" style="width:${t/rmax*100}%"></div></div></div>`).join(''):'<div class="empty">表示する記録がありません</div>';
+      const subjects=groupSum(rows,'subject');$('subjectSummary').innerHTML=subjects.length?subjects.map(([s,t])=>`<div class="subject"><div class="subject-name">${esc(s)}</div><div class="subject-time">${esc(fmtTime(t))}</div></div>`).join(''):'<div class="empty">表示する記録がありません</div>';
+      $('logBody').innerHTML=[...rows].sort((a,b)=>(b.sent||b.date).localeCompare(a.sent||a.date)).map(r=>`<tr><td>${esc(fmtDate(r.date))}</td><td><strong>${esc(r.name||'—')}</strong></td><td>${esc(r.grade||'—')}</td><td>${esc(r.subject||'—')}</td><td>${esc(r.start||'—')}</td><td>${esc(r.end||'—')}</td><td class="num"><strong>${r.minutes}</strong></td><td class="num">${r.focus||'—'}</td><td class="num">${r.goal||'—'}</td><td class="memo">${esc([r.study,r.comment].filter(Boolean).join('／')||'—')}</td></tr>`).join('');$('empty').hidden=rows.length>0;
+    }
+    function refreshControls(){fillSelect('student','name','全員');fillSelect('grade','grade','すべて');fillSelect('subject','subject','すべて');render()}
+    ['from','to','student','grade','subject'].forEach(id=>$(id).addEventListener('change',render));$('resetBtn').onclick=()=>{['from','to','student','grade','subject'].forEach(id=>$(id).value='');render()};
+    async function fetchLatest(auto=false){const button=$('syncBtn');if(auto)$('updatedAt').textContent='データを確認中…';else{button.disabled=true;button.textContent='更新中…';$('updatedAt').textContent='最新データを確認中…'}try{const res=await fetch(`${DEFAULT_API_URL}?t=${Date.now()}`,{cache:'no-store',signal:AbortSignal.timeout(8000)});if(!res.ok)throw new Error('HTTP '+res.status);const json=await res.json();const list=Array.isArray(json)?json:(json.records||json.data||json.items||json.logs);if(!Array.isArray(list))throw new Error('一覧データが見つかりません');const next=list.map(normalize).filter(r=>r.date&&r.name);if(!next.length)throw new Error('有効な記録がありません');records=next;$('updatedAt').textContent=`更新済み ${new Date().toLocaleString('ja-JP')}`;refreshControls();if(!auto){button.textContent='更新受付';setTimeout(()=>button.textContent='データ更新',1000);setTimeout(()=>fetchLatest(true),15000)}}catch(e){$('updatedAt').textContent='更新できませんでした（前回データを表示中）';if(!auto){button.textContent='再試行';setTimeout(()=>button.textContent='データ更新',1600)}}finally{button.disabled=false}}
+    $('syncBtn').onclick=()=>fetchLatest(false);
+    $('updatedAt').textContent='最新データを取得中…';refreshControls();fetchLatest(true);
+  </script>
+</body>
+</html>
