@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Cardly｜カード印刷</title>
+<meta name="description" content="カードを配置・印刷・共有できるCardlyのWebアプリです。">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23745cf6'/%3E%3Cpath d='M18 17h28a5 5 0 0 1 5 5v20a5 5 0 0 1-5 5H18a5 5 0 0 1-5-5V22a5 5 0 0 1 5-5Z' fill='white'/%3E%3Cpath d='M22 26h20M22 33h14M22 40h10' stroke='%23745cf6' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f5f6fa;--panel:#fff;--ink:#202336;--sub:#72778a;--line:#dfe3ec;
+  --accent:#745cf6;--accent2:#9d78ff;--danger:#c5362f;--ok:#17834b;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif;background:var(--bg);color:var(--ink)}
+button,input,select{font:inherit}
+[hidden]{display:none!important}
+button{cursor:pointer}
+
+.home{
+  min-height:100vh;
+  padding:48px 24px 64px;
+  background:#f7f7fa;
+}
+.home-inner{
+  max-width:1040px;
+  margin:0 auto;
+}
+.brand{
+  text-align:center;
+  margin-bottom:34px;
+}
+.brand h1{
+  font-size:42px;
+  margin:0;
+  font-weight:800;
+  letter-spacing:-1.2px;
+  color:#242536;
+}
+.brand h1 span{
+  color:var(--accent);
+}
+.brand p{
+  margin:6px 0 0;
+  color:#8a8d99;
+  font-size:13px;
+  letter-spacing:.08em;
+}
+.home h2{
+  text-align:left;
+  margin:0 0 18px;
+  font-size:20px;
+  font-weight:700;
+  letter-spacing:-.2px;
+}
+.type-grid{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:14px;
+}
+.type-card{
+  border:1px solid #e3e4ea;
+  background:#fff;
+  border-radius:14px;
+  min-height:170px;
+  padding:22px 18px 20px;
+  text-align:left;
+  box-shadow:0 2px 8px rgba(31,35,48,.04);
+  transition:border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+.type-card:hover{
+  transform:translateY(-1px);
+  border-color:#b9b0f8;
+  box-shadow:0 5px 14px rgba(31,35,48,.07);
+}
+.type-card:active{
+  transform:translateY(0);
+}
+.type-card:focus-visible{
+  outline:3px solid rgba(116,92,246,.22);
+  outline-offset:4px;
+}
+.pictogram{
+  width:54px;
+  height:54px;
+  margin:0 0 18px;
+  border-radius:10px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:#6f61df;
+  background:#f1effd;
+}
+.pictogram svg{
+  width:34px;
+  height:34px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.type-card b{
+  display:block;
+  font-size:16px;
+  font-weight:700;
+  letter-spacing:-.1px;
+}
+.type-card small{
+  display:block;
+  color:#9295a1;
+  margin-top:6px;
+  font-size:12px;
+}
+
+.app{display:grid;grid-template-columns:360px 1fr;min-height:100vh}
+.sidebar{background:#fff;border-right:1px solid var(--line);padding:17px;overflow:auto}
+.side-head{display:flex;justify-content:space-between;align-items:center}
+.side-head h1{font-size:27px;margin:0}
+.side-head h1 span{color:var(--accent)}
+.ghost,.btn,.tool-btn{
+  border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px 10px
+}
+.btn.primary{
+  background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:transparent;font-weight:800
+}
+.btn.danger{color:var(--danger)}
+.section{border-top:1px solid var(--line);padding-top:14px;margin-top:14px}
+.section h2{font-size:14px;margin:0 0 10px}
+label{display:block;font-size:12px;color:var(--sub);margin-bottom:5px}
+input[type=number],input[type=text],input[type=color],select{
+  width:100%;padding:9px;border:1px solid var(--line);border-radius:9px;background:#fff
+}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.orientation-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}
+.orientation-btn{border:1px solid var(--line);background:#fff;border-radius:10px;padding:9px}
+.orientation-btn.active{border:2px solid var(--accent);padding:8px;background:#f2efff;color:#4b3fe0;font-weight:800}
+.mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mode{
+  border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px;text-align:left
+}
+.mode.active{border:2px solid var(--accent);padding:9px;background:#f2efff}
+.mode b{display:block}
+.mode small{display:block;color:var(--sub);margin-top:3px}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;margin:9px 0}
+.summary{background:#f8f9fc;border:1px solid var(--line);border-radius:12px;padding:11px;font-size:13px;line-height:1.65}
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.ok{color:var(--ok);font-weight:800}
+.note{font-size:11px;color:var(--sub);line-height:1.5;margin-top:7px}
+
+.main{padding:18px;overflow:auto}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.top h2{margin:0;font-size:18px}
+.hint{font-size:12px;color:var(--sub)}
+.page-shell{display:flex;justify-content:center}
+.page-pad{background:#dde2eb;border-radius:16px;padding:24px;box-shadow:0 12px 34px rgba(25,28,50,.12)}
+.page{position:relative;background:#fff;overflow:hidden;transform-origin:top left}
+.card{position:absolute;background:#fff;overflow:hidden}
+.card-frame{position:absolute;inset:0;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.card img{width:100%;height:100%;display:block;object-fit:contain}
+.card.cover img{object-fit:cover}
+.cut{position:absolute;inset:0;border:.2mm dashed #64748b;pointer-events:none}
+.card-frame-border{
+  position:absolute;
+  pointer-events:none;
+  box-sizing:border-box;
+}
+
+.editor{
+  position:fixed;
+  inset:0;
+  background:#f3f4f8;
+  z-index:1000;
+  display:grid;
+  grid-template-rows:max-content minmax(0,1fr);
+  overflow:hidden;
+}
+.editor-topbar{
+  min-height:64px;
+  background:#18191e;
+  color:#fff;
+  padding:10px 14px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  position:relative;
+  z-index:5;
+  box-shadow:0 1px 0 rgba(255,255,255,.06);
+}
+.editor-title{font-weight:850}
+.top-tools{display:flex;gap:7px;flex-wrap:wrap}
+.tool-btn{
+  background:#282a31;color:#fff;border-color:#3b3e49;display:flex;align-items:center;gap:5px
+}
+.tool-btn.active{background:var(--accent);border-color:var(--accent)}
+.editor-actions{display:flex;gap:8px}
+.editor-body{
+  display:grid;
+  grid-template-columns:300px minmax(0,1fr) 230px;
+  min-height:0;
+  height:100%;
+  overflow:hidden;
+}
+.properties,.layers{
+  background:#fff;
+  padding:14px;
+  overflow:auto;
+  min-height:0;
+}
+.properties{border-right:1px solid var(--line)}
+.layers{border-left:1px solid var(--line)}
+.prop-group{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.prop-group:first-child{border-top:0;padding-top:0;margin-top:0}
+.prop-title{font-size:13px;font-weight:800;margin-bottom:8px}
+.icon-row{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.icon-row button{padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}
+.icon-row button.active{border-color:var(--accent);background:#f0edff;color:#4b3fe0}
+.canvas-area{
+  min-width:0;
+  min-height:0;
+  overflow:auto;
+  padding:28px 24px 44px;
+  background:#e7e9ef;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  scroll-padding-top:28px;
+}
+.canvas-stage{
+  position:relative;
+  background:#fff;
+  box-shadow:0 12px 34px rgba(0,0,0,.16);
+  touch-action:none;
+  flex:0 0 auto;
+  margin-top:0;
+}
+.canvas-stage canvas{display:block;max-width:100%;height:auto;touch-action:none}
+.zoom-controls{display:flex;gap:7px;align-items:center;margin-top:10px}
+.layer-list{display:flex;flex-direction:column;gap:7px}
+.layer-item{
+  border:1px solid var(--line);border-radius:9px;padding:9px;background:#fff;
+  display:flex;align-items:center;justify-content:space-between;gap:8px
+}
+.layer-item.active{border-color:var(--accent);background:#f3f0ff}
+.layer-name{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-actions{display:flex;gap:4px}
+.layer-actions button{border:1px solid var(--line);background:#fff;border-radius:7px;padding:4px 6px}
+.small{font-size:11px;color:var(--sub)}
+.color-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.range-with-value{display:grid;grid-template-columns:1fr 64px;gap:8px;align-items:center}
+input[type=range]{width:100%}
+
+@media(max-width:1100px){
+  .editor-body{grid-template-columns:260px 1fr}
+  .layers{grid-column:1/-1;border-left:0;border-top:1px solid var(--line);max-height:190px}
+}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{border-right:0;border-bottom:1px solid var(--line)}
+  .main{padding:12px}
+  .page-pad{padding:10px;width:100%;overflow:auto}
+  .editor-body{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+  .properties{border-right:0;border-bottom:1px solid var(--line);max-height:310px}
+  .layers{grid-column:auto;max-height:180px}
+  .editor-topbar{align-items:flex-start;flex-direction:column;max-height:170px;overflow:auto}
+  .top-tools{width:100%;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+  .editor-actions{width:100%}
+  .editor-actions .btn{flex:1}
+}
+.brand{grid-column:1/-1;grid-row:1}
+  .home-action{justify-content:center}
+}
+@media(max-width:760px){
+  .type-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:560px){
+  .type-grid{grid-template-columns:1fr}
+  .brand h1{font-size:38px}
+  .home{padding-left:16px;padding-right:16px}
+  .type-card{min-height:150px}
+}
+#printRoot{display:none}
+
+@media print{
+  @page{margin:0}
+
+  html,body{
+    margin:0!important;
+    padding:0!important;
+    background:#fff!important;
+    overflow:hidden!important;
+  }
+
+  body > *:not(#printRoot){
+    display:none!important;
+  }
+
+  #printRoot{
+    display:block!important;
+    position:fixed!important;
+    left:0!important;
+    top:0!important;
+    margin:0!important;
+    padding:0!important;
+    background:#fff!important;
+    overflow:hidden!important;
+  }
+
+  #printRoot .print-page{
+    display:block!important;
+    position:relative!important;
+    margin:0!important;
+    padding:0!important;
+    transform:none!important;
+    transform-origin:top left!important;
+    overflow:hidden!important;
+    background:#fff!important;
+  }
+}
+</style>
+</head>
+<body>
+
+<section id="home" class="home">
+  <div class="home-inner">
+    <div class="brand">
+      <h1>Card<span>ly</span></h1>
+      <p>Create • Arrange • Print</p>
+    </div>
+
+    <div style="max-width:1040px;margin:0 auto 18px">
+      <h2>何を作りますか？</h2>
+      <div style="font-size:13px;color:#8a8d99">作りたいものを選ぶと、サイズが自動で設定されます。</div>
+    </div>
+
+    <div class="type-grid">
+      <button class="type-card" data-name="名刺・ショップカード" data-w="91" data-h="55">
+        <span class="pictogram">
+          <svg viewBox="0 0 64 64"><rect x="10" y="18" width="44" height="28" rx="4"/><circle cx="22" cy="31" r="5"/><path d="M32 26h14M32 32h14M32 38h10"/></svg>
+        </span>
+        <b>名刺・ショップカード</b>
+        <small>91 × 55 mm</small>
+      </button>
+
+      <button class="type-card" data-name="ポケットティッシュ広告" data-w="104" data-h="73">
+        <span class="pictogram">
+          <svg viewBox="0 0 64 64"><rect x="12" y="22" width="40" height="20" rx="2"/></svg>
+        </span>
+        <b>ポケットティッシュ広告</b>
+        <small>104 × 73 mm</small>
+      </button>
+
+      <button class="type-card" data-name="トレカ" data-w="63" data-h="88">
+        <span class="pictogram">
+          <svg viewBox="0 0 64 64"><rect x="20" y="12" width="24" height="40" rx="3"/></svg>
+        </span>
+        <b>トレカ</b>
+        <small>63 × 88 mm</small>
+      </button>
+
+      <button class="type-card" data-name="POPカード" data-w="100" data-h="148">
+        <span class="pictogram">
+          <svg viewBox="0 0 64 64"><path d="M18 18h20l8 8v20H18z"/><circle cx="42" cy="22" r="2.5"/></svg>
+        </span>
+        <b>POPカード</b>
+        <small>100 × 148 mm</small>
+      </button>
+
+      <button class="type-card" data-name="シール" data-w="50" data-h="50">
+        <span class="pictogram">
+          <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="18"/></svg>
+        </span>
+        <b>シール</b>
+        <small>50 × 50 mm</small>
+      </button>
+
+      <button class="type-card" data-name="オリジナルサイズ" data-w="104" data-h="73">
+        <span class="pictogram">
+          <svg viewBox="0 0 64 64"><rect x="14" y="14" width="36" height="36" rx="6" stroke-dasharray="4 4"/><path d="M32 23v18M23 32h18"/></svg>
+        </span>
+        <b>オリジナルサイズ</b>
+        <small>自由にmm指定</small>
+      </button>
+    </div>
+  </div>
+</section>
+
+<div id="app" class="app" hidden>
+  <aside class="sidebar">
+    <div class="side-head">
+      <div><h1>Card<span>ly</span></h1><div class="hint">Create • Arrange • Print</div></div>
+      <button id="backHome" class="ghost">戻る</button>
+    </div>
+
+    <div class="section">
+      <h2>1. 画像と編集</h2>
+      <label>元画像</label>
+      <input id="file" type="file" accept="image/*">
+      <button id="openEditor" class="btn primary" style="width:100%;margin-top:10px">編集モードを開く</button>
+      <div class="note">文字・手描き・複数画像・図形・レイヤー編集に対応します。</div>
+    </div>
+
+    <div class="section">
+      <h2>2. 仕上がりサイズ</h2>
+      <div class="summary">作成中：<b id="typeName"></b></div>
+      <div class="row2" style="margin-top:9px">
+        <div><label>横 mm</label><input id="cw" type="number" value="104" step="0.1"></div>
+        <div><label>縦 mm</label><input id="ch" type="number" value="73" step="0.1"></div>
+      </div>
+      <label style="margin-top:9px">カードの向き</label>
+      <div class="orientation-grid">
+        <button id="cardLandscape" class="orientation-btn active">▭ 横向き</button>
+        <button id="cardPortrait" class="orientation-btn">▯ 縦向き</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>3. 配置</h2>
+      <div class="mode-grid">
+        <button class="mode active" data-mode="max"><b>最大枚数</b><small>紙を有効活用</small></button>
+        <button class="mode" data-mode="safe"><b>おすすめ</b><small>切りやすさ優先</small></button>
+      </div>
+      <div class="row2" style="margin-top:9px">
+        <div><label>用紙方向</label><select id="ori"><option value="auto">自動</option><option value="portrait">A4縦</option><option value="landscape">A4横</option></select></div>
+        <div><label>画像表示</label><select id="fit"><option value="contain">全体を収める</option><option value="cover">全面に広げる</option></select></div>
+      </div>
+      <label style="margin-top:10px">配置する枚数</label>
+      <select id="copyCount">
+        <option value="auto">自動（最大枚数）</option>
+        <option value="1">1枚</option>
+        <option value="2">2枚</option>
+        <option value="3">3枚</option>
+        <option value="4">4枚</option>
+        <option value="6">6枚</option>
+        <option value="8">8枚</option>
+        <option value="10">10枚</option>
+        <option value="12">12枚</option>
+      </select>
+      <div class="note">指定枚数が実寸のまま入らない場合は、入る最大枚数を表示します。</div>
+
+      <label class="check"><input id="rotate" type="checkbox" checked>90°回転も試す</label>
+      <label class="check"><input id="cut" type="checkbox" checked>切り取り線を表示</label>
+
+      <div class="section" style="margin-top:12px;padding-top:12px">
+        <h2>フレーム設定</h2>
+        <label class="check"><input id="frameEnabled" type="checkbox"> カードにフレームを付ける</label>
+
+        <div id="frameOptions" hidden>
+          <div class="row2">
+            <div>
+              <label>色</label>
+              <input id="frameColor" type="color" value="#745cf6">
+            </div>
+            <div>
+              <label>線の太さ px</label>
+              <input id="frameWidth" type="number" value="4" min="1" max="30" step="1">
+            </div>
+          </div>
+
+          <div class="row2" style="margin-top:8px">
+            <div>
+              <label>内側余白 mm</label>
+              <input id="frameInset" type="number" value="2" min="0" max="20" step="0.5">
+            </div>
+            <div>
+              <label>角丸 mm</label>
+              <input id="frameRadius" type="number" value="0" min="0" max="30" step="0.5">
+            </div>
+          </div>
+
+          <label style="margin-top:8px">線の種類</label>
+          <select id="frameStyle">
+            <option value="solid">実線</option>
+            <option value="dashed">破線</option>
+            <option value="double">二重線</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="section" style="margin-top:12px;padding-top:12px">
+        <h2>余白・間隔の調整</h2>
+        <div class="row2">
+          <div>
+            <label>用紙の外側余白 mm</label>
+            <input id="pageMargin" type="number" value="0" min="0" max="30" step="0.5">
+          </div>
+          <div>
+            <label>カード間隔 mm</label>
+            <input id="cardGap" type="number" value="0" min="0" max="20" step="0.5">
+          </div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <button id="tightLayout" class="btn">余白を最小</button>
+          <button id="safeLayout" class="btn">切りやすい余白</button>
+        </div>
+        <div class="note">数値を小さくするとカード同士が近づき、A4を広く使えます。</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>4. 印刷</h2>
+
+      <label>用紙サイズ</label>
+      <select id="paperSize">
+        <option value="A4">A4（210 × 297 mm）</option>
+        <option value="A3">A3（297 × 420 mm）</option>
+        <option value="A5">A5（148 × 210 mm）</option>
+        <option value="B4">B4（257 × 364 mm）</option>
+        <option value="B5">B5（182 × 257 mm）</option>
+        <option value="POSTCARD">はがき（100 × 148 mm）</option>
+        <option value="L">L判（89 × 127 mm）</option>
+        <option value="2L">2L判（127 × 178 mm）</option>
+        <option value="KG">KG判（102 × 152 mm）</option>
+        <option value="SQUARE">スクエア（127 × 127 mm）</option>
+        <option value="CUSTOM">オリジナル用紙</option>
+      </select>
+
+      <div id="customPaperFields" class="row2" style="margin-top:8px" hidden>
+        <div><label>用紙の横 mm</label><input id="paperW" type="number" value="210" min="20" step="0.1"></div>
+        <div><label>用紙の縦 mm</label><input id="paperH" type="number" value="297" min="20" step="0.1"></div>
+      </div>
+
+      <div id="summary" class="summary" style="margin-top:10px">計算中...</div>
+      <div class="actions">
+        <button id="reset" class="btn">初期化</button>
+        <button id="print" class="btn primary">印刷画面を開く</button>
+      </div>
+      <button id="share" class="btn" style="width:100%;margin-top:8px">共有（AirDropなど）</button>
+      <div id="shareStatus" class="note" aria-live="polite"></div>
+      <div class="note">コンビニ印刷では、店舗のコピー機が対応している用紙サイズを選んでください。</div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="top">
+      <div><h2>Cardly Preview</h2><div class="hint">同じデザインをA4に複数配置します</div></div>
+      <div id="zoom" class="hint"></div>
+    </div>
+    <div class="page-shell"><div class="page-pad"><div id="page" class="page"></div></div></div>
+  </main>
+</div>
+
+<div id="editor" class="editor" hidden>
+  <div class="editor-topbar">
+    <div class="editor-title">Cardly Editor</div>
+    <div class="top-tools">
+      <button class="tool-btn active" data-tool="select">↖ 選択</button>
+      <button class="tool-btn" data-tool="text">T テキスト</button>
+      <button class="tool-btn" data-tool="draw">✎ 手描き</button>
+      <button class="tool-btn" data-tool="rect">□ 四角</button>
+      <button class="tool-btn" data-tool="circle">○ 丸</button>
+      <button class="tool-btn" data-tool="image">▧ 画像</button>
+    </div>
+    <div class="editor-actions">
+      <button id="closeEditor" class="btn">閉じる</button>
+      <button id="applyEdit" class="btn primary">編集を反映</button>
+    </div>
+  </div>
+
+  <div class="editor-body">
+    <aside class="properties">
+      <div class="prop-group">
+        <div class="prop-title">カードの向き</div>
+        <div class="orientation-grid" style="margin-top:0">
+          <button id="editorLandscape" class="orientation-btn active">▭ 横向き</button>
+          <button id="editorPortrait" class="orientation-btn">▯ 縦向き</button>
+        </div>
+        <div class="small" style="margin-top:7px">向きを変えると、キャンバスとA4配置も自動で再計算します。</div>
+      </div>
+      <div id="textProps" class="prop-group">
+        <div class="prop-title">テキスト設定</div>
+        <label>文字</label><input id="textValue" type="text" placeholder="文字を入力">
+        <label style="margin-top:8px">フォント</label>
+        <select id="fontFamily">
+          <option value="sans-serif">ゴシック</option>
+          <option value="serif">明朝</option>
+          <option value="cursive">手書き風</option>
+          <option value="monospace">等幅</option>
+        </select>
+        <div class="row2" style="margin-top:8px">
+          <div><label>サイズ</label><input id="fontSize" type="number" value="48" min="8" max="240"></div>
+          <div><label>色</label><input id="fontColor" type="color" value="#111111"></div>
+        </div>
+        <div class="icon-row" style="margin-top:8px">
+          <button id="boldBtn"><b>B</b></button>
+          <button id="italicBtn"><i>I</i></button>
+          <button data-align="left">左</button>
+          <button data-align="center">中</button>
+        </div>
+        <button id="addText" class="btn primary" style="width:100%;margin-top:9px">テキストを追加</button>
+      </div>
+
+      <div class="prop-group">
+        <div class="prop-title">選択中の要素</div>
+        <div class="row2">
+          <div><label>横位置</label><input id="objX" type="number"></div>
+          <div><label>縦位置</label><input id="objY" type="number"></div>
+        </div>
+        <div class="row2" style="margin-top:8px">
+          <div><label>幅</label><input id="objW" type="number"></div>
+          <div><label>高さ</label><input id="objH" type="number"></div>
+        </div>
+        <label style="margin-top:8px">回転</label>
+        <div class="range-with-value"><input id="objRot" type="range" min="-180" max="180" value="0"><input id="objRotNum" type="number" value="0"></div>
+        <div class="actions">
+          <button id="duplicateObj" class="btn">複製</button>
+          <button id="deleteObj" class="btn danger">削除</button>
+        </div>
+      </div>
+
+      <div class="prop-group">
+        <div class="prop-title">手描き設定</div>
+        <div class="row2">
+          <div><label>ペン色</label><input id="penColor" type="color" value="#ef4444"></div>
+          <div><label>太さ</label><input id="penSize" type="number" value="8" min="1" max="60"></div>
+        </div>
+        <div class="actions">
+          <button id="undo" class="btn">1つ戻す</button>
+          <button id="redo" class="btn">やり直す</button>
+        </div>
+      </div>
+    </aside>
+
+    <section class="canvas-area">
+      <div>
+        <div class="canvas-stage"><canvas id="canvas" width="1200" height="842"></canvas></div>
+        <div class="zoom-controls">
+          <button id="zoomOut" class="btn">−</button>
+          <span id="zoomLabel" class="small">100%</span>
+          <button id="zoomIn" class="btn">＋</button>
+          <button id="fitEditorView" class="btn">全体表示</button>
+          <button id="resetView" class="btn">100%に戻す</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="layers">
+      <div class="prop-title">レイヤー</div>
+      <div id="layerList" class="layer-list"></div>
+      <input id="extraImage" type="file" accept="image/*" hidden>
+      <div class="note">上のレイヤーほど手前に表示されます。要素を選択して上下移動できます。</div>
+    </aside>
+  </div>
+</div>
+
+<div id="printRoot" aria-hidden="true"></div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const state={
+  type:'',source:'',edited:'',mode:'max',
+  objects:[],strokes:[],selected:null,tool:'select',
+  history:[],future:[],zoom:1
+};
+let baseImage=null,isPointerDown=false,lastPoint=null,dragMode=null,dragOffset={x:0,y:0},startObj=null;
+const canvas=$('canvas'),ctx=canvas.getContext('2d');
+
+function snapshot(){
+  state.history.push(JSON.stringify({objects:state.objects,strokes:state.strokes}));
+  if(state.history.length>40)state.history.shift();
+  state.future=[];
+}
+function restore(s){
+  const d=JSON.parse(s);state.objects=d.objects;state.strokes=d.strokes;state.selected=null;
+  drawEditor();renderLayers();syncProps();
+}
+function selectTool(tool){
+  state.tool=tool;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('active',b.dataset.tool===tool));
+  if(tool==='image')$('extraImage').click();
+}
+document.querySelectorAll('.tool-btn').forEach(b=>b.onclick=()=>selectTool(b.dataset.tool));
+
+
+function updateOrientationButtons(){
+  const landscape=Number($('cw').value)>=Number($('ch').value);
+  ['cardLandscape','editorLandscape'].forEach(id=>$(id)?.classList.toggle('active',landscape));
+  ['cardPortrait','editorPortrait'].forEach(id=>$(id)?.classList.toggle('active',!landscape));
+}
+function resizeCanvasPreserve(){
+  const oldW=canvas.width||1200,oldH=canvas.height||842;
+  const ratio=Math.max(.2,Number($('cw').value)/Number($('ch').value));
+  const newW=1200,newH=Math.round(1200/ratio);
+  const sx=newW/oldW,sy=newH/oldH;
+
+  state.objects.forEach(o=>{
+    o.x*=sx;o.y*=sy;o.w*=sx;o.h*=sy;
+    if(o.type==='text')o.size*=Math.min(sx,sy);
+  });
+  state.strokes.forEach(st=>{
+    st.points.forEach(p=>{p.x*=sx;p.y*=sy});
+    st.size*=Math.min(sx,sy);
+  });
+
+  canvas.width=newW;canvas.height=newH;
+  applyEditorZoom();drawEditor();renderLayers();syncProps();
+}
+function setCardOrientation(kind){
+  const w=Number($('cw').value),h=Number($('ch').value);
+  const already=(kind==='landscape'&&w>=h)||(kind==='portrait'&&h>=w);
+  if(!already){
+    snapshot();
+    $('cw').value=h;
+    $('ch').value=w;
+    resizeCanvasPreserve();
+  }
+  updateOrientationButtons();
+  renderPage();
+  if(!$('editor').hidden){
+    requestAnimationFrame(fitEditorToView);
+  }
+}
+['cardLandscape','editorLandscape'].forEach(id=>$(id).onclick=()=>setCardOrientation('landscape'));
+['cardPortrait','editorPortrait'].forEach(id=>$(id).onclick=()=>setCardOrientation('portrait'));
+
+function openType(btn){
+  state.type=btn.dataset.name;
+  $('typeName').textContent=state.type;
+  $('cw').value=btn.dataset.w;
+  $('ch').value=btn.dataset.h;
+  updateOrientationButtons();
+  $('home').hidden=true;
+  $('app').hidden=false;
+  renderPage();
+}
+document.querySelectorAll('.type-card').forEach(b=>b.onclick=()=>openType(b));
+$('backHome').onclick=()=>{$('app').hidden=true;$('home').hidden=false};
+
+$('file').onchange=e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    state.source=r.result;state.edited='';baseImage=new Image();
+    baseImage.onload=()=>{setupCanvas();drawEditor();renderPage()};
+    baseImage.src=r.result
+  };
+  r.readAsDataURL(f)
+};
+
+function setupCanvas(){
+  const ratio=Math.max(.2,Number($('cw').value)/Number($('ch').value));
+  canvas.width=1200;canvas.height=Math.round(1200/ratio);
+}
+function imageFit(img,x,y,w,h){
+  const s=Math.min(w/img.width,h/img.height),dw=img.width*s,dh=img.height*s;
+  ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh)
+}
+function drawObject(o,index){
+  ctx.save();
+  ctx.translate(o.x+o.w/2,o.y+o.h/2);
+  ctx.rotate((o.rot||0)*Math.PI/180);
+  ctx.translate(-o.w/2,-o.h/2);
+
+  if(o.type==='text'){
+    ctx.fillStyle=o.color;ctx.textBaseline='top';
+    ctx.textAlign=o.align||'left';
+    ctx.font=`${o.italic?'italic ':''}${o.bold?'700 ':'400 '}${o.size}px ${o.font}`;
+    const tx=o.align==='center'?o.w/2:0;
+    ctx.fillText(o.text,tx,0,o.w);
+  }else if(o.type==='rect'){
+    if(o.fill && o.fill!=='rgba(0,0,0,0)'){
+      ctx.fillStyle=o.fill;
+      ctx.fillRect(0,0,o.w,o.h);
+    }
+    if(o.stroke || o.fill==='rgba(0,0,0,0)'){
+      const sw=o.strokeWidth||8;
+      ctx.strokeStyle=o.stroke||'#745cf6';
+      ctx.lineWidth=sw;
+      ctx.strokeRect(sw/2,sw/2,o.w-sw,o.h-sw);
+    }
+  }else if(o.type==='circle'){
+    ctx.fillStyle=o.fill;ctx.beginPath();ctx.ellipse(o.w/2,o.h/2,o.w/2,o.h/2,0,0,Math.PI*2);ctx.fill()
+  }else if(o.type==='image'&&o.img){
+    imageFit(o.img,0,0,o.w,o.h)
+  }
+
+  if(state.selected===index){
+    ctx.strokeStyle='#745cf6';ctx.lineWidth=4;ctx.setLineDash([10,7]);ctx.strokeRect(-6,-6,o.w+12,o.h+12);
+    ctx.setLineDash([]);
+    const handles=[[0,0],[o.w,0],[0,o.h],[o.w,o.h]];
+    ctx.fillStyle='#fff';ctx.strokeStyle='#745cf6';ctx.lineWidth=3;
+    handles.forEach(([hx,hy])=>{ctx.beginPath();ctx.rect(hx-8,hy-8,16,16);ctx.fill();ctx.stroke()});
+    ctx.beginPath();ctx.arc(o.w/2,-28,9,0,Math.PI*2);ctx.fill();ctx.stroke()
+  }
+  ctx.restore()
+}
+function drawEditor(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(baseImage)imageFit(baseImage,0,0,canvas.width,canvas.height);
+  state.objects.forEach((o,i)=>drawObject(o,i));
+  state.strokes.forEach(st=>{
+    if(st.points.length<2)return;
+    ctx.strokeStyle=st.color;ctx.lineWidth=st.size;ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.beginPath();ctx.moveTo(st.points[0].x,st.points[0].y);
+    st.points.slice(1).forEach(p=>ctx.lineTo(p.x,p.y));ctx.stroke()
+  })
+}
+function point(e){
+  const r=canvas.getBoundingClientRect();
+  return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}
+}
+function localPoint(o,p){
+  const cx=o.x+o.w/2,cy=o.y+o.h/2,a=-(o.rot||0)*Math.PI/180,dx=p.x-cx,dy=p.y-cy;
+  return{x:dx*Math.cos(a)-dy*Math.sin(a)+o.w/2,y:dx*Math.sin(a)+dy*Math.cos(a)+o.h/2}
+}
+function hitObject(p){
+  for(let i=state.objects.length-1;i>=0;i--){
+    const o=state.objects[i],lp=localPoint(o,p);
+    if(lp.x>=-10&&lp.y>=-35&&lp.x<=o.w+10&&lp.y<=o.h+10)return i
+  }
+  return null
+}
+function handleAt(o,p){
+  const lp=localPoint(o,p),hs=20;
+  const hsList=[['nw',0,0],['ne',o.w,0],['sw',0,o.h],['se',o.w,o.h]];
+  for(const [n,x,y] of hsList)if(Math.abs(lp.x-x)<hs&&Math.abs(lp.y-y)<hs)return n;
+  if(Math.hypot(lp.x-o.w/2,lp.y+28)<20)return'rot';
+  return null
+}
+canvas.addEventListener('pointerdown',e=>{
+  canvas.setPointerCapture(e.pointerId);const p=point(e);isPointerDown=true;
+  if(state.tool==='draw'){
+    snapshot();state.strokes.push({color:$('penColor').value,size:Number($('penSize').value),points:[p]});dragMode='draw';return
+  }
+  if(state.tool==='rect'||state.tool==='circle'){
+    snapshot();const o={type:state.tool,x:p.x,y:p.y,w:10,h:10,rot:0,fill:'#745cf6'};
+    state.objects.push(o);state.selected=state.objects.length-1;startObj={...o};dragMode='newshape';drawEditor();renderLayers();return
+  }
+  const i=hitObject(p);state.selected=i;
+  if(i!==null){
+    const o=state.objects[i],h=handleAt(o,p);snapshot();startObj=JSON.parse(JSON.stringify(o));
+    dragOffset={x:p.x-o.x,y:p.y-o.y};dragMode=h||'move'
+  }else dragMode=null;
+  drawEditor();renderLayers();syncProps()
+});
+canvas.addEventListener('pointermove',e=>{
+  if(!isPointerDown)return;const p=point(e);
+  if(dragMode==='draw'){
+    state.strokes[state.strokes.length-1].points.push(p);drawEditor();return
+  }
+  if(state.selected===null)return;
+  const o=state.objects[state.selected];
+  if(dragMode==='move'){o.x=p.x-dragOffset.x;o.y=p.y-dragOffset.y}
+  else if(dragMode==='newshape'){o.w=Math.max(10,p.x-o.x);o.h=Math.max(10,p.y-o.y)}
+  else if(dragMode==='rot'){
+    const cx=o.x+o.w/2,cy=o.y+o.h/2;o.rot=Math.atan2(p.y-cy,p.x-cx)*180/Math.PI+90
+  }else if(['nw','ne','sw','se'].includes(dragMode)){
+    const dx=p.x-(startObj.x+(dragMode.includes('e')?startObj.w:0));
+    const dy=p.y-(startObj.y+(dragMode.includes('s')?startObj.h:0));
+    if(dragMode==='se'){o.w=Math.max(20,startObj.w+dx);o.h=Math.max(20,startObj.h+dy)}
+    if(dragMode==='sw'){o.x=startObj.x+dx;o.w=Math.max(20,startObj.w-dx);o.h=Math.max(20,startObj.h+dy)}
+    if(dragMode==='ne'){o.y=startObj.y+dy;o.w=Math.max(20,startObj.w+dx);o.h=Math.max(20,startObj.h-dy)}
+    if(dragMode==='nw'){o.x=startObj.x+dx;o.y=startObj.y+dy;o.w=Math.max(20,startObj.w-dx);o.h=Math.max(20,startObj.h-dy)}
+  }
+  drawEditor();syncProps()
+});
+canvas.addEventListener('pointerup',()=>{isPointerDown=false;dragMode=null;renderLayers()});
+canvas.addEventListener('pointercancel',()=>{isPointerDown=false;dragMode=null});
+
+function addText(){
+  const text=$('textValue').value.trim()||'テキスト';
+  snapshot();
+  state.objects.push({
+    type:'text',text,x:canvas.width*.15,y:canvas.height*.15,w:canvas.width*.7,h:Number($('fontSize').value)*1.4,
+    rot:0,size:Number($('fontSize').value),color:$('fontColor').value,font:$('fontFamily').value,
+    bold:$('boldBtn').classList.contains('active'),italic:$('italicBtn').classList.contains('active'),align:'left'
+  });
+  state.selected=state.objects.length-1;selectTool('select');drawEditor();renderLayers();syncProps()
+}
+$('addText').onclick=addText;
+$('boldBtn').onclick=()=>{$('boldBtn').classList.toggle('active');updateSelectedText()};
+$('italicBtn').onclick=()=>{$('italicBtn').classList.toggle('active');updateSelectedText()};
+document.querySelectorAll('[data-align]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-align]').forEach(x=>x.classList.toggle('active',x===b));
+  const o=state.objects[state.selected];if(o?.type==='text'){snapshot();o.align=b.dataset.align;drawEditor()}
+});
+['textValue','fontSize','fontColor','fontFamily'].forEach(id=>$(id).addEventListener('input',updateSelectedText));
+function updateSelectedText(){
+  const o=state.objects[state.selected];if(!o||o.type!=='text')return;
+  o.text=$('textValue').value;o.size=Number($('fontSize').value);o.color=$('fontColor').value;o.font=$('fontFamily').value;
+  o.bold=$('boldBtn').classList.contains('active');o.italic=$('italicBtn').classList.contains('active');drawEditor();renderLayers()
+}
+
+$('extraImage').onchange=e=>{
+  const f=e.target.files?.[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{const img=new Image();img.onload=()=>{
+    snapshot();const w=canvas.width*.35,h=w*img.height/img.width;
+    state.objects.push({type:'image',src:r.result,img,x:canvas.width*.32,y:canvas.height*.25,w,h,rot:0});
+    state.selected=state.objects.length-1;selectTool('select');drawEditor();renderLayers();syncProps()
+  };img.src=r.result};r.readAsDataURL(f)
+};
+
+function syncProps(){
+  const o=state.objects[state.selected];
+  const ids=['objX','objY','objW','objH','objRot','objRotNum'];
+  ids.forEach(id=>$(id).disabled=!o);
+  if(!o)return;
+  $('objX').value=Math.round(o.x);$('objY').value=Math.round(o.y);$('objW').value=Math.round(o.w);$('objH').value=Math.round(o.h);
+  $('objRot').value=Math.round(o.rot||0);$('objRotNum').value=Math.round(o.rot||0);
+  if(o.type==='text'){
+    $('textValue').value=o.text;$('fontSize').value=o.size;$('fontColor').value=o.color;$('fontFamily').value=o.font;
+    $('boldBtn').classList.toggle('active',!!o.bold);$('italicBtn').classList.toggle('active',!!o.italic)
+  }
+}
+['objX','objY','objW','objH','objRot','objRotNum'].forEach(id=>$(id).addEventListener('input',()=>{
+  const o=state.objects[state.selected];if(!o)return;
+  o.x=Number($('objX').value);o.y=Number($('objY').value);o.w=Math.max(10,Number($('objW').value));o.h=Math.max(10,Number($('objH').value));
+  o.rot=Number(id==='objRot' ? $('objRot').value : $('objRotNum').value);
+  $('objRot').value=o.rot;$('objRotNum').value=o.rot;drawEditor();renderLayers()
+}));
+
+$('deleteObj').onclick=()=>{if(state.selected===null)return;snapshot();state.objects.splice(state.selected,1);state.selected=null;drawEditor();renderLayers();syncProps()};
+$('duplicateObj').onclick=()=>{
+  if(state.selected===null)return;snapshot();const o=JSON.parse(JSON.stringify(state.objects[state.selected]));
+  if(o.type==='image'&&o.src){o.img=new Image();o.img.src=o.src}
+  o.x+=25;o.y+=25;state.objects.push(o);state.selected=state.objects.length-1;drawEditor();renderLayers();syncProps()
+};
+$('undo').onclick=()=>{const s=state.history.pop();if(!s)return;state.future.push(JSON.stringify({objects:state.objects,strokes:state.strokes}));restore(s)};
+$('redo').onclick=()=>{const s=state.future.pop();if(!s)return;state.history.push(JSON.stringify({objects:state.objects,strokes:state.strokes}));restore(s)};
+
+function renderLayers(){
+  const list=$('layerList');list.innerHTML='';
+  [...state.objects].map((o,i)=>({o,i})).reverse().forEach(({o,i})=>{
+    const item=document.createElement('div');item.className='layer-item'+(state.selected===i?' active':'');
+    const name=document.createElement('div');name.className='layer-name';
+    name.textContent=o.type==='text'?'T '+o.text:o.type==='image'?'画像':o.type==='rect'?'四角':'丸';
+    const acts=document.createElement('div');acts.className='layer-actions';
+    const up=document.createElement('button');up.textContent='↑';
+    const down=document.createElement('button');down.textContent='↓';
+    up.onclick=e=>{e.stopPropagation();if(i<state.objects.length-1){snapshot();[state.objects[i],state.objects[i+1]]=[state.objects[i+1],state.objects[i]];state.selected=i+1;drawEditor();renderLayers()}};
+    down.onclick=e=>{e.stopPropagation();if(i>0){snapshot();[state.objects[i],state.objects[i-1]]=[state.objects[i-1],state.objects[i]];state.selected=i-1;drawEditor();renderLayers()}};
+    acts.append(up,down);item.append(name,acts);item.onclick=()=>{state.selected=i;selectTool('select');drawEditor();renderLayers();syncProps()};list.appendChild(item)
+  })
+}
+
+$('openEditor').onclick=()=>{
+  setupCanvas();
+  updateOrientationButtons();
+  drawEditor();
+  renderLayers();
+  syncProps();
+  $('editor').hidden=false;
+  requestAnimationFrame(()=>requestAnimationFrame(fitEditorToView));
+};
+$('closeEditor').onclick=()=>$('editor').hidden=true;
+$('applyEdit').onclick=()=>{state.selected=null;drawEditor();state.edited=canvas.toDataURL('image/png',1);$('editor').hidden=true;renderPage()};
+
+$('zoomIn').onclick=()=>{state.zoom=Math.min(1.8,state.zoom+.1);applyEditorZoom()};
+$('zoomOut').onclick=()=>{state.zoom=Math.max(.25,state.zoom-.1);applyEditorZoom()};
+$('resetView').onclick=()=>{
+  state.zoom=1;
+  applyEditorZoom();
+  document.querySelector('.canvas-area').scrollTo({top:0,left:0,behavior:'smooth'});
+};
+$('fitEditorView').onclick=fitEditorToView;
+
+function fitEditorToView(){
+  const area=document.querySelector('.canvas-area');
+  const availableW=Math.max(240,area.clientWidth-56);
+  const availableH=Math.max(240,area.clientHeight-72);
+  const scale=Math.min(1,availableW/canvas.width,availableH/canvas.height);
+  state.zoom=Math.max(.25,scale);
+  applyEditorZoom();
+  requestAnimationFrame(()=>{
+    area.scrollTo({top:0,left:Math.max(0,(area.scrollWidth-area.clientWidth)/2),behavior:'smooth'});
+  });
+}
+function applyEditorZoom(){
+  canvas.style.width=(canvas.width*state.zoom)+'px';
+  canvas.style.height=(canvas.height*state.zoom)+'px';
+  $('zoomLabel').textContent=Math.round(state.zoom*100)+'%';
+}
+
+document.querySelectorAll('.mode').forEach(b=>b.onclick=()=>{
+  state.mode=b.dataset.mode;
+  document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('active',x===b));
+  if(state.mode==='max'){
+    $('pageMargin').value=0;
+    $('cardGap').value=0;
+  }else{
+    $('pageMargin').value=5;
+    $('cardGap').value=3;
+  }
+  renderPage()
+});
+$('tightLayout').onclick=()=>{
+  $('pageMargin').value=0;
+  $('cardGap').value=0;
+  renderPage();
+};
+$('safeLayout').onclick=()=>{
+  $('pageMargin').value=5;
+  $('cardGap').value=3;
+  renderPage();
+};
+['ori','fit','rotate','cut','pageMargin','cardGap','copyCount','frameColor','frameWidth','frameInset','frameRadius','frameStyle']
+.forEach(id=>$(id).oninput=renderPage);
+
+$('frameEnabled').addEventListener('change',()=>{
+  $('frameOptions').hidden=!$('frameEnabled').checked;
+  renderPage();
+});
+['cw','ch'].forEach(id=>$(id).addEventListener('change',()=>{
+  resizeCanvasPreserve();
+  updateOrientationButtons();
+  renderPage();
+}));
+
+
+const PAPER_SIZES={
+  A4:{w:210,h:297,label:'A4'},
+  A3:{w:297,h:420,label:'A3'},
+  A5:{w:148,h:210,label:'A5'},
+  B4:{w:257,h:364,label:'B4'},
+  B5:{w:182,h:257,label:'B5'},
+  POSTCARD:{w:100,h:148,label:'はがき'},
+  L:{w:89,h:127,label:'L判'},
+  '2L':{w:127,h:178,label:'2L判'},
+  KG:{w:102,h:152,label:'KG判'},
+  SQUARE:{w:127,h:127,label:'スクエア'}
+};
+function selectedPaper(){
+  const key=$('paperSize').value;
+  if(key==='CUSTOM'){
+    return{
+      w:Math.max(20,Number($('paperW').value)||210),
+      h:Math.max(20,Number($('paperH').value)||297),
+      label:'オリジナル用紙'
+    };
+  }
+  return PAPER_SIZES[key]||PAPER_SIZES.A4;
+}
+$('paperSize').addEventListener('change',()=>{
+  $('customPaperFields').hidden=$('paperSize').value!=='CUSTOM';
+  renderPage();
+});
+['paperW','paperH'].forEach(id=>$(id).addEventListener('input',renderPage));
+
+function calc(pw,ph,w,h,m,g,rot,targetCount='auto'){
+  const variants=[{w,h,rot:false}];
+  if(rot&&w!==h)variants.push({w:h,h:w,rot:true});
+  let best=null;
+
+  for(const v of variants){
+    const maxCols=Math.max(0,Math.floor((pw-m*2+g)/(v.w+g)));
+    const maxRows=Math.max(0,Math.floor((ph-m*2+g)/(v.h+g)));
+    const maxCount=maxCols*maxRows;
+    if(maxCount<1)continue;
+
+    if(targetCount==='auto'){
+      const usedW=maxCols?v.w*maxCols+(maxCols-1)*g:0;
+      const usedH=maxRows?v.h*maxRows+(maxRows-1)*g:0;
+      const candidate={...v,cols:maxCols,rows:maxRows,count:maxCount,usedW,usedH,pw,ph};
+      if(!best||candidate.count>best.count)best=candidate;
+      continue;
+    }
+
+    const requested=Math.max(1,Number(targetCount)||1);
+    const actual=Math.min(requested,maxCount);
+
+    for(let cols=1;cols<=maxCols;cols++){
+      const rows=Math.ceil(actual/cols);
+      if(rows>maxRows)continue;
+      const usedW=cols*v.w+(cols-1)*g;
+      const usedH=rows*v.h+(rows-1)*g;
+      const unusedSlots=cols*rows-actual;
+      const balance=Math.abs((usedW/usedH)-(pw/ph));
+      const waste=(pw*ph)-(usedW*usedH);
+      const score=unusedSlots*1e9+balance*1e6+waste;
+      const candidate={...v,cols,rows,count:actual,usedW,usedH,pw,ph,score,requested,maxCount};
+      if(!best||candidate.score<best.score)best=candidate;
+    }
+  }
+  return best;
+}
+function choose(){
+  const w=Number($('cw').value),h=Number($('ch').value),
+        m=Math.max(0,Number($('pageMargin').value)||0),
+        g=Math.max(0,Number($('cardGap').value)||0),
+        r=$('rotate').checked,o=$('ori').value,
+        target=$('copyCount').value,
+        base=selectedPaper();
+
+  if(o==='portrait'){
+    return{l:calc(base.w,base.h,w,h,m,g,r,target),p:{w:base.w,h:base.h,label:base.label+'縦'},m,g};
+  }
+  if(o==='landscape'){
+    return{l:calc(base.h,base.w,w,h,m,g,r,target),p:{w:base.h,h:base.w,label:base.label+'横'},m,g};
+  }
+
+  const portrait=calc(base.w,base.h,w,h,m,g,r,target);
+  const landscape=calc(base.h,base.w,w,h,m,g,r,target);
+
+  return landscape.count>portrait.count
+    ?{l:landscape,p:{w:base.h,h:base.w,label:base.label+'横'},m,g}
+    :{l:portrait,p:{w:base.w,h:base.h,label:base.label+'縦'},m,g};
+}
+function renderPage(){
+  if($('app').hidden)return;
+  const result=choose(),page=$('page');
+  if(!result){
+    page.innerHTML='';
+    $('summary').textContent='配置を計算できませんでした。設定を確認してください。';
+    return;
+  }
+  const {l,p,m,g}=result;
+  page.innerHTML='';
+  page.style.width=p.w+'mm';
+  page.style.height=p.h+'mm';
+  if(!l||l.count<1){
+    $('summary').textContent='この設定では用紙に配置できません。';
+    fitPage(p.w,p.h);
+    return;
+  }
+  const ox=m+(p.w-m*2-l.usedW)/2,oy=m+(p.h-m*2-l.usedH)/2,url=state.edited||state.source;
+  for(let i=0;i<l.count;i++){
+    const col=i%l.cols,row=Math.floor(i/l.cols),c=document.createElement('div');
+    c.className='card '+$('fit').value;
+    Object.assign(c.style,{left:(ox+col*(l.w+g))+'mm',top:(oy+row*(l.h+g))+'mm',width:l.w+'mm',height:l.h+'mm'});
+    if(url){
+      const frame=document.createElement('div');
+      frame.className='card-frame';
+      const img=document.createElement('img');
+      img.src=url;
+      if(l.rot){
+        img.style.position='absolute';
+        img.style.width=l.h+'mm';
+        img.style.height=l.w+'mm';
+        img.style.maxWidth='none';
+        img.style.maxHeight='none';
+        img.style.transform='rotate(90deg)';
+        img.style.transformOrigin='center';
+      }
+      frame.appendChild(img);
+      c.appendChild(frame);
+    }else c.style.border='.2mm dashed #bbb';
+    if($('frameEnabled').checked){
+      const inset=Math.max(0,Number($('frameInset').value)||0);
+      const frame=document.createElement('div');
+      frame.className='card-frame-border';
+      frame.style.left=inset+'mm';
+      frame.style.top=inset+'mm';
+      frame.style.right=inset+'mm';
+      frame.style.bottom=inset+'mm';
+      frame.style.borderColor=$('frameColor').value;
+      frame.style.borderWidth=(Number($('frameWidth').value)||4)+'px';
+      frame.style.borderRadius=(Number($('frameRadius').value)||0)+'mm';
+      frame.style.borderStyle=$('frameStyle').value;
+      c.appendChild(frame);
+    }
+
+    if($('cut').checked){const d=document.createElement('div');d.className='cut';c.appendChild(d)}
+    page.appendChild(c)
+  }
+  const left=ox,top=oy,right=p.w-(ox+l.usedW),bottom=p.h-(oy+l.usedH);
+  $('summary').innerHTML=
+    `<span class="ok">配置可能</span><br>`+
+    `<b>${l.count}枚</b>（${l.cols}列×${l.rows}段）<br>`+
+    ($('copyCount').value!=='auto' && Number($('copyCount').value)>l.count
+      ? `<span style="color:#b45309">指定した${$('copyCount').value}枚は実寸では入りません。${l.count}枚で配置しています。</span><br>`
+      : '')+
+    `${p.label}／${$('cw').value}×${$('ch').value}mm<br>`+
+    `外側余白：上${top.toFixed(1)}・下${bottom.toFixed(1)}・左${left.toFixed(1)}・右${right.toFixed(1)}mm<br>`+
+    `カード間隔：${g.toFixed(1)}mm`;
+  fitPage(p.w,p.h)
+}
+function fitPage(w,h){
+  const ppm=96/25.4,aw=document.querySelector('.main').clientWidth-60,ah=window.innerHeight-120,s=Math.min(1,aw/(w*ppm),ah/(h*ppm));
+  $('page').style.transform=`scale(${s})`;const pad=document.querySelector('.page-pad');
+  pad.style.width=(w*ppm*s+48)+'px';pad.style.height=(h*ppm*s+48)+'px';$('zoom').textContent='表示倍率 '+Math.round(s*100)+'%'
+}
+
+function loadShareImage(src){
+  return new Promise((resolve,reject)=>{
+    if(!src){resolve(null);return;}
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error('画像を読み込めませんでした'));
+    img.src=src;
+  });
+}
+
+function drawImageFit(ctx,img,x,y,w,h,fit,rotated){
+  if(!img)return;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x,y,w,h);
+  ctx.clip();
+
+  if(rotated){
+    ctx.translate(x+w/2,y+h/2);
+    ctx.rotate(Math.PI/2);
+
+    const boxW=h,boxH=w;
+    const scale=fit==='cover'
+      ? Math.max(boxW/img.width,boxH/img.height)
+      : Math.min(boxW/img.width,boxH/img.height);
+    const dw=img.width*scale,dh=img.height*scale;
+    ctx.drawImage(img,-dw/2,-dh/2,dw,dh);
+  }else{
+    const scale=fit==='cover'
+      ? Math.max(w/img.width,h/img.height)
+      : Math.min(w/img.width,h/img.height);
+    const dw=img.width*scale,dh=img.height*scale;
+    ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
+  }
+  ctx.restore();
+}
+
+async function createSharePng(){
+  const result=choose();
+  if(!result||!result.l||result.l.count<1){
+    throw new Error('共有するレイアウトを作成できません');
+  }
+
+  const {l,p,m,g}=result;
+  const dpi=150;
+  const pxPerMm=dpi/25.4;
+  const canvasOut=document.createElement('canvas');
+  canvasOut.width=Math.max(1,Math.round(p.w*pxPerMm));
+  canvasOut.height=Math.max(1,Math.round(p.h*pxPerMm));
+  const out=canvasOut.getContext('2d');
+
+  out.fillStyle='#ffffff';
+  out.fillRect(0,0,canvasOut.width,canvasOut.height);
+
+  const url=state.edited||state.source;
+  const img=await loadShareImage(url);
+  const ox=m+(p.w-m*2-l.usedW)/2;
+  const oy=m+(p.h-m*2-l.usedH)/2;
+
+  for(let i=0;i<l.count;i++){
+    const col=i%l.cols,row=Math.floor(i/l.cols);
+    const x=(ox+col*(l.w+g))*pxPerMm;
+    const y=(oy+row*(l.h+g))*pxPerMm;
+    const w=l.w*pxPerMm;
+    const h=l.h*pxPerMm;
+
+    drawImageFit(out,img,x,y,w,h,$('fit').value,l.rot);
+
+    if($('frameEnabled').checked){
+      const inset=(Math.max(0,Number($('frameInset').value)||0))*pxPerMm;
+      const lineW=Math.max(1,Number($('frameWidth').value)||4);
+      out.save();
+      out.strokeStyle=$('frameColor').value;
+      out.lineWidth=lineW;
+      const style=$('frameStyle').value;
+      if(style==='dashed')out.setLineDash([lineW*3,lineW*2]);
+      const rx=x+inset+lineW/2;
+      const ry=y+inset+lineW/2;
+      const rw=Math.max(1,w-inset*2-lineW);
+      const rh=Math.max(1,h-inset*2-lineW);
+      const radius=Math.max(0,(Number($('frameRadius').value)||0)*pxPerMm);
+
+      if(typeof out.roundRect==='function'){
+        out.beginPath();
+        out.roundRect(rx,ry,rw,rh,Math.min(radius,rw/2,rh/2));
+        if(style==='double'){
+          out.stroke();
+          const gap=lineW*2;
+          out.beginPath();
+          out.roundRect(rx+gap,ry+gap,Math.max(1,rw-gap*2),Math.max(1,rh-gap*2),Math.max(0,radius-gap));
+        }
+        out.stroke();
+      }else{
+        out.strokeRect(rx,ry,rw,rh);
+        if(style==='double')out.strokeRect(rx+lineW*2,ry+lineW*2,rw-lineW*4,rh-lineW*4);
+      }
+      out.restore();
+    }
+
+    if($('cut').checked){
+      out.save();
+      out.strokeStyle='#64748b';
+      out.lineWidth=Math.max(1,.2*pxPerMm);
+      out.setLineDash([2*pxPerMm,1.5*pxPerMm]);
+      out.strokeRect(x,y,w,h);
+      out.restore();
+    }
+  }
+
+  return new Promise((resolve,reject)=>{
+    canvasOut.toBlob(blob=>{
+      if(blob)resolve(blob);
+      else reject(new Error('共有画像を作成できませんでした'));
+    },'image/png',1);
+  });
+}
+
+$('share').onclick=async()=>{
+  const button=$('share');
+  const status=$('shareStatus');
+  const original=button.textContent;
+  button.disabled=true;
+  button.textContent='共有データを作成中…';
+  status.textContent='';
+
+  try{
+    const blob=await createSharePng();
+    const paper=selectedPaper();
+    const filename=`Cardly_${paper.label}_${new Date().toISOString().slice(0,10)}.png`;
+    const file=new File([blob],filename,{type:'image/png'});
+
+    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
+      await navigator.share({
+        title:'Cardly 印刷データ',
+        text:'Cardlyで作成した印刷レイアウトです。',
+        files:[file]
+      });
+      status.textContent='共有画面を開きました。AirDropなどを選択できます。';
+    }else{
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;
+      a.download=filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+      status.textContent='このブラウザは共有に対応していないため、PNGを保存しました。保存した画像をAirDropで共有できます。';
+    }
+  }catch(error){
+    if(error?.name==='AbortError'){
+      status.textContent='共有をキャンセルしました。';
+    }else{
+      console.error(error);
+      status.textContent='共有データを作成できませんでした。画像とレイアウト設定を確認してください。';
+    }
+  }finally{
+    button.disabled=false;
+    button.textContent=original;
+  }
+};
+
+$('print').onclick=async()=>{
+  // Recalculate immediately so the printed sheet always matches the current settings.
+  renderPage();
+
+  const result=choose();
+  if(!result||!result.p){
+    alert('印刷レイアウトを作成できませんでした。設定を確認してください。');
+    return;
+  }
+
+  const {p}=result;
+  const sourcePage=$('page');
+  const printRoot=$('printRoot');
+
+  // Print a clean clone instead of the scaled preview inside the app.
+  printRoot.innerHTML='';
+  const clone=sourcePage.cloneNode(true);
+  clone.removeAttribute('id');
+  clone.classList.add('print-page');
+  clone.style.width=p.w+'mm';
+  clone.style.height=p.h+'mm';
+  clone.style.transform='none';
+  clone.style.margin='0';
+  clone.style.padding='0';
+  printRoot.style.width=p.w+'mm';
+  printRoot.style.height=p.h+'mm';
+  printRoot.appendChild(clone);
+
+  let style=document.getElementById('printStyle');
+  if(!style){
+    style=document.createElement('style');
+    style.id='printStyle';
+    document.head.appendChild(style);
+  }
+  style.textContent=`@media print{
+    @page{size:${p.w}mm ${p.h}mm;margin:0}
+    html,body,#printRoot{
+      width:${p.w}mm!important;
+      height:${p.h}mm!important;
+    }
+  }`;
+
+  // Wait until cloned images are ready before opening the print dialog.
+  const images=[...clone.querySelectorAll('img')];
+  await Promise.all(images.map(img=>{
+    if(img.complete)return Promise.resolve();
+    if(typeof img.decode==='function')return img.decode().catch(()=>{});
+    return new Promise(resolve=>{
+      img.onload=resolve;
+      img.onerror=resolve;
+    });
+  }));
+
+  await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+  window.print();
+};
+$('reset').onclick=()=>{
+  state.objects=[];state.strokes=[];state.edited='';state.selected=null;state.mode='max';
+  $('pageMargin').value=0;$('cardGap').value=0;
+  $('copyCount').value='auto';
+  $('frameEnabled').checked=false;
+  $('frameOptions').hidden=true;
+  $('frameColor').value='#745cf6';
+  $('frameWidth').value=4;
+  $('frameInset').value=2;
+  $('frameRadius').value=0;
+  $('frameStyle').value='solid';
+  $('paperSize').value='A4';$('customPaperFields').hidden=true;
+  document.querySelectorAll('.mode').forEach(x=>x.classList.toggle('active',x.dataset.mode==='max'));
+  updateOrientationButtons();renderPage()
+};
+window.addEventListener('resize',renderPage);
+window.addEventListener('afterprint',()=>{
+  const root=$('printRoot');
+  if(root)root.innerHTML='';
+});
+updateOrientationButtons();
+})();
+</script>
+</body>
+</html>
