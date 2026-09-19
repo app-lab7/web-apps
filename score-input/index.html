@@ -28,7 +28,7 @@ button{width:100%;border:0;border-radius:12px;padding:15px;font-size:17px;font-w
 <div class="card"><button id="save">保存する</button><button class="sub" id="clear">入力をクリア</button><div id="status"></div>
 <p class="hint">保存するとテスト履歴として蓄積します。同じ年度・テスト・生徒のデータは確認のうえ更新できる設計です。</p></div>
 </main><script>
-const CONFIG={apiUrl:""};
+const CONFIG={apiUrl:"https://script.google.com/macros/s/AKfycbzvzuLhSIDscTI8AMd12DnePlM2IdOOjDCE9L6Zqjj0Ik_0Q5jPvtdXoqV0mIcU7pAX/exec"};
 const subjects=["国語","数学","英語","理科","社会"];
 const studentsByGrade={"中1":["奥山 莉心","鶴藤 万紘","鬮目 真結","村本 悠馬","大槻 拓巳","任田 尊晴","川上 慶人","穐元 清一"],"中2":["松嵜 巧磨","浦壁 光介","山田 菜心","中村 准誠","鈴木 明日実","池谷 碧音","永田 詩栞","石川 煌稀","山本 心菜","米 奏多","山本 悠真"],"中3":["山本 紘士朗","大野 翔生","中川 心菜","櫨 もな実","原 悠稀","上野 藍士","北野 るか","西脇 優","國分 瑛太","松井 巧","太田 璃桜","村本 風音","平木 愛琉","今 洋太","木村 水玲","高木 那史登","池田 琉唯","松下 勝晃","泉 琴音"]};
 const y=new Date().getFullYear();document.querySelector("#year").innerHTML=[y-1,y,y+1].map(v=>`<option ${v===y?"selected":""}>${v}</option>`).join("");
