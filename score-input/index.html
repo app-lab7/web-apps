@@ -15,7 +15,7 @@ button{width:100%;border:0;border-radius:12px;padding:15px;font-size:17px;font-w
 <main>
 <div class="card"><div class="grid">
 <div><label>年度</label><select id="year"></select></div>
-<div><label>テスト</label><select id="test"><option>1学期中間</option><option>1学期期末</option><option>2学期中間</option><option>2学期期末</option><option>学年末</option><option>その他</option></select></div>
+<div><label>テスト</label><select id="test"><option value="">読み込み中…</option></select></div>
 <div><label>学年</label><select id="grade"><option>中1</option><option>中2</option><option>中3</option></select></div>
 <div><label>生徒</label><select id="student"><option value="">生徒を選択</option></select></div>
 </div></div>
@@ -32,6 +32,30 @@ const CONFIG={apiUrl:"https://script.google.com/macros/s/AKfycbzvzuLhSIDscTI8AMd
 const subjects=["国語","数学","英語","理科","社会"];
 const studentsByGrade={"中1":["奥山 莉心","鶴藤 万紘","鬮目 真結","村本 悠馬","大槻 拓巳","任田 尊晴","川上 慶人","穐元 清一"],"中2":["松嵜 巧磨","浦壁 光介","山田 菜心","中村 准誠","鈴木 明日実","池谷 碧音","永田 詩栞","石川 煌稀","山本 心菜","米 奏多","山本 悠真"],"中3":["山本 紘士朗","大野 翔生","中川 心菜","櫨 もな実","原 悠稀","上野 藍士","北野 るか","西脇 優","國分 瑛太","松井 巧","太田 璃桜","村本 風音","平木 愛琉","今 洋太","木村 水玲","高木 那史登","池田 琉唯","松下 勝晃","泉 琴音"]};
 const y=new Date().getFullYear();document.querySelector("#year").innerHTML=[y-1,y,y+1].map(v=>`<option ${v===y?"selected":""}>${v}</option>`).join("");
+let testSettings=[];
+async function loadTests(){
+ const testEl=document.querySelector("#test");
+ testEl.innerHTML='<option value="">読み込み中…</option>';
+ try{
+   const r=await fetch(CONFIG.apiUrl+"?action=tests");
+   const data=await r.json();
+   if(!data.ok) throw new Error(data.message||"取得失敗");
+   testSettings=data.tests||[];
+   refreshTests();
+ }catch(e){
+   testEl.innerHTML='<option value="">テスト設定を取得できません</option>';
+ }
+}
+function refreshTests(){
+ const selectedYear=String(document.querySelector("#year").value);
+ const list=testSettings.filter(t=>String(t.year)===selectedYear);
+ const testEl=document.querySelector("#test");
+ testEl.innerHTML=list.length
+   ? '<option value="">テストを選択</option>'+list.map(t=>`<option value="${t.name}">${t.name}</option>`).join("")
+   : '<option value="">この年度のテスト設定がありません</option>';
+}
+document.querySelector("#year").addEventListener("change",refreshTests);
+loadTests();
 document.querySelector("#subjects").innerHTML=subjects.map(s=>`<div class="card subject"><h3>${s}</h3><div class="grid">
 <div><label>本人点</label><input data-s="${s}" data-k="score" inputmode="decimal" placeholder="点"></div>
 <div><label>学校平均</label><input data-s="${s}" data-k="avg" inputmode="decimal" placeholder="平均"></div>
@@ -39,6 +63,6 @@ document.querySelector("#subjects").innerHTML=subjects.map(s=>`<div class="card 
 function refreshStudents(){const g=document.querySelector("#grade").value;document.querySelector("#student").innerHTML='<option value="">生徒を選択</option>'+studentsByGrade[g].map(n=>`<option>${n}</option>`).join("")}
 document.querySelector("#grade").addEventListener("change",refreshStudents);refreshStudents();
 function payload(){const p={year:year.value,test:test.value,grade:grade.value,student:student.value,rank:rank.value,collect:collect.value,memo:memo.value,scores:{}};subjects.forEach(s=>{p.scores[s]={};document.querySelectorAll(`[data-s="${s}"]`).forEach(i=>p.scores[s][i.dataset.k]=i.value)});return p}
-document.querySelector("#save").onclick=async()=>{const st=document.querySelector("#status");if(!student.value){st.textContent="生徒を選択してください";return}if(!CONFIG.apiUrl){st.textContent="Google連携設定後に保存できます";return}st.textContent="保存中…";try{const r=await fetch(CONFIG.apiUrl,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload())});if(!r.ok)throw Error();st.textContent="保存しました"}catch(e){st.textContent="保存に失敗しました"}};
+document.querySelector("#save").onclick=async()=>{const st=document.querySelector("#status");if(!test.value){st.textContent="テストを選択してください";return}if(!student.value){st.textContent="生徒を選択してください";return}if(!CONFIG.apiUrl){st.textContent="Google連携設定後に保存できます";return}st.textContent="保存中…";try{const r=await fetch(CONFIG.apiUrl,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload())});if(!r.ok)throw Error();st.textContent="保存しました"}catch(e){st.textContent="保存に失敗しました"}};
 document.querySelector("#clear").onclick=()=>{document.querySelectorAll('input,textarea').forEach(x=>x.value="");document.querySelector("#status").textContent=""};
 </script></body></html>
