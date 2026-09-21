@@ -1,68 +1,16 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Score Input</title><style>
-*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}
-header{background:#173b68;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:2}header b{font-size:20px}header small{display:block;opacity:.8;margin-top:3px}
-main{max-width:760px;margin:auto;padding:16px}.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 3px 14px #18304c12}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;color:#5c6878;margin:0 0 5px}
-select,input,textarea{width:100%;font-size:16px;padding:12px;border:1px solid #cfd8e4;border-radius:10px;background:#fff}
-.subject{border-top:4px solid #d7dde6}.subject h3{margin:0 0 12px}.subject .grid{grid-template-columns:repeat(3,1fr)}
-button{width:100%;border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:700;background:#1769aa;color:#fff}.sub{background:#e9eef5;color:#25364a;margin-top:8px}
-#status{font-size:14px;text-align:center;margin-top:10px;min-height:20px}.hint{font-size:12px;color:#738094;line-height:1.6}
-@media(max-width:600px){main{padding:10px}.grid,.subject .grid{grid-template-columns:1fr 1fr}.subject .grid>div:last-child{grid-column:1/-1}}
-</style></head><body>
-<header><b>Score Input</b><small>中学生 テスト成績入力</small></header>
-<main>
-<div class="card"><div class="grid">
-<div><label>年度</label><select id="year"></select></div>
-<div><label>テスト</label><select id="test"><option value="">読み込み中…</option></select></div>
-<div><label>学年</label><select id="grade"><option>中1</option><option>中2</option><option>中3</option></select></div>
-<div><label>生徒</label><select id="student"><option value="">生徒を選択</option></select></div>
-</div></div>
-<div id="subjects"></div>
-<div class="card"><div class="grid">
-<div><label>順位</label><input id="rank" inputmode="numeric" placeholder="例：12"></div>
-<div><label>回収状況</label><select id="collect"><option value="○">○ 回収済</option><option value="未">未回収</option></select></div>
-<div class="full"><label>メモ</label><textarea id="memo" rows="3" placeholder="面談・テストについてのメモ"></textarea></div>
-</div></div>
-<div class="card"><button id="save">保存する</button><button class="sub" id="clear">入力をクリア</button><div id="status"></div>
-<p class="hint">保存するとテスト履歴として蓄積します。同じ年度・テスト・生徒のデータは確認のうえ更新できる設計です。</p></div>
-</main><script>
-const CONFIG={apiUrl:"https://script.google.com/macros/s/AKfycbzvzuLhSIDscTI8AMd12DnePlM2IdOOjDCE9L6Zqjj0Ik_0Q5jPvtdXoqV0mIcU7pAX/exec"};
-const subjects=["国語","数学","英語","理科","社会"];
-const studentsByGrade={"中1":["奥山 莉心","鶴藤 万紘","鬮目 真結","村本 悠馬","大槻 拓巳","任田 尊晴","川上 慶人","穐元 清一"],"中2":["松嵜 巧磨","浦壁 光介","山田 菜心","中村 准誠","鈴木 明日実","池谷 碧音","永田 詩栞","石川 煌稀","山本 心菜","米 奏多","山本 悠真"],"中3":["山本 紘士朗","大野 翔生","中川 心菜","櫨 もな実","原 悠稀","上野 藍士","北野 るか","西脇 優","國分 瑛太","松井 巧","太田 璃桜","村本 風音","平木 愛琉","今 洋太","木村 水玲","高木 那史登","池田 琉唯","松下 勝晃","泉 琴音"]};
-const y=new Date().getFullYear();document.querySelector("#year").innerHTML=[y-1,y,y+1].map(v=>`<option ${v===y?"selected":""}>${v}</option>`).join("");
-let testSettings=[];
-async function loadTests(){
- const testEl=document.querySelector("#test");
- testEl.innerHTML='<option value="">読み込み中…</option>';
- try{
-   const r=await fetch(CONFIG.apiUrl+"?action=tests");
-   const data=await r.json();
-   if(!data.ok) throw new Error(data.message||"取得失敗");
-   testSettings=data.tests||[];
-   refreshTests();
- }catch(e){
-   testEl.innerHTML='<option value="">テスト設定を取得できません</option>';
- }
-}
-function refreshTests(){
- const selectedYear=String(document.querySelector("#year").value);
- const list=testSettings.filter(t=>String(t.year)===selectedYear);
- const testEl=document.querySelector("#test");
- testEl.innerHTML=list.length
-   ? '<option value="">テストを選択</option>'+list.map(t=>`<option value="${t.name}">${t.name}</option>`).join("")
-   : '<option value="">この年度のテスト設定がありません</option>';
-}
-document.querySelector("#year").addEventListener("change",refreshTests);
-loadTests();
-document.querySelector("#subjects").innerHTML=subjects.map(s=>`<div class="card subject"><h3>${s}</h3><div class="grid">
-<div><label>本人点</label><input data-s="${s}" data-k="score" inputmode="decimal" placeholder="点"></div>
-<div><label>学校平均</label><input data-s="${s}" data-k="avg" inputmode="decimal" placeholder="平均"></div>
-<div><label>偏差値</label><input data-s="${s}" data-k="dev" inputmode="decimal" placeholder="偏差値"></div></div></div>`).join("");
-function refreshStudents(){const g=document.querySelector("#grade").value;document.querySelector("#student").innerHTML='<option value="">生徒を選択</option>'+studentsByGrade[g].map(n=>`<option>${n}</option>`).join("")}
-document.querySelector("#grade").addEventListener("change",refreshStudents);refreshStudents();
-function payload(){const p={year:year.value,test:test.value,grade:grade.value,student:student.value,rank:rank.value,collect:collect.value,memo:memo.value,scores:{}};subjects.forEach(s=>{p.scores[s]={};document.querySelectorAll(`[data-s="${s}"]`).forEach(i=>p.scores[s][i.dataset.k]=i.value)});return p}
-document.querySelector("#save").onclick=async()=>{const st=document.querySelector("#status");if(!test.value){st.textContent="テストを選択してください";return}if(!student.value){st.textContent="生徒を選択してください";return}if(!CONFIG.apiUrl){st.textContent="Google連携設定後に保存できます";return}st.textContent="保存中…";try{const r=await fetch(CONFIG.apiUrl,{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(payload())});if(!r.ok)throw Error();st.textContent="保存しました"}catch(e){st.textContent="保存に失敗しました"}};
-document.querySelector("#clear").onclick=()=>{document.querySelectorAll('input,textarea').forEach(x=>x.value="");document.querySelector("#status").textContent=""};
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Score Input</title><style>
+*{box-sizing:border-box}body{margin:0;background:#f4f7fb;color:#172033;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans JP",sans-serif}header{background:#173b68;color:#fff;padding:18px 16px;position:sticky;top:0;z-index:2}header b{font-size:20px}header small{display:block;opacity:.8;margin-top:3px}main{max-width:760px;margin:auto;padding:16px}.card{background:#fff;border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 3px 14px #18304c12}.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}label{display:block;font-size:12px;font-weight:700;color:#5c6878;margin:0 0 5px}select,input,textarea{width:100%;font-size:16px;padding:12px;border:1px solid #cfd8e4;border-radius:10px;background:#fff}.subject{border-top:4px solid #d7dde6}.subject h3{margin:0 0 12px}.subject .grid{grid-template-columns:repeat(3,1fr)}input[readonly]{background:#eef4f9;color:#526174}button{width:100%;border:0;border-radius:12px;padding:15px;font-size:17px;font-weight:700;background:#1769aa;color:#fff}.sub{background:#e9eef5;color:#25364a;margin-top:8px}#status{font-size:14px;text-align:center;margin-top:10px;min-height:20px}.hint{font-size:12px;color:#738094;line-height:1.6}.loading{opacity:.65;pointer-events:none}@media(max-width:600px){main{padding:10px}.grid,.subject .grid{grid-template-columns:1fr 1fr}.subject .grid>div:last-child{grid-column:1/-1}}</style></head><body>
+<header><b>Score Input</b><small>共和校　中学生テスト成績入力</small></header><main><div class="card"><div class="grid"><div><label>年度</label><select id="year"></select></div><div><label>テスト</label><select id="test"><option value="">読み込み中…</option></select></div><div><label>学年</label><select id="grade"><option value="">学年を選択</option></select></div><div><label>生徒</label><select id="student"><option value="">生徒を選択</option></select></div></div></div><div id="subjects"></div><div class="card"><div class="grid"><div><label>順位</label><input id="rank" inputmode="numeric" placeholder="例：12"></div><div><label>回収状況</label><select id="collect"><option value="○">○ 回収済</option><option value="未">未回収</option></select></div><div class="full"><label>メモ</label><textarea id="memo" rows="3" placeholder="面談・テストについてのメモ"></textarea></div></div></div><div class="card"><button id="save">保存する</button><button class="sub" id="clear">入力をクリア</button><div id="status"></div><p class="hint">生徒マスター・テスト設定・学校平均マスターを基準に表示します。保存済みの生徒を選ぶと、現在の登録内容を読み込んで続きから編集できます。</p></div></main>
+<script>
+const CONFIG={apiUrl:"https://script.google.com/macros/s/AKfycbya7qViVMKVJau3fZ1fgyKF82jkAeQOtMMQSpzC8fqjhRBMgoB9h8cf0nCmWcVL7izntQ/exec"};const subjects=["国語","数学","英語","理科","社会"],$=s=>document.querySelector(s);let state={tests:[],students:[]};
+function h(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}function setStatus(t,bad=false){$("#status").textContent=t;$("#status").style.color=bad?"#c13b3b":"#1769aa"}function value(id){return $(id).value}
+$("#subjects").innerHTML=subjects.map(s=>`<div class="card subject"><h3>${s}</h3><div class="grid"><div><label>本人点</label><input data-s="${s}" data-k="score" inputmode="decimal" placeholder="点"></div><div><label>学校平均</label><input data-s="${s}" data-k="avg" readonly placeholder="マスター未登録"></div><div><label>偏差値</label><input data-s="${s}" data-k="dev" inputmode="decimal" placeholder="偏差値"></div></div></div>`).join("");
+async function api(action,data){let u=CONFIG.apiUrl+"?action="+encodeURIComponent(action);if(data)u+="&data="+encodeURIComponent(JSON.stringify(data));const r=await fetch(u,{cache:"no-store"});const j=await r.json();if(!j.ok)throw Error(j.message||"通信に失敗しました");return j}function fill(sel,items,placeholder,mapper=v=>[v,v]){$(sel).innerHTML=`<option value="">${placeholder}</option>`+items.map(v=>{const [a,b]=mapper(v);return `<option value="${h(a)}">${h(b)}</option>`}).join("")}
+function refreshTests(){const keep=value("#test"),year=value("#year");fill("#test",state.tests.filter(x=>String(x.year)===String(year)),"テストを選択",x=>[x.name,x.name]);if([...$("#test").options].some(o=>o.value===keep))$("#test").value=keep}function refreshGrades(){const keep=value("#grade"),year=value("#year");const grades=[...new Set(state.students.filter(s=>String(s.startYear)<=String(year)&&s.status==="在籍").map(s=>s.grade))];fill("#grade",grades,"学年を選択");if(grades.includes(keep))$("#grade").value=keep;refreshStudents()}function refreshStudents(){const keep=value("#student"),g=value("#grade"),list=state.students.filter(s=>s.status==="在籍"&&s.grade===g);fill("#student",list,"生徒を選択",s=>[s.id,`${s.name}${s.school?"（"+s.school+"）":""}`]);if(list.some(s=>s.id===keep))$("#student").value=keep}
+function setScores(scores={}){subjects.forEach(s=>["score","avg","dev"].forEach(k=>document.querySelector(`[data-s="${s}"][data-k="${k}"]`).value=(scores[s]||{})[k]??""))}function clearInputs(){setScores();$("#rank").value="";$("#collect").value="○";$("#memo").value=""}
+async function loadRecord(){clearInputs();if(!value("#year")||!value("#test")||!value("#student"))return;setStatus("保存内容を読み込み中…");try{const d=await api("record",{year:value("#year"),test:value("#test"),studentId:value("#student")});if(d.record){setScores(d.record.scores);$("#rank").value=d.record.rank||"";$("#collect").value=d.record.collect||"○";$("#memo").value=d.record.memo||"";setStatus("保存済みの内容を読み込みました")}else{setScores(d.averages||{});setStatus("新規入力です。学校平均はマスターから読み込みました")}}catch(e){setStatus(e.message,true)}}
+function payload(){const p={year:value("#year"),test:value("#test"),grade:value("#grade"),studentId:value("#student"),rank:value("#rank"),collect:value("#collect"),memo:value("#memo"),scores:{}};subjects.forEach(s=>{p.scores[s]={};["score","avg","dev"].forEach(k=>p.scores[s][k]=document.querySelector(`[data-s="${s}"][data-k="${k}"]`).value)});return p}
+async function boot(){document.body.classList.add("loading");try{const d=await api("bootstrap");state={tests:d.tests||[],students:d.students||[]};const years=[...new Set(state.tests.map(x=>String(x.year)))].sort();fill("#year",years,"年度を選択");const now=String(new Date().getFullYear());$("#year").value=years.includes(now)?now:years.at(-1)||"";refreshTests();refreshGrades();setStatus("マスターを読み込みました")}catch(e){setStatus("マスターを取得できませんでした："+e.message,true)}finally{document.body.classList.remove("loading")}}
+$("#year").addEventListener("change",()=>{refreshTests();refreshGrades();clearInputs()});$("#test").addEventListener("change",loadRecord);$("#grade").addEventListener("change",()=>{refreshStudents();clearInputs()});$("#student").addEventListener("change",loadRecord);$("#clear").onclick=()=>{clearInputs();setStatus("")};$("#save").onclick=async()=>{if(!value("#year")||!value("#test")||!value("#grade")||!value("#student")){setStatus("年度・テスト・学年・生徒を選択してください",true);return}const b=$("#save");b.disabled=true;setStatus("保存中…");try{const r=await fetch(CONFIG.apiUrl,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action:"save",data:payload()})});const d=await r.json();if(!d.ok)throw Error(d.message||"保存できませんでした");setScores(d.record.scores);setStatus("保存しました。生徒別点数にも反映済みです")}catch(e){setStatus(e.message||"保存に失敗しました",true)}finally{b.disabled=false}};boot();
 </script></body></html>
