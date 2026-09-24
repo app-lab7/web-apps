@@ -17,22 +17,20 @@ function matchingRows_(rows,index,d,st,test){const found=[];rows.forEach((r,x)=>
 function save_(d){['year','test','grade','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test);if(st.grade!==c_(d.grade))throw Error('生徒マスターの学年と一致しません');const av=avgs_(d.year,test,st.grade,st.school),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),matches=matchingRows_(a,i,d,st,test);const n=matches.length?matches[matches.length-1]:s.getLastRow()+1,row=HEAD.map(x=>''),put=(k,v)=>row[i[k]]=v;put('保存日時',new Date());put('年度',c_(d.year));put('テスト',test);put('学年',st.grade);put('生徒ID',st.id);put('生徒名',st.name);put('学校',st.school);let total=0;SUB.forEach(sub=>{const x=(d.scores||{})[sub]||{},score=c_(x.score);put(sub,score);put(sub+' 学校平均',c_(av[sub].avg));put(sub+' 偏差値',c_(x.dev));if(score!==''&&!isNaN(+score))total+=+score});put('5科合計',total);put('順位',c_(d.rank));put('回収',c_(d.collect)||'○');put('メモ',c_(d.memo));s.getRange(n,1,1,HEAD.length).setValues([row]);SpreadsheetApp.flush();return {ok:true,record:record_(row,i),updatedRow:n}}finally{lock.releaseLock()}}
 function delete_(d){['year','test','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),rows=matchingRows_(a,i,d,st,test);if(!rows.length)throw Error('削除する保存済み成績がありません');rows.forEach(n=>s.getRange(n,1,1,HEAD.length).clearContent());SpreadsheetApp.flush();return {ok:true,deleted:rows.length}}finally{lock.releaseLock()}}
 
-// 「生徒別点数」の手入力を成績履歴へ保存し、表示用の数式を戻す。
-// インストール型編集トリガーとして installScoreEditTrigger を一度実行する。
-const VIEW_HISTORY_COLS=['H','K','N','Q','T','W','Y','X','Z','I','J','L','M','O','P','R','S','U','V'];
-const EDIT_HISTORY_COLS={3:'国語',4:'数学',5:'英語',6:'理科',7:'社会',9:'回収',10:'順位',11:'メモ',13:'国語 偏差値',15:'数学 偏差値',17:'英語 偏差値',19:'理科 偏差値',21:'社会 偏差値'};
-function viewFormula_(n,col){const h=VIEW_HISTORY_COLS[col-3],q="'成績履歴'!",cond=`${q}$B$2:$B$1000=$B$2,${q}$C$2:$C$1000=$D$2,${q}$E$2:$E$1000=$V${n}`,count=`COUNTIFS(${q}$B$2:$B$1000,$B$2,${q}$C$2:$C$1000,$D$2,${q}$E$2:$E$1000,$V${n})`;return `=IF($V${n}="","",IFERROR(INDEX(FILTER(${q}$${h}$2:$${h}$1000,${cond}),${count}),""))`}
+// 数式のある「生徒別点数」は閲覧専用。手入力タブの変更列だけを履歴に反映する。
+const EDIT_HISTORY_COLS={4:'国語',5:'数学',6:'英語',7:'理科',8:'社会',9:'国語 偏差値',10:'数学 偏差値',11:'英語 偏差値',12:'理科 偏差値',13:'社会 偏差値',14:'順位',15:'回収',16:'メモ'};
 function installScoreEditTrigger(){ScriptApp.getProjectTriggers().filter(t=>t.getHandlerFunction()==='onScoreSheetEdit').forEach(t=>ScriptApp.deleteTrigger(t));ScriptApp.newTrigger('onScoreSheetEdit').forSpreadsheet(SCORE_SHEET_ID).onEdit().create()}
 function onScoreSheetEdit(e){
-  if(!e||!e.range||e.range.getSheet().getName()!=='生徒別点数')return;
-  const range=e.range,top=Math.max(4,range.getRow()),bottom=range.getLastRow(),left=Math.max(3,range.getColumn()),right=Math.min(21,range.getLastColumn());
+  if(!e||!e.range||e.range.getSheet().getName()!=='手入力')return;
+  const range=e.range,top=Math.max(4,range.getRow()),bottom=range.getLastRow(),left=Math.max(4,range.getColumn()),right=Math.min(16,range.getLastColumn());
   if(bottom<top||right<left)return;
   const sheet=range.getSheet(),entered=sheet.getRange(top,left,bottom-top+1,right-left+1).getValues(),lock=LockService.getScriptLock();
   try{
     lock.waitLock(30000);
-    const year=c_(sheet.getRange('B2').getValue()),test=test_(year,sheet.getRange('D2').getValue()),students=students_(),history=history_(),all=history.getDataRange().getValues(),index=map_(all.shift()),ids=sheet.getRange(top,22,bottom-top+1,1).getValues();
+    const students=students_(),history=history_(),all=history.getDataRange().getValues(),index=map_(all.shift()),keys=sheet.getRange(top,1,bottom-top+1,3).getValues();
     entered.forEach((values,offset)=>{
-      const st=students.find(s=>s.id===c_(ids[offset][0]));if(!st||st.status!=='在籍')return;
+      const [year,rawTest,id]=keys[offset],st=students.find(s=>s.id===c_(id));if(!st||st.status!=='在籍'||!c_(year)||!c_(rawTest))return;
+      const test=test_(year,rawTest);
       const edits=values.map((v,k)=>({column:left+k,value:v})).filter(x=>EDIT_HISTORY_COLS[x.column]);if(!edits.length)return;
       const matches=matchingRows_(all,index,{year:year},st,test),rowNumber=matches.length?matches[matches.length-1]:history.getLastRow()+1;
       const row=matches.length?all[rowNumber-2].slice(0,HEAD.length):HEAD.map(()=>''),put=(key,value)=>row[index[key]]=value;
@@ -45,5 +43,5 @@ function onScoreSheetEdit(e){
     SpreadsheetApp.flush();
     sheet.getParent().toast('手入力を成績履歴へ保存しました','Score Input',4);
   }catch(error){sheet.getParent().toast('手入力を保存できませんでした：'+error.message,'Score Input',8);throw error}
-  finally{try{sheet.getRange(top,left,bottom-top+1,right-left+1).setFormulas(entered.map((_,offset)=>Array.from({length:right-left+1},(_,k)=>viewFormula_(top+offset,left+k))))}finally{if(lock.hasLock())lock.releaseLock()}}
+  finally{if(lock.hasLock())lock.releaseLock()}
 }
