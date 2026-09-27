@@ -4,9 +4,9 @@ const playlist='hls/v37/index.m3u8';
 const at=Number(new URLSearchParams(location.search).get('t'));
 function jump(){if(Number.isFinite(at)&&at>0&&at<v.duration)v.currentTime=at}
 v.addEventListener('loadedmetadata',jump,{once:true});
-if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=playlist}
-else if(window.Hls&&Hls.isSupported()){
+if(window.Hls&&Hls.isSupported()){
  const h=new Hls({enableWorker:true});h.loadSource(playlist);h.attachMedia(v);
  h.on(Hls.Events.ERROR,(_,data)=>{if(data.fatal){status.hidden=false;status.textContent='再生に失敗しました。ページを再読み込みするか、ダウンロードからご覧ください。'}});
-}else{status.hidden=false;status.textContent='この環境ではストリーミングを利用できません。ダウンロードからご覧ください。'}
+}else if(v.canPlayType('application/vnd.apple.mpegurl')){v.src=playlist}
+else{status.hidden=false;status.textContent='この環境ではストリーミングを利用できません。ダウンロードからご覧ください。'}
 </script></body></html>
