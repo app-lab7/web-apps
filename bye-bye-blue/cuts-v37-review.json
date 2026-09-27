@@ -387,7 +387,7 @@
   {
     "cut": 36,
     "start": 177.7,
-    "end": 179.32,
+    "end": 179.45,
     "place_angle": "住宅街・電線と夕日",
     "light": "夕焼け",
     "source_id": "street_sunset",
@@ -397,8 +397,8 @@
   },
   {
     "cut": 37,
-    "start": 179.32,
-    "end": 181.44,
+    "start": 179.45,
+    "end": 181.25,
     "place_angle": "校庭・女子のブランコを引きで",
     "light": "夕焼け",
     "source_id": "swing_sunset",
@@ -408,8 +408,8 @@
   },
   {
     "cut": 38,
-    "start": 181.44,
-    "end": 182.68,
+    "start": 181.25,
+    "end": 182.75,
     "place_angle": "校舎の階段・見下ろし",
     "light": "夕焼け",
     "source_id": "stairs_orig",
@@ -419,8 +419,8 @@
   },
   {
     "cut": 39,
-    "start": 182.68,
-    "end": 184.66,
+    "start": 182.75,
+    "end": 184.55,
     "place_angle": "下駄箱・上履きの寄り（回想）",
     "light": "昼",
     "source_id": "shoe_day",
@@ -430,7 +430,7 @@
   },
   {
     "cut": 40,
-    "start": 184.66,
+    "start": 184.55,
     "end": 186.36,
     "place_angle": "教室・窓と住宅街",
     "light": "夕方",
