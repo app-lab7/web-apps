@@ -19,5 +19,6 @@ Data:
 
 Export:
 - 540p and 1080p, 30 fps, whole MV / selected interval / six seconds near the playhead.
-- Original v47 video is fetched for soundtrack and untouched frames. A local original MP4 may be supplied when remote CORS/download is unavailable.
+- Export requires selecting the original v47 MP4; preview needs no upload. GitHub release media can be played but cannot be fetched for export because of CORS. The selected file supplies soundtrack and untouched frames.
+- Verified in the cloud browser: 2.12-second selected interval, 960x540 H.264 video with Opus audio. Audio codec depends on browser support; full-length 1080p export has not been verified.
 - This work reuses the engine rather than inventing JIZURA-like presets. See JIZURA-LICENSE.txt and JIZURA-THIRD-PARTY-NOTICES.txt.
