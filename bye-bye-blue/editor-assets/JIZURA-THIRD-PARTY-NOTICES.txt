@@ -1,6 +1,14 @@
+# Third-party notices
+
+## mp4-muxer 5.2.2 (bundled)
+
+`vendor/mp4-muxer.min.js` is embedded in `index.html` and is used to write MP4 files.
+Source: https://github.com/Vanilagy/mp4-muxer — licensed under the MIT License:
+
+```
 MIT License
 
-Copyright (c) 2026 hakoniwa
+Copyright (c) 2023 Vanilagy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,16 +27,11 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+```
 
--------------------------------------------------------------------------------
-JIZURA MV Studio (this derivative)
+## Fonts (not bundled)
 
-Copyright (c) 2026 MV Studio contributors
-
-This repository is a fork / derivative of JIZURA by hakoniwa
-(https://github.com/852wa/JIZURA), which remains Copyright (c) 2026 hakoniwa
-and licensed under the MIT License above. Do not remove that notice.
-
-Studio additions (multi-track timeline, original+override editing, background
-photo/video tracks, overlay bands, Bye Bye BLUE import) are also released
-under the MIT License.
+The web app loads the following typefaces at runtime from Google Fonts (https://fonts.google.com/); they are not
+included in this repository. They are distributed by their authors under the SIL Open Font License 1.1:
+Noto Sans JP, Noto Serif JP, Dela Gothic One, Zen Kaku Gothic New, Zen Old Mincho, Kaisei Tokumin,
+M PLUS Rounded 1c, Mochiy Pop One, DotGothic16, Yuji Syuku, IBM Plex Mono, IBM Plex Sans JP.
