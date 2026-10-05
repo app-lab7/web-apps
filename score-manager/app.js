@@ -103,4 +103,4 @@ $('app').addEventListener('input',e=>{if(e.target.id==='rosterQuery'&&!busy){ros
 $('app').addEventListener('change',e=>{if(busy)return;const t=e.target;if(t.dataset.rosterId){t.checked?rosterSelected.add(t.dataset.rosterId):rosterSelected.delete(t.dataset.rosterId);updateRosterCount()}if(t.id==='rosterGrade'){rosterFilters.grade=t.value;renderRosterTable()}if(t.id==='rosterFilterSchool'){rosterFilters.school=t.value;renderRosterTable()}if(t.id==='rosterSchool'){rosterSchool=t.value;updateRosterCount()}});
 $('app').addEventListener('click',e=>{const a=e.target.closest('[data-roster-action]')?.dataset.rosterAction;if(!a||busy)return;if(a==='selectVisible'){rosterVisible().forEach(s=>rosterSelected.add(s.id));renderRosterTable()}if(a==='clear'){rosterSelected.clear();renderRosterTable()}if(a==='save')saveRosterSchool();if(a==='refresh')refreshMaster().catch(()=>{})});
 
-render();notice();refreshMaster(false).then(()=>{notice();render()}).catch(()=>render());
+render();notice();refreshMaster(false).then(()=>{notice();render()}).catch(()=>render()).finally(()=>{$('startup').hidden=true});
