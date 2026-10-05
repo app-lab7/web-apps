@@ -1,0 +1,11 @@
+import assert from 'node:assert/strict';
+import worker,{ScoreMirror} from './worker.mjs';
+let payload;const storage={sql:{exec(sql,arg){if(sql.startsWith('INSERT'))payload=arg;return {toArray:()=>sql.startsWith('SELECT')&&payload?[{payload}]:[]}}},transactionSync:f=>f()};const mirror=new ScoreMirror({storage});const env={VIEW_KEY:'view-test',SYNC_KEY:'sync-test',SCORE_MIRROR:{idFromName:()=>1,get:()=>({fetch:r=>mirror.fetch(r)})}};
+const call=(path,key='view-test',method='GET',body)=>worker.fetch(new Request('https://test.workers.dev'+path,{method,headers:{Authorization:'Bearer '+key,Origin:'https://app-lab7.github.io'},...(body?{body:JSON.stringify(body)}:{})}),env);
+const snap={schema:1,generatedAt:Date.now()-1000,tests:[{year:'2026',name:'第２回'}],students:[{id:'1',status:'在籍',startYear:'2026',grade:'中3'},{id:'2',status:'在籍',startYear:'2026',grade:'中3'},{id:'3',status:'退塾',grade:'中3'}],records:[{year:'2026',test:'第２回',studentId:'1',record:{scores:{国語:{score:'0'}}}}]};
+assert.equal((await call('/?action=bootstrap','wrong')).status,401);assert.equal((await call('/?action=bootstrap')).status,503);assert.equal((await call('/sync','view-test','POST',snap)).status,401);assert.equal((await call('/sync','sync-test','POST',snap)).status,200);
+const result=await (await call('/?action=records&data='+encodeURIComponent(JSON.stringify({year:'2026',test:'第2回',grade:'中3'})))).json();assert.equal(result.records.length,2);assert.equal(result.records[0].record.scores.国語.score,'0');assert.equal(result.records[1].record,null);assert.ok(result.syncedAt);
+const old=await (await call('/sync','sync-test','POST',{...snap,generatedAt:snap.generatedAt-1,records:[]})).json();assert.equal(old.ignored,true);
+await call('/sync','sync-test','POST',{...snap,generatedAt:snap.generatedAt+1,records:[]});const deleted=await (await call('/?action=record&data='+encodeURIComponent(JSON.stringify({year:'2026',test:'第2回',studentId:'1'})))).json();assert.equal(deleted.record,null);
+assert.equal((await call('/?action=save')).status,400);assert.equal((await call('/?action=bootstrap')).headers.get('Access-Control-Allow-Origin'),'https://app-lab7.github.io');
+console.log('PASS: 閲覧/同期キー分離・初回未同期・0点・未入力・退塾除外・古い同期を拒否・削除反映・読み取り専用');

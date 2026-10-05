@@ -1,0 +1,8 @@
+{
+  "name": "score-view-kyowa",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-10-05",
+  "durable_objects": {"bindings": [{"name": "SCORE_MIRROR", "class_name": "ScoreMirror"}]},
+  "migrations": [{"tag": "v1", "new_sqlite_classes": ["ScoreMirror"]}],
+  "vars": {"ALLOWED_ORIGIN": "https://app-lab7.github.io"}
+}
