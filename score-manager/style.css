@@ -4,3 +4,44 @@
 
 /* Keep bulk assignment controls above the sticky table column. */
 .savebar{z-index:5}.roster-table th:first-child,.roster-table td:first-child{min-width:64px;width:64px}.roster-table input[type=checkbox]{min-width:24px}.roster-save label{white-space:nowrap}.roster-save select{color:#172d40;background:#fff;min-width:180px}@media(max-width:700px){.roster-save label{width:100%}.roster-save select{width:100%;flex-basis:100%}.roster-save button{width:100%}}
+
+/* Tactile panels for the main navigation and selection controls. */
+.home-card,.choice,.settings-grid button{
+  position:relative;
+  border:1px solid #cbdce2;
+  background:linear-gradient(160deg,#fff 0%,#f6fafb 100%);
+  box-shadow:0 3px 0 #d4e0e5,0 11px 25px #173b4c13;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background-color .16s ease;
+}
+.home-card{padding-right:58px;box-shadow:0 4px 0 #d1e0e3,0 15px 30px #173b4c17}
+.home-card:first-child{
+  background:linear-gradient(155deg,#208a76 0%,#126b60 100%);
+  border-color:#0f6c60;
+  box-shadow:0 4px 0 #0b5a51,0 15px 30px #123c3b28;
+}
+.home-card::after,.settings-grid button::after{
+  content:"›";position:absolute;right:23px;top:50%;transform:translateY(-50%);
+  width:32px;height:32px;display:grid;place-items:center;border-radius:50%;
+  background:#e7f2f0;color:#176e61;font-size:26px;font-weight:400;line-height:1;
+}
+.home-card:first-child::after{background:#ffffff26;color:white}
+.home-card .icon{width:42px;height:42px;display:grid;place-items:center;
+  background:#e7f3ef;border-radius:12px;margin-bottom:22px}
+.home-card:first-child .icon{background:#ffffff2b}
+.choice{box-shadow:0 3px 0 #d4e0e5,0 8px 18px #173b4c10}
+.settings-grid button{padding-right:58px}
+button.primary{box-shadow:0 3px 0 #0c5c53,0 8px 18px #123c3b18}
+@media(hover:hover){
+  .home-card:hover:enabled,.choice:hover:enabled,.settings-grid button:hover:enabled{
+    transform:translateY(-2px);border-color:#55a392;
+    box-shadow:0 6px 0 #c5dcd9,0 17px 30px #173b4c20;
+  }
+  .home-card:first-child:hover:enabled{box-shadow:0 6px 0 #0b5a51,0 17px 30px #123c3b35}
+}
+.home-card:active:enabled,.choice:active:enabled,.settings-grid button:active:enabled{
+  transform:translateY(3px);box-shadow:0 1px 0 #c5dcd9,0 3px 8px #173b4c12;
+}
+.home-card:first-child:active:enabled{box-shadow:0 1px 0 #0b5a51,0 3px 8px #123c3b25}
+button.primary:active:enabled{transform:translateY(2px);box-shadow:0 1px 0 #0c5c53}
+@media(max-width:700px){.home-card{min-height:132px;padding-right:58px}.home-card .icon{margin-bottom:10px}.settings-grid button{min-height:94px}}
+@media(prefers-reduced-motion:reduce){.home-card,.choice,.settings-grid button{transition:none}}
