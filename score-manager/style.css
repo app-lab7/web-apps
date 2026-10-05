@@ -45,3 +45,22 @@ button.primary{box-shadow:0 3px 0 #0c5c53,0 8px 18px #123c3b18}
 button.primary:active:enabled{transform:translateY(2px);box-shadow:0 1px 0 #0c5c53}
 @media(max-width:700px){.home-card{min-height:132px;padding-right:58px}.home-card .icon{margin-bottom:10px}.settings-grid button{min-height:94px}}
 @media(prefers-reduced-motion:reduce){.home-card,.choice,.settings-grid button{transition:none}}
+
+/* Keep each student's name and their scores visually paired. */
+.table-wrap tbody tr:not(.detail-row) td{
+  border-bottom:1px solid #cfdde4;
+  background:#fff;
+}
+.table-wrap tbody tr:not(.detail-row):nth-of-type(even) td{background:#f6f9fa}
+.table-wrap tbody tr:not(.detail-row) td:first-child{
+  border-right:2px solid #b8ccd5;
+  box-shadow:inset -5px 0 7px -7px #274a5a55;
+}
+.table-wrap tbody tr:not(.detail-row) .name{font-size:15px;color:#18364a}
+.roster-table tbody td:nth-child(2){
+  border-right:2px solid #b8ccd5;
+  box-shadow:inset -5px 0 7px -7px #274a5a55;
+}
+@media(hover:hover){
+  .table-wrap tbody tr:not(.detail-row):hover td{background:#ebf5f3}
+}
