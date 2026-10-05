@@ -62,12 +62,12 @@ async function readAverage(automatic=false){
 const token=++averageReadRun;
 if(master.capabilities.manager!==true){$('registerStatus').textContent='登録済み平均の取得には接続先の更新が必要です。';return}
 const d=Object.fromEntries(new FormData($('registerForm')));
-if(!d.year||!d.test||!d.grade||!d.school){if(automatic)SUB.forEach((_,i)=>$('reg-avg'+i).value='');$('registerStatus').textContent='学校・学年・年度・テストを選択してください。';return}
+if(!d.year||!d.test||!d.grade||!d.school){$('registerSubmit').disabled=busy;SUB.forEach((_,i)=>$('reg-avg'+i).disabled=false);if(automatic)SUB.forEach((_,i)=>$('reg-avg'+i).value='');$('registerStatus').textContent='学校・学年・年度・テストを選択してください。';return}
 if(automatic)SUB.forEach((_,i)=>$('reg-avg'+i).value='');
-$('registerSubmit').disabled=true;$('registerStatus').textContent='登録済みの学校平均を読み込み中…';
+SUB.forEach((_,i)=>$('reg-avg'+i).disabled=true);$('registerSubmit').disabled=true;$('registerStatus').textContent='登録済みの学校平均を読み込み中…';
 try{const r=await request('averages',d);if(token!==averageReadRun||formKind!=='average')return;SUB.forEach((s,i)=>$('reg-avg'+i).value=r.averages?.[s]?.avg??'');$('registerStatus').textContent=SUB.some(s=>present(r.averages?.[s]?.avg))?'登録済みの学校平均を表示しています。':'この条件の学校平均は未登録です。'}
 catch(e){if(token===averageReadRun&&formKind==='average')$('registerStatus').textContent='学校平均を取得できませんでした：'+e.message}
-finally{if(token===averageReadRun&&formKind==='average')$('registerSubmit').disabled=busy}
+finally{if(token===averageReadRun&&formKind==='average'){SUB.forEach((_,i)=>$('reg-avg'+i).disabled=busy);$('registerSubmit').disabled=busy}}
 }
 async function refreshMaster(show=true){if(show)notice('最新の名簿とテストを確認中…');try{const d=await request('bootstrap');if(!Array.isArray(d.students)||!Array.isArray(d.tests))throw Error('名簿の形式を確認してください');master=d;master.schools=d.schools||[];ready=true;if(show){notice('名簿を更新しました。');render()}}catch(e){notice(e.message,true);if(show)render();throw e}}
 $('settings').onclick=()=>{if(!leave())return;view='settings';render()};$('brand').onclick=e=>{e.preventDefault();home()};$('closeDialog').onclick=()=>{if(!busy)$('registration').close()};$('registration').addEventListener('cancel',e=>{if(busy)e.preventDefault()});$('registerForm').onsubmit=submitRegistration;
