@@ -21,8 +21,8 @@ function readRecords_(d){
 }
 function history_(){const s=sheet_('成績履歴'),head=s.getRange(1,1,1,HEAD.length).getDisplayValues()[0].map(c_);if(!HEAD.every((x,i)=>head[i]===x))throw Error('成績履歴の列構成が想定と違います。保存を止めました');return s}
 function matchingRows_(rows,index,d,st,test){const found=[];rows.forEach((r,x)=>{if(c_(r[index['年度']])===c_(d.year)&&norm_(r[index['テスト']])===norm_(test)&&c_(r[index['生徒ID']])===st.id)found.push(x+2)});return found}
-function save_(d){['year','test','grade','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test);if(st.grade!==c_(d.grade))throw Error('生徒マスターの学年と一致しません');const av=avgs_(d.year,test,st.grade,st.school),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),matches=matchingRows_(a,i,d,st,test);const n=matches.length?matches[matches.length-1]:s.getLastRow()+1,row=HEAD.map(x=>''),put=(k,v)=>row[i[k]]=v;put('保存日時',new Date());put('年度',c_(d.year));put('テスト',test);put('学年',st.grade);put('生徒ID',st.id);put('生徒名',st.name);put('学校',st.school);let total=0;SUB.forEach(sub=>{const x=(d.scores||{})[sub]||{},score=c_(x.score);put(sub,score);put(sub+' 学校平均',c_(av[sub].avg));put(sub+' 偏差値',c_(x.dev));if(score!==''&&!isNaN(+score))total+=+score});put('5科合計',total);put('順位',c_(d.rank));put('回収',c_(d.collect)||'○');put('メモ',c_(d.memo));s.getRange(n,1,1,HEAD.length).setValues([row]);SpreadsheetApp.flush();return {ok:true,record:record_(row,i),updatedRow:n}}finally{lock.releaseLock()}}
-function delete_(d){['year','test','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),rows=matchingRows_(a,i,d,st,test);if(!rows.length)throw Error('削除する保存済み成績がありません');rows.forEach(n=>s.getRange(n,1,1,HEAD.length).clearContent());SpreadsheetApp.flush();return {ok:true,deleted:rows.length}}finally{lock.releaseLock()}}
+function save_(d){['year','test','grade','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test);if(st.grade!==c_(d.grade))throw Error('生徒マスターの学年と一致しません');const av=avgs_(d.year,test,st.grade,st.school),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),matches=matchingRows_(a,i,d,st,test);const n=matches.length?matches[matches.length-1]:s.getLastRow()+1,row=HEAD.map(x=>''),put=(k,v)=>row[i[k]]=v;put('保存日時',new Date());put('年度',c_(d.year));put('テスト',test);put('学年',st.grade);put('生徒ID',st.id);put('生徒名',st.name);put('学校',st.school);let total=0;SUB.forEach(sub=>{const x=(d.scores||{})[sub]||{},score=c_(x.score);put(sub,score);put(sub+' 学校平均',c_(av[sub].avg));put(sub+' 偏差値',c_(x.dev));if(score!==''&&!isNaN(+score))total+=+score});put('5科合計',total);put('順位',c_(d.rank));put('回収',c_(d.collect)||'○');put('メモ',c_(d.memo));s.getRange(n,1,1,HEAD.length).setValues([row]);const manualSync=syncManualInput_(d,st,test,row,i);SpreadsheetApp.flush();return {ok:true,record:record_(row,i),updatedRow:n,manualSync:manualSync}}finally{lock.releaseLock()}}
+function delete_(d){['year','test','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),rows=matchingRows_(a,i,d,st,test);if(!rows.length)throw Error('削除する保存済み成績がありません');rows.forEach(n=>s.getRange(n,1,1,HEAD.length).clearContent());const manualSync=syncManualInput_(d,st,test,null,i);SpreadsheetApp.flush();return {ok:true,deleted:rows.length,manualSync:manualSync}}finally{lock.releaseLock()}}
 
 // 数式のある「生徒別点数」は閲覧専用。手入力タブの変更列だけを履歴に反映する。
 const EDIT_HISTORY_COLS={4:'国語',5:'数学',6:'英語',7:'理科',8:'社会',9:'国語 偏差値',10:'数学 偏差値',11:'英語 偏差値',12:'理科 偏差値',13:'社会 偏差値',14:'順位',15:'回収',16:'メモ'};
@@ -31,9 +31,10 @@ function onScoreSheetEdit(e){
   if(!e||!e.range||e.range.getSheet().getName()!=='手入力')return;
   const range=e.range,top=Math.max(4,range.getRow()),bottom=range.getLastRow(),left=Math.max(4,range.getColumn()),right=Math.min(16,range.getLastColumn());
   if(bottom<top||right<left)return;
-  const sheet=range.getSheet(),entered=sheet.getRange(top,left,bottom-top+1,right-left+1).getValues(),lock=LockService.getScriptLock();
+  const sheet=range.getSheet(),lock=LockService.getScriptLock();
   try{
     lock.waitLock(30000);
+    const entered=sheet.getRange(top,left,bottom-top+1,right-left+1).getValues();
     const students=students_(),history=history_(),all=history.getDataRange().getValues(),index=map_(all.shift()),keys=sheet.getRange(top,1,bottom-top+1,3).getValues();
     entered.forEach((values,offset)=>{
       const [year,rawTest,id]=keys[offset],st=students.find(s=>s.id===c_(id));if(!st||st.status!=='在籍'||!c_(year)||!c_(rawTest))return;
@@ -53,3 +54,26 @@ function onScoreSheetEdit(e){
   finally{if(lock.hasLock())lock.releaseLock()}
 }
 
+// アプリの保存・削除を、同じ年度・テスト・生徒IDの手入力行へ反映。
+// A:C、見出し、数式セルは変更しない。手入力のない成績は履歴だけに保存。
+function syncManualInput_(d,st,test,row,index){
+  try{
+    const sheet=ss_().getSheetByName('手入力');
+    if(!sheet||sheet.getLastRow()<4)return {ok:true,updated:0};
+    const keys=sheet.getRange(4,1,sheet.getLastRow()-3,3).getValues(),targets=[];
+    keys.forEach((key,offset)=>{
+      if(c_(key[0])===c_(d.year)&&norm_(key[1])===norm_(test)&&c_(key[2])===st.id)targets.push(offset+4);
+    });
+    // 全対象を検証してから書き込む。数式を見つけた場合は手入力側を変更しない。
+    targets.forEach(n=>{
+      if(sheet.getRange(n,4,1,13).getFormulas()[0].some(Boolean))throw Error('手入力の対象行に数式があります');
+    });
+    const values=Array.from({length:13},(_,k)=>row?row[index[EDIT_HISTORY_COLS[k+4]]]: '');
+    targets.forEach(n=>sheet.getRange(n,4,1,13).setValues([values]));
+    return {ok:true,updated:targets.length};
+  }catch(error){
+    // 履歴への保存は成功済み。手入力側の失敗で保存を失敗扱いにしない。
+    console.error('手入力への反映に失敗: '+error.message);
+    return {ok:false,message:String(error.message||error)};
+  }
+}
