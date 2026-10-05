@@ -65,21 +65,21 @@ button.primary:active:enabled{transform:translateY(2px);box-shadow:0 1px 0 #0c5c
   .table-wrap tbody tr:not(.detail-row):hover td{background:#ebf5f3}
 }
 
-/* In score entry, keep subjects visible while scrolling through students. */
-.input-table{
+/* Keep subjects visible in entry and score viewing. */
+.score-table{
   max-height:min(70dvh,720px);
   overflow:auto;
   scrollbar-gutter:stable;
   border:1px solid #d5e2e8;
   border-radius:12px;
 }
-.input-table table{margin:0}
-.input-table thead th{
+.score-table table{margin:0}
+.score-table thead th{
   position:sticky;top:0;z-index:3;
   background:#eaf3f2;color:#294a51;
   border-bottom:2px solid #a9c8c4;
   box-shadow:0 2px 5px #193b4518;
 }
-.input-table thead th:first-child{left:0;z-index:4;border-right:2px solid #b8ccd5}
-@media(max-width:700px){.input-table{max-height:65dvh}}
-@media print{.input-table{max-height:none;overflow:visible;border:0}.input-table thead th{position:static;box-shadow:none}}
+.score-table thead th:first-child{left:0;z-index:4;border-right:2px solid #b8ccd5}
+@media(max-width:700px){.score-table{max-height:65dvh}}
+@media print{.score-table{max-height:none;overflow:visible;border:0}.score-table thead th{position:static;box-shadow:none}}
