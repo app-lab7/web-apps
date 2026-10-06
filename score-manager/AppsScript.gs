@@ -14,15 +14,30 @@ function avgs_(year,test,grade,school){const t=table_('学校平均マスター'
 function record_(r,i){const scores={};SUB.forEach(s=>scores[s]={score:c_(r[i[s]]),avg:c_(r[i[s+' 学校平均']]),dev:c_(r[i[s+' 偏差値']])});return {scores:scores,rank:c_(r[i['順位']]),collect:c_(r[i['回収']]),memo:c_(r[i['メモ']])}}
 function read_(d){const st=student_(d.studentId),test=test_(d.year,d.test),t=table_('成績履歴'),i=t.i;let r=null;for(let x=t.r.length-1;x>=0;x--)if(c_(t.r[x][i['年度']])===c_(d.year)&&norm_(t.r[x][i['テスト']])===norm_(test)&&c_(t.r[x][i['生徒ID']])===st.id){r=t.r[x];break}return r?{record:record_(r,i)}:{record:null,averages:avgs_(d.year,test,st.grade,st.school)}}
 // 閲覧画面向け。一度の履歴読み取りで対象生徒全員を返す。
+const RECORDS_REVISION_KEY='kyowa-score-records-revision-v1';
+function bumpRecordsRevision_(){PropertiesService.getScriptProperties().setProperty(RECORDS_REVISION_KEY,String(Date.now())+'-'+Math.random().toString(36).slice(2))}
+function recordsCacheKey_(d){
+  const revision=PropertiesService.getScriptProperties().getProperty(RECORDS_REVISION_KEY)||'0';
+  const raw=JSON.stringify([revision,c_(d.year),norm_(d.test),c_(d.grade),c_(d.school)]);
+  const bytes=Utilities.computeDigest(Utilities.DigestAlgorithm.MD5,raw);
+  return 'kyowa-records-v1:'+bytes.map(b=>('0'+(b&255).toString(16)).slice(-2)).join('');
+}
 function readRecords_(d){
-  const test=test_(d.year,d.test),students=students_().filter(st=>st.status==='在籍'&&Number(st.startYear||0)<=Number(d.year)&&(!c_(d.grade)||st.grade===c_(d.grade))&&(!c_(d.school)||st.school===c_(d.school))),table=table_('成績履歴'),i=table.i,latest=Object.create(null);
-  table.r.forEach(row=>{if(c_(row[i['年度']])===c_(d.year)&&norm_(row[i['テスト']])===norm_(test)){const id=c_(row[i['生徒ID']]);if(id)latest[id]=row}});
-  return {records:students.map(st=>({studentId:st.id,record:latest[st.id]?record_(latest[st.id],i):null}))};
+  const cache=CacheService.getScriptCache(),key=recordsCacheKey_(d),hit=cache.get(key);
+  if(hit)return JSON.parse(hit);
+  const boot=bootstrap_(),year=c_(d.year),selected=boot.tests.find(t=>t.year===year&&norm_(t.name)===norm_(d.test));
+  if(!selected)throw Error('テスト設定にないテストです');
+  const students=boot.students.filter(st=>st.status==='在籍'&&Number(st.startYear||0)<=Number(year)&&(!c_(d.grade)||st.grade===c_(d.grade))&&(!c_(d.school)||st.school===c_(d.school)));
+  const table=table_('成績履歴'),i=table.i,latest=Object.create(null);
+  table.r.forEach(row=>{if(c_(row[i['年度']])===year&&norm_(row[i['テスト']])===norm_(selected.name)){const id=c_(row[i['生徒ID']]);if(id)latest[id]=row}});
+  const result={records:students.map(st=>({studentId:st.id,record:latest[st.id]?record_(latest[st.id],i):null}))};
+  try{cache.put(key,JSON.stringify(result),90)}catch(_){}
+  return result;
 }
 function history_(){const s=sheet_('成績履歴'),head=s.getRange(1,1,1,HEAD.length).getDisplayValues()[0].map(c_);if(!HEAD.every((x,i)=>head[i]===x))throw Error('成績履歴の列構成が想定と違います。保存を止めました');return s}
 function matchingRows_(rows,index,d,st,test){const found=[];rows.forEach((r,x)=>{if(c_(r[index['年度']])===c_(d.year)&&norm_(r[index['テスト']])===norm_(test)&&c_(r[index['生徒ID']])===st.id)found.push(x+2)});return found}
-function save_(d){['year','test','grade','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test);if(st.grade!==c_(d.grade))throw Error('生徒マスターの学年と一致しません');const av=avgs_(d.year,test,st.grade,st.school),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),matches=matchingRows_(a,i,d,st,test);if(d.expectedRecord!==undefined){const previous=matches.length?record_(a[matches[matches.length-1]-2],i):null;if(managerFingerprint_(previous)!==d.expectedRecord)throw Error('ほかの人が成績を変更しました。再読み込みして確認してください');}managerValidateScores_(d);const n=matches.length?matches[matches.length-1]:s.getLastRow()+1,row=HEAD.map(x=>''),put=(k,v)=>row[i[k]]=v;put('保存日時',new Date());put('年度',c_(d.year));put('テスト',test);put('学年',st.grade);put('生徒ID',st.id);put('生徒名',st.name);put('学校',st.school);let total=0;SUB.forEach(sub=>{const x=(d.scores||{})[sub]||{},score=c_(x.score);put(sub,score);put(sub+' 学校平均',c_(av[sub].avg));put(sub+' 偏差値',c_(x.dev));if(score!==''&&!isNaN(+score))total+=+score});put('5科合計',total);put('順位',c_(d.rank));put('回収',c_(d.collect)||'○');put('メモ',c_(d.memo));s.getRange(n,1,1,HEAD.length).setValues([row]);const manualSync=syncManualInput_(d,st,test,row,i);SpreadsheetApp.flush();return {ok:true,record:record_(row,i),updatedRow:n,manualSync:manualSync}}finally{lock.releaseLock()}}
-function delete_(d){['year','test','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),rows=matchingRows_(a,i,d,st,test);if(!rows.length)throw Error('削除する保存済み成績がありません');rows.forEach(n=>s.getRange(n,1,1,HEAD.length).clearContent());const manualSync=syncManualInput_(d,st,test,null,i);SpreadsheetApp.flush();return {ok:true,deleted:rows.length,manualSync:manualSync}}finally{lock.releaseLock()}}
+function save_(d){['year','test','grade','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test);if(st.grade!==c_(d.grade))throw Error('生徒マスターの学年と一致しません');const av=avgs_(d.year,test,st.grade,st.school),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),matches=matchingRows_(a,i,d,st,test);if(d.expectedRecord!==undefined){const previous=matches.length?record_(a[matches[matches.length-1]-2],i):null;if(managerFingerprint_(previous)!==d.expectedRecord)throw Error('ほかの人が成績を変更しました。再読み込みして確認してください');}managerValidateScores_(d);const n=matches.length?matches[matches.length-1]:s.getLastRow()+1,row=HEAD.map(x=>''),put=(k,v)=>row[i[k]]=v;put('保存日時',new Date());put('年度',c_(d.year));put('テスト',test);put('学年',st.grade);put('生徒ID',st.id);put('生徒名',st.name);put('学校',st.school);let total=0;SUB.forEach(sub=>{const x=(d.scores||{})[sub]||{},score=c_(x.score);put(sub,score);put(sub+' 学校平均',c_(av[sub].avg));put(sub+' 偏差値',c_(x.dev));if(score!==''&&!isNaN(+score))total+=+score});put('5科合計',total);put('順位',c_(d.rank));put('回収',c_(d.collect)||'○');put('メモ',c_(d.memo));s.getRange(n,1,1,HEAD.length).setValues([row]);const manualSync=syncManualInput_(d,st,test,row,i);SpreadsheetApp.flush();bumpRecordsRevision_();return {ok:true,record:record_(row,i),updatedRow:n,manualSync:manualSync}}finally{lock.releaseLock()}}
+function delete_(d){['year','test','studentId'].forEach(k=>{if(!c_(d[k]))throw Error(k+'を選択してください')});const lock=LockService.getScriptLock();lock.waitLock(30000);try{const st=student_(d.studentId),test=test_(d.year,d.test),s=history_(),a=s.getDataRange().getValues(),i=map_(a.shift()),rows=matchingRows_(a,i,d,st,test);if(!rows.length)throw Error('削除する保存済み成績がありません');rows.forEach(n=>s.getRange(n,1,1,HEAD.length).clearContent());const manualSync=syncManualInput_(d,st,test,null,i);SpreadsheetApp.flush();bumpRecordsRevision_();return {ok:true,deleted:rows.length,manualSync:manualSync}}finally{lock.releaseLock()}}
 
 // 数式のある「生徒別点数」は閲覧専用。手入力タブの変更列だけを履歴に反映する。
 const EDIT_HISTORY_COLS={4:'国語',5:'数学',6:'英語',7:'理科',8:'社会',9:'国語 偏差値',10:'数学 偏差値',11:'英語 偏差値',12:'理科 偏差値',13:'社会 偏差値',14:'順位',15:'回収',16:'メモ'};
@@ -48,7 +63,7 @@ function onScoreSheetEdit(e){
       put('5科合計',SUB.reduce((sum,sub)=>{const v=c_(row[index[sub]]);return sum+(v!==''&&!isNaN(+v)?+v:0)},0));
       history.getRange(rowNumber,1,1,HEAD.length).setValues([row]);all[rowNumber-2]=row;
     });
-    SpreadsheetApp.flush();
+    SpreadsheetApp.flush();bumpRecordsRevision_();
     sheet.getParent().toast('手入力を成績履歴へ保存しました','Score Input',4);
   }catch(error){sheet.getParent().toast('手入力を保存できませんでした：'+error.message,'Score Input',8);throw error}
   finally{if(lock.hasLock())lock.releaseLock()}
@@ -104,7 +119,7 @@ function updateStudentSchool_(d){
     const test=c_(d.year)&&c_(d.test)?test_(d.year,d.test):null;
     const averages=test?avgs_(d.year,test,st.grade,school):null;
     table.s.getRange(found.n+2,i['学校']+1).setValue(school);
-    SpreadsheetApp.flush();CacheService.getScriptCache().remove(BOOT_CACHE_KEY);
+    SpreadsheetApp.flush();bumpRecordsRevision_();CacheService.getScriptCache().remove(BOOT_CACHE_KEY);
     return {ok:true,studentId:id,school:school,averages:averages};
   }finally{lock.releaseLock()}
 }
@@ -119,6 +134,6 @@ if(d.kind==='school'){const name=managerText_(d.name,'学校名');if(schools_().
 else if(d.kind==='student'){const name=managerText_(d.name,'生徒名'),grade=c_(d.grade),school=managerText_(d.school,'学校名'),year=managerYear_(d.year),t=table_('生徒マスター');if(!['中1','中2','中3'].includes(grade)||!schools_().includes(school))throw Error('学年・学校を候補から選択してください');if(t.r.some(r=>norm_(r[t.i['生徒名']])===norm_(name)&&c_(r[t.i['学年']])===grade))throw Error('同じ学年・生徒名が登録されています。名簿を確認してください');const ids=t.r.map(r=>c_(r[t.i['生徒ID']]));let n=ids.reduce((m,id)=>/^KY-\d+$/.test(id)?Math.max(m,+id.slice(3)):m,0)+1;let id='KY-'+String(n).padStart(3,'0');while(ids.includes(id)){n++;id='KY-'+String(n).padStart(3,'0')}managerAppend_(t,{'生徒ID':id,'学年':grade,'生徒名':name,'在籍状況':'在籍','登録年度':year,'学校':school});message='生徒を追加しました（'+id+'）';}
 else if(d.kind==='test'){const year=managerYear_(d.year),t=table_('テスト設定'),all=tests_(),source=c_(d.copyYear)?all.filter(x=>x.year===managerYear_(d.copyYear)):[{name:managerText_(d.name,'テスト名')}];if(!source.length)throw Error('コピー元にテストがありません');const fresh=source.filter(x=>!t.r.some(r=>c_(r[t.i['年度']])===year&&norm_(r[t.i['テスト名']])===norm_(x.name)));if(!fresh.length)throw Error('同じ年度・テストが登録されています');let order=all.filter(x=>x.year===year).reduce((m,x)=>Math.max(m,x.order),0);fresh.forEach(x=>managerAppend_(t,{'年度':year,'テスト名':x.name,'表示順':++order,'使用':'○'}));message=fresh.length+'件のテストを追加しました';}
 else if(d.kind==='average'){const year=managerYear_(d.year),test=test_(year,d.test),grade=c_(d.grade),school=managerText_(d.school,'学校名'),t=table_('学校平均マスター'),i=t.i;if(!['中1','中2','中3'].includes(grade)||!schools_().includes(school))throw Error('学年・学校を選択してください');const values={'年度':year,'テスト':test,'学年':grade,'学校':school};SUB.forEach(s=>{const v=c_((d.averages||{})[s]);if(v&&(!/^\d+(\.\d+)?$/.test(v)||+v>100))throw Error(s+'平均は0〜100で入力してください');values[s+'平均']=v===''?'':+v});Object.keys(values).forEach(k=>{if(i[k]===undefined)throw Error('学校平均マスターの列が不足しています')});const hits=t.r.map((r,n)=>({r,n})).filter(x=>c_(x.r[i['年度']])===year&&norm_(x.r[i['テスト']])===norm_(test)&&c_(x.r[i['学年']])===grade&&c_(x.r[i['学校']])===school);if(hits.length>1)throw Error('学校平均が重複しています。管理者に確認してください');if(hits.length){const row=hits[0].r.slice();Object.keys(values).forEach(k=>row[i[k]]=values[k]);t.s.getRange(hits[0].n+2,1,1,row.length).setValues([row])}else managerAppend_(t,values);message='学校平均を保存しました';}
-else throw Error('未対応の登録です');SpreadsheetApp.flush();CacheService.getScriptCache().remove(BOOT_CACHE_KEY);return {ok:true,message:message};}finally{lock.releaseLock()}}
+else throw Error('未対応の登録です');SpreadsheetApp.flush();bumpRecordsRevision_();CacheService.getScriptCache().remove(BOOT_CACHE_KEY);return {ok:true,message:message};}finally{lock.releaseLock()}}
 function managerHistory_(d){const st=student_(d.studentId),t=table_('成績履歴'),i=t.i,latest={};t.r.forEach(r=>{if(c_(r[i['生徒ID']])===st.id)latest[JSON.stringify([c_(r[i['年度']]),norm_(r[i['テスト']])])]=record_(r,i)});return {history:tests_().filter(x=>Number(x.year)>=Number(st.startYear||0)).map(x=>({year:x.year,test:x.name,record:latest[JSON.stringify([x.year,norm_(x.name)])]||null}))}}
 
