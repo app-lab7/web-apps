@@ -3,7 +3,7 @@ const SUB=['国語','数学','英語','理科','社会'];
 const HEAD=['保存日時','年度','テスト','学年','生徒ID','生徒名','学校','国語','国語 学校平均','国語 偏差値','数学','数学 学校平均','数学 偏差値','英語','英語 学校平均','英語 偏差値','理科','理科 学校平均','理科 偏差値','社会','社会 学校平均','社会 偏差値','5科合計','順位','回収','メモ'];
 const BOOT_CACHE_KEY='kyowa-score-input:bootstrap:v5';
 function doGet(e){try{const a=e.parameter.action||'',d=e.parameter.data?JSON.parse(e.parameter.data):{};let o={ok:true};if(a==='averages')o={ok:true,averages:avgs_(d.year,test_(d.year,d.test),d.grade,d.school)};if(a==='history')o=Object.assign(o,managerHistory_(d));if(a==='bootstrap')o=bootstrap_();if(a==='record')o=Object.assign(o,read_(d));if(a==='records')o=Object.assign(o,readRecords_(d));return out_(o)}catch(x){return out_({ok:false,message:String(x.message||x)})}}
-function doPost(e){try{const q=JSON.parse(e.postData.contents||'{}');if(q.action==='managerSave')return out_(managerSave_(q.data||{}));if(q.action==='school')return out_(updateStudentSchool_(q.data||{}));if(q.action==='save')return out_(save_(q.data||{}));if(q.action==='delete')return out_(delete_(q.data||{}));throw Error('未対応の処理です')}catch(x){return out_({ok:false,message:String(x.message||x)})}}
+function doPost(e){try{const q=JSON.parse(e.postData.contents||'{}');if(q.action==='karteSnapshot')return out_(karteSnapshot_(q));if(q.action==='managerSave')return out_(managerSave_(q.data||{}));if(q.action==='school')return out_(updateStudentSchool_(q.data||{}));if(q.action==='save')return out_(save_(q.data||{}));if(q.action==='delete')return out_(delete_(q.data||{}));throw Error('未対応の処理です')}catch(x){return out_({ok:false,message:String(x.message||x)})}}
 let SCORE_SPREADSHEET_=null;
 function ss_(){return SCORE_SPREADSHEET_||(SCORE_SPREADSHEET_=SpreadsheetApp.openById(SCORE_SHEET_ID))}function sheet_(n){const s=ss_().getSheetByName(n);if(!s)throw Error('「'+n+'」が見つかりません');return s}function out_(x){return ContentService.createTextOutput(JSON.stringify(x)).setMimeType(ContentService.MimeType.JSON)}function c_(x){return String(x==null?'':x).trim()}function norm_(x){return c_(x).replace(/[ 　]/g,'').replace(/[０-９]/g,x=>String.fromCharCode(x.charCodeAt(0)-65248)).replace(/^第/,'').replace(/回目$/,'回')}function map_(h){return h.reduce((o,x,i)=>(o[c_(x)]=i,o),{})}function table_(n){const s=sheet_(n),a=s.getDataRange().getValues(),h=a.shift().map(c_);return {s:s,h:h,i:map_(h),r:a}}
 function tests_(){const t=table_('テスト設定'),i=t.i;return t.r.filter(r=>c_(r[i['年度']])&&c_(r[i['テスト名']])&&c_(r[i['使用']])!=='×').map(r=>({year:c_(r[i['年度']]),name:c_(r[i['テスト名']]),order:+r[i['表示順']]||0})).sort((a,b)=>a.year.localeCompare(b.year)||a.order-b.order)}
@@ -137,3 +137,19 @@ else if(d.kind==='average'){const year=managerYear_(d.year),test=test_(year,d.te
 else throw Error('未対応の登録です');SpreadsheetApp.flush();bumpRecordsRevision_();CacheService.getScriptCache().remove(BOOT_CACHE_KEY);return {ok:true,message:message};}finally{lock.releaseLock()}}
 function managerHistory_(d){const st=student_(d.studentId),t=table_('成績履歴'),i=t.i,latest={};t.r.forEach(r=>{if(c_(r[i['生徒ID']])===st.id)latest[JSON.stringify([c_(r[i['年度']]),norm_(r[i['テスト']])])]=record_(r,i)});return {history:tests_().filter(x=>Number(x.year)>=Number(st.startYear||0)).map(x=>({year:x.year,test:x.name,record:latest[JSON.stringify([x.year,norm_(x.name)])]||null}))}}
 
+
+// 成績カルテ共和校ページ用。共有トークンはスクリプトプロパティだけに保存。
+function karteSnapshot_(request){
+  const expected=PropertiesService.getScriptProperties().getProperty('KARTE_SYNC_TOKEN');
+  const supplied=String(request&&request.token||'');
+  if(!expected||expected.length<32||supplied.length!==expected.length)return {ok:false,message:'認証できません'};
+  let mismatch=0;for(let i=0;i<expected.length;i++)mismatch|=expected.charCodeAt(i)^supplied.charCodeAt(i);
+  if(mismatch)return {ok:false,message:'認証できません'};
+  const students=students_().filter(st=>st.status==='在籍').map(st=>({id:st.id,name:st.name,grade:st.grade,school:st.school,status:st.status}));
+  const allowed=new Set(students.map(st=>st.id));
+  const tests=tests_().map(t=>({year:t.year,name:t.name}));
+  const validTests=new Map(tests.map(t=>[t.year+'|'+norm_(t.name),t.name]));
+  const t=table_('成績履歴'),latest=new Map();
+  t.r.forEach(row=>{const studentId=c_(row[t.i['生徒ID']]),year=c_(row[t.i['年度']]),test=validTests.get(year+'|'+norm_(row[t.i['テスト']]));if(!allowed.has(studentId)||!test)return;const r=record_(row,t.i);latest.set(year+'|'+test+'|'+studentId,{studentId,year,test,scores:r.scores,rank:r.rank,collect:r.collect})});
+  return {ok:true,generatedAt:new Date().toISOString(),students,tests,records:[...latest.values()]};
+}
