@@ -173,3 +173,41 @@ button.primary:active:enabled{transform:translateY(2px);box-shadow:0 1px 0 #0c5c
 .score-delta.neutral{color:#516676;background:#edf2f5}
 @media(max-width:700px){#listTable .score-delta{display:flex;width:max-content}}
 @media print{.score-delta{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+
+/* Compact accordion headers on phones; the checkbox remains usable while closed. */
+.mobile-toggle{display:none}
+@media(max-width:700px){
+  #listTable .desktop-student,.history-table .desktop-student,
+  #rosterTable .desktop-student{display:none}
+  #listTable .student-cell{padding:0}
+  #listTable .mobile-toggle,.history-table .mobile-toggle,
+  #rosterTable .mobile-toggle{
+    display:block;position:relative;width:100%;min-height:62px;
+    padding:10px 42px 10px 13px;margin:0;border:0;border-radius:0;
+    background:transparent;box-shadow:none;color:#18364a;text-align:left;
+  }
+  #listTable .mobile-toggle .name,.history-table .mobile-toggle .name,
+  #rosterTable .mobile-toggle .name{display:block;font-size:16px;line-height:1.3}
+  #listTable .mobile-toggle .school-line{display:block;margin-top:2px;
+    font-size:12px;line-height:1.3}
+  .mobile-summary{display:block;margin-top:3px;color:#587181;
+    font-size:12px;font-weight:500;line-height:1.3}
+  .mobile-chevron{position:absolute;right:15px;top:50%;
+    transform:translateY(-50%);font-size:23px;line-height:1;
+    color:#356b70;transition:transform .15s ease}
+  .mobile-expanded .mobile-chevron{transform:translateY(-50%) rotate(180deg)}
+  #listTable tr:not(.mobile-expanded):not(.detail-row)>td:not(.student-cell),
+  .history-table tr:not(.mobile-expanded)>td:not(:first-child),
+  #rosterTable tr:not(.mobile-expanded)>td:not(.roster-check):not(.roster-name){
+    display:none
+  }
+  #listTable tr:not(.mobile-expanded)+tr.detail-row{display:none}
+  #rosterTable .roster-name{padding:0}
+  #rosterTable .mobile-toggle{min-height:58px}
+  .history-table td:first-child{padding:0}
+}
+@media(prefers-reduced-motion:reduce){.mobile-chevron{transition:none}}
+@media print{
+  .mobile-toggle{display:none!important}
+  .desktop-student{display:block!important}
+}
