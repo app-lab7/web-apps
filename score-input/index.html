@@ -8,15 +8,53 @@ main button.danger{border-color:#f2b8b5;box-shadow:0 3px 0 #e8b8b5}
 main button:active:not(:disabled){transform:translateY(2px);box-shadow:0 1px 0 #104d7d}
 main button:disabled{box-shadow:none}
 @media(prefers-reduced-motion:reduce){main button{transition:none}}
+
+.decimal-field{display:flex;align-items:center;border:1px solid #cfd8e4;border-radius:10px;background:#fff;min-width:0;overflow:hidden}
+.decimal-field:focus-within{outline:2px solid #1769aa;outline-offset:2px}
+.decimal-field input{border:0;border-radius:0;min-width:0;padding:12px 6px;outline:none}
+.decimal-field .decimal-whole{flex:1;width:0;text-align:right}
+.decimal-field .decimal-fraction{flex:0 0 3.2em;width:3.2em}
+.decimal-point{font-size:20px;font-weight:700;color:#526174}
+.decimal-field.is-readonly,.decimal-field.is-readonly input{background:#eef4f9;color:#526174}
+.decimal-empty{font-size:12px;color:#738094;margin-top:4px}
+.decimal-empty[hidden]{display:none}
 </style></head><body class="locked"><div id="gate" class="gate"><form id="gateForm" class="gate-card"><h1>Score Input</h1><p>アプリのパスワードを入力してください。</p><label for="gatePassword">パスワード</label><input id="gatePassword" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required><button>開く</button><p id="gateError" class="gate-error" role="alert"></p></form></div><div id="startup" class="startup" role="status" aria-live="polite" hidden><div class="startup-card"><span class="startup-mark">共和校</span><div class="startup-spinner" aria-hidden="true"></div><strong>成績入力を準備中</strong><p>名簿とテストを読み込んでいます</p></div></div>
 <header><b>Score Input</b><small>共和校　中学生テスト成績入力</small></header><main><div class="card"><div class="grid"><div><label>年度</label><select id="year"></select></div><div><label>テスト</label><select id="test"><option value="">読み込み中…</option></select></div><div><label>学年</label><select id="grade"><option value="">学年を選択</option></select></div><div><label>生徒</label><select id="student"><option value="">生徒を選択</option></select></div></div></div><div class="card"><label for="school">学校（生徒マスターに登録）</label><select id="school" disabled><option value="">生徒を選択してください</option></select><button class="sub" id="schoolSave" disabled>学校を名簿に保存</button><button class="sub" id="masterReload">名簿・学校候補を再読込</button><p class="hint" id="schoolHint">学校を選び、ボタンを押すと名簿に反映します。</p></div><div id="subjects"></div><div class="card"><div class="grid"><div><label>順位</label><input id="rank" inputmode="numeric" placeholder="例：12"></div><div><label>回収状況</label><select id="collect"><option value="○">○ 回収済</option><option value="未">未回収</option></select></div><div class="full"><label>メモ</label><textarea id="memo" rows="3" placeholder="面談・テストについてのメモ"></textarea></div></div></div><div class="card"><button id="save">保存する</button><button class="sub" id="reload">保存済みを再読込</button><button class="sub" id="clear">入力をクリア</button><button class="sub danger" id="delete">この成績を削除</button><div id="status"></div><p class="hint">削除は選択中の年度・テスト・生徒の保存済み成績だけに適用されます。生徒別点数などの数式は変更しません。</p></div></main>
 <script>
 const CONFIG={apiUrl:"https://script.google.com/macros/s/AKfycbya7qViVMKVJau3fZ1fgyKF82jkAeQOtMMQSpzC8fqjhRBMgoB9h8cf0nCmWcVL7izntQ/exec"};const MASTER_CACHE_KEY="kyowa-score-input-master-v1",MASTER_CACHE_MAX_AGE=24*60*60*1000;const subjects=["国語","数学","英語","理科","社会"],$=s=>document.querySelector(s);let state={tests:[],students:[],schools:[],capabilities:{}};let schoolBusy=false,recordRequest=0;
 function h(v){return String(v??"").replace(/[&<>\"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}function setStatus(t,bad=false){$("#status").textContent=t;$("#status").style.color=bad?"#c13b3b":"#1769aa"}function value(id){return $(id).value}
-$("#subjects").innerHTML=subjects.map(s=>`<div class="card subject"><h3>${s}</h3><div class="grid"><div><label>本人点</label><input data-s="${s}" data-k="score" inputmode="decimal" placeholder="点"></div><div><label>学校平均</label><input data-s="${s}" data-k="avg" readonly placeholder="マスター未登録"></div><div><label>偏差値</label><input data-s="${s}" data-k="dev" inputmode="decimal" placeholder="偏差値"></div></div></div>`).join("");
+
+function decimalField(subject,key,readonly=false){
+  const label=subject+ (key==='avg'?' 学校平均':' 偏差値');
+  return `<input type="hidden" data-s="${subject}" data-k="${key}"><div class="decimal-field${readonly?' is-readonly':''}"><input class="decimal-whole" inputmode="numeric" aria-label="${label} 整数部分" placeholder="—" ${readonly?'readonly':''}><span class="decimal-point" aria-hidden="true">.</span><input class="decimal-fraction" inputmode="numeric" aria-label="${label} 小数部分" placeholder="—" ${readonly?'readonly':''}></div>${readonly?'<div class="decimal-empty">マスター未登録</div>':''}`;
+}
+function syncDecimalFields(){
+  document.querySelectorAll('.decimal-field').forEach(box=>{
+    const raw=box.previousElementSibling.value,parts=String(raw).split('.');
+    box.querySelector('.decimal-whole').value=raw===''?'':parts[0];
+    box.querySelector('.decimal-fraction').value=raw===''?'':(parts[1]||'0');
+    const hint=box.nextElementSibling;if(hint?.classList.contains('decimal-empty'))hint.hidden=raw!=='';
+  });
+}
+function bindDecimalFields(){
+  document.querySelectorAll('.decimal-field:not(.is-readonly)').forEach(box=>{
+    const whole=box.querySelector('.decimal-whole'),fraction=box.querySelector('.decimal-fraction'),stored=box.previousElementSibling;
+    function update(){stored.value=whole.value===''&&fraction.value===''?'':(whole.value||'0')+'.'+(fraction.value||'0')}
+    whole.addEventListener('input',()=>{
+      const text=whole.value.normalize('NFKC');
+      if(text.includes('.')){const parts=text.split('.');whole.value=parts[0].replace(/\D/g,'');fraction.value=parts[1].replace(/\D/g,'');fraction.focus()}else whole.value=text.replace(/\D/g,'');
+      update();
+    });
+    whole.addEventListener('keydown',e=>{if(e.key==='.'||e.key==='Decimal'){e.preventDefault();fraction.focus();fraction.select()}});
+    fraction.addEventListener('input',()=>{fraction.value=fraction.value.normalize('NFKC').replace(/\D/g,'');update()});
+    [whole,fraction].forEach(input=>input.addEventListener('focus',()=>input.select()));
+  });
+}
+$("#subjects").innerHTML=subjects.map(s=>`<div class="card subject"><h3>${s}</h3><div class="grid"><div><label>本人点</label><input data-s="${s}" data-k="score" inputmode="decimal" placeholder="点"></div><div><label>学校平均</label>${decimalField(s,"avg",true)}</div><div><label>偏差値</label>${decimalField(s,"dev")}</div></div></div>`).join("");
+bindDecimalFields();
 async function api(action,data){let u=CONFIG.apiUrl+"?action="+encodeURIComponent(action);if(data)u+="&data="+encodeURIComponent(JSON.stringify(data));const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),30000);let j;try{const r=await fetch(u,{cache:"no-store",signal:controller.signal});j=await r.json()}catch(e){if(e.name==="AbortError")throw Error("読み込みがタイムアウトしました。再読込してください");throw e}finally{clearTimeout(timer)}if(!j.ok)throw Error(j.message||"通信に失敗しました");return j}function fill(sel,items,placeholder,mapper=v=>[v,v]){$(sel).innerHTML=`<option value="">${placeholder}</option>`+items.map(v=>{const [a,b]=mapper(v);return `<option value="${h(a)}">${h(b)}</option>`}).join("")}
 function refreshTests(){const keep=value("#test"),year=value("#year");fill("#test",state.tests.filter(x=>String(x.year)===String(year)),"テストを選択",x=>[x.name,x.name]);if([...$("#test").options].some(o=>o.value===keep))$("#test").value=keep}function refreshGrades(){const keep=value("#grade"),year=value("#year");const grades=[...new Set(state.students.filter(s=>String(s.startYear)<=String(year)&&s.status==="在籍").map(s=>s.grade))];fill("#grade",grades,"学年を選択");if(grades.includes(keep))$("#grade").value=keep;refreshStudents()}function refreshStudents(){const keep=value("#student"),g=value("#grade"),list=state.students.filter(s=>s.status==="在籍"&&s.grade===g);fill("#student",list,"生徒を選択",s=>[s.id,`${s.name}${s.school?"（"+s.school+"）":""}`]);if(list.some(s=>s.id===keep))$("#student").value=keep;refreshSchool()}
-function setScores(scores={}){subjects.forEach(s=>["score","avg","dev"].forEach(k=>document.querySelector(`[data-s="${s}"][data-k="${k}"]`).value=(scores[s]||{})[k]??""))}function clearInputs(){setScores();$("#rank").value="";$("#collect").value="○";$("#memo").value=""}
+function setScores(scores={}){subjects.forEach(s=>["score","avg","dev"].forEach(k=>document.querySelector(`[data-s="${s}"][data-k="${k}"]`).value=(scores[s]||{})[k]??""));syncDecimalFields()}function clearInputs(){setScores();$("#rank").value="";$("#collect").value="○";$("#memo").value=""}
 async function loadRecord(){const request=++recordRequest;refreshSchool();clearInputs();if(!value("#year")||!value("#test")||!value("#student"))return;setStatus("保存内容を読み込み中…");try{const d=await api("record",{year:value("#year"),test:value("#test"),studentId:value("#student")});if(request!==recordRequest)return;if(d.record){setScores(d.record.scores);$("#rank").value=d.record.rank||"";$("#collect").value=d.record.collect||"○";$("#memo").value=d.record.memo||"";setStatus("保存済みの内容を読み込みました")}else{setScores(d.averages||{});setStatus("新規入力です。学校平均はマスターから読み込みました")}}catch(e){setStatus(e.message,true)}}
 function payload(){const p={year:value("#year"),test:value("#test"),grade:value("#grade"),studentId:value("#student"),rank:value("#rank"),collect:value("#collect"),memo:value("#memo"),scores:{}};subjects.forEach(s=>{p.scores[s]={};["score","avg","dev"].forEach(k=>p.scores[s][k]=document.querySelector(`[data-s="${s}"][data-k="${k}"]`).value)});return p}
 function applyMaster(d){state={tests:d.tests||[],students:d.students||[],schools:d.schools||[],capabilities:d.capabilities||{}};const keepYear=value("#year"),keepTest=value("#test"),keepGrade=value("#grade"),keepStudent=value("#student"),years=[...new Set(state.tests.map(x=>String(x.year)))].sort();fill("#year",years,"年度を選択");const now=String(new Date().getFullYear());$("#year").value=years.includes(keepYear)?keepYear:(years.includes(now)?now:years.at(-1)||"");refreshTests();if([...$("#test").options].some(o=>o.value===keepTest))$("#test").value=keepTest;refreshGrades();if([...$("#grade").options].some(o=>o.value===keepGrade))$("#grade").value=keepGrade;refreshStudents();if([...$("#student").options].some(o=>o.value===keepStudent))$("#student").value=keepStudent;refreshSchool()}
@@ -56,7 +94,7 @@ $('#schoolSave').onclick=async()=>{
     const d=await response.json();if(!d.ok||d.school!==school||d.studentId!==st.id)throw Error(d.message||'学校を保存できませんでした');
     st.school=d.school;if(!state.schools.includes(d.school))state.schools.push(d.school);
     refreshStudents();cacheMaster(state);
-    subjects.forEach(sub=>document.querySelector(`[data-s="${sub}"][data-k="avg"]`).value=d.averages?.[sub]?.avg??'');
+    subjects.forEach(sub=>document.querySelector(`[data-s="${sub}"][data-k="avg"]`).value=d.averages?.[sub]?.avg??'');syncDecimalFields();
     setStatus('学校を名簿に保存しました。点数は「保存する」で保存してください。');
   }catch(error){setStatus(error.message||'学校を保存できませんでした',true)}
   finally{schoolBusy=false;controls.forEach((id,n)=>$(id).disabled=disabled[n])}
