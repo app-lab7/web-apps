@@ -3,6 +3,67 @@
 :root{--ink:#302a26;--paper:#f6f0e3;--edge:#9f8763;--gold:#d4b474;--blue:#527888}*{box-sizing:border-box}body{margin:0;background:#18282c;color:var(--ink);font-family:system-ui,-apple-system,sans-serif;font-size:14px}button{font:inherit;cursor:pointer;border:1px solid var(--edge);border-radius:7px;background:#fbf7ed;color:var(--ink);min-height:44px;padding:9px 14px;touch-action:manipulation}button:hover{background:#e9ddc6}button:focus-visible{outline:3px solid #5496bd;outline-offset:2px}button:disabled{opacity:.5;cursor:default}.primary{background:#436657;color:white;border-color:#436657}.primary:hover{background:#355544}.game{max-width:1250px;margin:auto;padding:12px}.top{display:flex;align-items:center;gap:16px;color:#f6efdd;margin-bottom:10px}.top h1{font-family:serif;font-size:23px;margin:0;letter-spacing:.08em}.top .date{font-size:12px;opacity:.8}.top button{margin-left:auto}.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:12px}.world{min-width:0}.stats{display:flex;gap:9px;margin-bottom:10px}.stat{background:var(--paper);border:1px solid #baab8a;border-radius:8px;padding:8px 13px;flex:1;display:flex;align-items:baseline;gap:12px}.stat small{font-size:12px;color:#6c6253}.stat b{font-size:21px;font-weight:500}.mapframe{position:relative;height:clamp(260px,55vh,590px);border:3px solid #b29562;border-radius:12px;overflow:hidden;background:#718d59;box-shadow:0 6px 24px #0003}canvas{display:block;width:100%;height:100%;touch-action:none;image-rendering:pixelated}.maptip{position:absolute;left:10px;top:9px;pointer-events:none;background:#f6f0e3df;padding:6px 10px;border-radius:5px;font-size:12px}.names{position:absolute;bottom:9px;left:9px;display:flex;gap:6px;flex-wrap:wrap}.names button{min-height:40px;padding:7px 11px;background:#f6f0e3ed}.names button.active{border:2px solid #47645a}.toolbar{display:flex;gap:6px;align-items:center;margin-top:9px;flex-wrap:wrap;color:#eadfc6}.toolbar button{min-width:44px}.toolbar .active{background:var(--gold)}.toolbar .hint{font-size:11px;opacity:.8;margin-left:auto}.sidebar{background:var(--paper);border:2px solid #b5a080;border-radius:10px;padding:15px;min-width:0;overflow:auto;max-height:78vh}.guide{font-size:12px;background:#e8ddc6;padding:10px;border-left:3px solid #a58244;line-height:1.6;margin-bottom:13px}.eyebrow{font-size:11px;letter-spacing:.16em;color:#75614e}.personhead{display:flex;align-items:center;gap:12px;margin:10px 0}.portrait{width:56px;height:64px;flex-shrink:0;image-rendering:pixelated;border-radius:7px;background:#e1d7c4;display:grid;place-items:center}.portrait canvas{width:48px;height:60px}.personhead h2{font-family:serif;margin:0 0 3px;font-size:24px}.muted{color:#7c7160;font-size:12px}.current{padding:12px 0;border-top:1px solid #cec2ab;border-bottom:1px solid #cec2ab}.current p{margin:6px 0;line-height:1.6}.activity{font-weight:600;color:#3c6557}.controls{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin:12px 0}.controls .wide{grid-column:span 2}.section{margin-top:17px;padding-top:12px;border-top:1px solid #cabda4}.section h3{font-size:13px;margin:0 0 8px}.section p{font-size:12px;line-height:1.7;margin:5px 0}.voice{background:#e5e0ea;padding:10px;border-radius:6px;margin-top:15px}.voice b{font-size:12px}.voice p{line-height:1.7;margin:6px 0;font-size:13px}.notice{background:#ece1c5;border:1px solid #c0a376;border-radius:6px;padding:10px;margin:10px 0;display:flex;justify-content:space-between;align-items:center;font-size:12px}.notice[hidden]{display:none}.note{color:#eee2c9;font-size:11px;line-height:1.6;margin:10px 0}.shade{position:fixed;inset:0;background:#101d26bc;z-index:20;display:grid;place-items:center;padding:16px}.shade[hidden]{display:none}.dialog{width:min(550px,100%);max-height:90dvh;overflow:auto;background:var(--paper);border:2px solid #bba076;border-radius:12px;padding:26px;box-shadow:0 15px 80px #0005}.dialog h2{font-family:serif;margin:10px 0 16px;font-size:26px}.dialog p{line-height:1.8}.dialog .actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:20px}.dialog dl{display:grid;grid-template-columns:96px 1fr;gap:12px;font-size:13px;line-height:1.6}.dialog dd{margin:0}.timeline{padding-left:19px}.timeline li{padding:8px 0;font-size:13px;line-height:1.7}.timeline time{display:block;color:#7b6a52;font-size:11px}.menugrid{display:grid;grid-template-columns:1fr 1fr;gap:9px}.menugrid button{text-align:left;padding:14px}.toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#243a33;color:#fff6e2;max-width:92vw;padding:12px 18px;border-radius:8px;z-index:30;box-shadow:0 5px 22px #0004}.toast[hidden]{display:none}
 @media(orientation:landscape) and (max-height:550px){.game{padding:7px}.top{height:37px;margin:0 0 5px}.top h1{font-size:19px}.top button{min-height:36px;padding:5px 12px}.layout{grid-template-columns:minmax(0,1fr) 290px;gap:9px}.stats{margin-bottom:6px}.stat{padding:4px 10px}.stat b{font-size:18px}.mapframe{height:calc(100dvh - 142px);min-height:130px}.sidebar{max-height:calc(100dvh - 58px);padding:11px}.guide{padding:7px;margin-bottom:8px;font-size:11px}.personhead{margin:6px 0;gap:10px}.personhead h2{font-size:20px}.portrait{width:42px;height:47px}.portrait canvas{width:36px;height:45px}.current{padding:6px 0}.current p{font-size:12px}.controls{margin:8px 0}.note{display:none}.toolbar{margin-top:5px}.toolbar button{min-height:38px;padding:6px 10px}.dialog{padding:18px}.maptip{font-size:10px;top:5px;left:5px}.names button{min-height:34px;padding:5px 9px}.toolbar .hint{display:none}}
 @media(max-width:650px) and (orientation:portrait){.game{padding:8px}.top{gap:8px}.top h1{font-size:19px}.top .date{font-size:10px}.layout{display:block}.mapframe{height:38dvh;min-height:240px}.sidebar{max-height:none;margin-top:12px}.toolbar .hint{display:none}.dialog{padding:20px}.stat{padding:6px 10px}}
+
+/* Stage 1 smartphone viewport layout: keep the game chrome on one screen. */
+html,body{width:100%;min-height:100%;overscroll-behavior:none}
+.game{padding-top:max(7px,env(safe-area-inset-top));padding-bottom:max(7px,env(safe-area-inset-bottom))}
+@media (max-width:650px) and (orientation:portrait){
+ html,body{height:100%;overflow:hidden}
+ .game{height:100dvh;max-height:100dvh;display:flex;flex-direction:column;padding-left:max(7px,env(safe-area-inset-left));padding-right:max(7px,env(safe-area-inset-right));gap:5px;overflow:hidden}
+ .top{flex:0 0 auto;min-height:39px;margin:0;gap:6px}
+ .top h1{font-size:18px;white-space:nowrap}
+ .top button{min-height:36px;padding:5px 10px;margin-left:auto}
+ .top .date{font-size:10px;min-width:0}
+ .layout{display:flex;flex-direction:column;flex:1;min-height:0;gap:7px}
+ .world{display:flex;flex-direction:column;flex:1 1 58%;min-height:0}
+ .stats{flex:0 0 auto;margin-bottom:6px;gap:6px}
+ .stat{padding:5px 8px;gap:7px;min-width:0}
+ .stat small{font-size:10px}
+ .stat b{font-size:19px}
+ .mapframe{height:auto;min-height:100px;flex:1 1 auto;border-width:2px}
+ .maptip{font-size:10px;padding:4px 7px;max-width:70%}
+ .names{bottom:5px;left:5px;gap:4px}
+ .names button{min-height:34px;padding:5px 8px;font-size:12px}
+ .toolbar{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-top:6px}
+ .toolbar button{min-height:40px;min-width:0;padding:5px 0}
+ .toolbar .hint{display:none}
+ .note{display:none}
+ .notice{margin:4px 0;padding:6px}
+ .sidebar{flex:0 0 34%;height:34%;max-height:none;min-height:0;margin:0;padding:10px 11px;overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ .guide{padding:7px;font-size:11px;line-height:1.4;margin-bottom:6px}
+ .personhead{margin:6px 0}
+ .personhead h2{font-size:20px}
+ .portrait{width:44px;height:52px}
+ .portrait canvas{width:40px;height:50px}
+ .current{padding:6px 0}
+ .current p{margin:4px 0}
+ .controls{gap:6px;margin:7px 0}
+ .controls button{min-height:40px;padding:6px 8px}
+ .section{margin-top:8px;padding-top:7px}
+ .dialog{max-height:calc(100dvh - 28px);padding:16px}
+}
+@media (orientation:landscape) and (max-height:600px) and (max-width:1000px){
+ html,body{height:100%;overflow:hidden}
+ .game{height:100dvh;display:flex;flex-direction:column;gap:5px;padding-top:max(4px,env(safe-area-inset-top));padding-bottom:max(4px,env(safe-area-inset-bottom));padding-left:max(8px,env(safe-area-inset-left));padding-right:max(8px,env(safe-area-inset-right));overflow:hidden}
+ .top{flex:0 0 auto;min-height:32px;height:auto;margin:0}
+ .layout{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) minmax(235px,35%);gap:7px}
+ .world{display:flex;flex-direction:column;min-height:0}
+ .stats{flex:0 0 auto;margin-bottom:5px;gap:5px}
+ .stat{padding:3px 7px;gap:6px}
+ .stat small{font-size:10px}
+ .stat b{font-size:17px}
+ .mapframe{flex:1;min-height:90px;height:auto;border-width:2px}
+ .toolbar{flex:0 0 auto;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:4px;margin-top:4px}
+ .toolbar button{min-width:0;min-height:36px;padding:4px 0}
+ .toolbar .hint,.note{display:none}
+ .sidebar{min-height:0;max-height:none;height:100%;padding:9px 11px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+ .guide{font-size:11px;line-height:1.35;padding:6px;margin-bottom:5px}
+ .personhead{margin:5px 0}
+ .current{padding:5px 0}
+ .controls{margin:6px 0}
+ .controls button{min-height:37px;padding:5px 7px}
+ .dialog{max-height:calc(100dvh - 20px);padding:14px}
+}
 </style></head><body>
 <main class="game"><header class="top"><h1>神は死なない</h1><span class="date" id="date"></span><button id="menu">☰ メニュー</button></header><div class="layout"><section class="world"><div class="stats"><div class="stat"><small>神力</small><b id="power">8</b><small id="origin">創世の名残</small></div><div class="stat"><small>出会った人</small><b id="population">2</b></div></div><div class="mapframe"><canvas id="map" aria-label="世界の地図。人物をタップして観察する"></canvas><div class="maptip">人物をタップ · ドラッグで視点移動</div><div class="names" id="names"></div></div><div class="toolbar"><button id="pause" aria-label="時間を止める">Ⅱ</button><button data-speed="800" class="active" aria-label="通常速度">▶</button><button data-speed="160" aria-label="高速">▶▶</button><button id="zoomOut" aria-label="縮小">−</button><button id="zoomIn" aria-label="拡大">＋</button><button id="return" aria-label="最初の場所へ視点を戻す">⌂</button><span class="hint">人間への移動命令はできません</span></div><div class="notice" id="notice" hidden></div><p class="note">動作検証版 · 神力は時間では回復しません。数値・老化・病気は仮設定です。</p></section><aside class="sidebar"><div class="guide" id="guide"></div><div id="person"></div><div id="outcome"></div><div id="voice"></div></aside></div></main>
 <div class="shade" id="shade" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><span class="eyebrow">神は死なない</span><h2 id="dialogTitle"></h2><div id="dialogBody"></div><div class="actions" id="dialogActions"></div></section></div><div class="toast" id="toast" hidden role="status"></div>
