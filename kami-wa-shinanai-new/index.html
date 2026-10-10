@@ -64,8 +64,53 @@ html,body{width:100%;min-height:100%;overscroll-behavior:none}
  .controls button{min-height:37px;padding:5px 7px}
  .dialog{max-height:calc(100dvh - 20px);padding:14px}
 }
+
+/* No-scroll game UI on phone. Detail/history dialogs may scroll independently. */
+.mobile-tabs{display:none}
+@media (max-width:650px) and (orientation:portrait),(orientation:landscape) and (max-height:600px) and (max-width:1000px){
+ html,body{height:100%;overflow:hidden;overscroll-behavior:none}
+ .game{height:100dvh;max-height:100dvh;overflow:hidden}
+ .layout,.world,.sidebar{min-height:0}
+ .world{overflow:hidden}
+ .sidebar{display:flex;flex-direction:column;overflow:hidden!important;overscroll-behavior:none}
+ .mobile-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;flex-shrink:0;margin-bottom:6px}
+ .mobile-tabs button{font-size:11px;min-height:32px;padding:4px 2px;white-space:nowrap}
+ .mobile-tabs button.active{background:#436657;color:#fff;border-color:#436657}
+ .sidebar[data-mobile-tab="person"] #outcome,.sidebar[data-mobile-tab="person"] #voice{display:none}
+ .sidebar[data-mobile-tab="outcome"] .guide,.sidebar[data-mobile-tab="outcome"] #person,.sidebar[data-mobile-tab="outcome"] #voice{display:none}
+ .sidebar[data-mobile-tab="voice"] .guide,.sidebar[data-mobile-tab="voice"] #person,.sidebar[data-mobile-tab="voice"] #outcome{display:none}
+ .sidebar #person,.sidebar #outcome,.sidebar #voice{min-height:0;overflow:hidden}
+ .sidebar .section{margin-top:4px;padding-top:4px}
+ .sidebar .section p{margin:4px 0}
+ .sidebar .voice{margin-top:4px}
+ .sidebar .controls{margin:5px 0}
+ .sidebar .controls button{font-size:12px}
+ .sidebar .current p{line-height:1.3}
+ .sidebar .personhead h2{font-size:18px}
+ .sidebar .personhead{margin:4px 0}
+ .sidebar .guide{line-height:1.3;margin-bottom:4px}
+}
+@media (max-width:650px) and (orientation:portrait){
+ .world{flex:1 1 auto}
+ .sidebar{flex:0 0 38%;height:38%;padding:7px 9px}
+ .sidebar .portrait{width:36px;height:42px}
+ .sidebar .portrait canvas{width:34px;height:40px}
+ .sidebar .controls button{min-height:34px}
+ .sidebar .current{padding:3px 0}
+ .sidebar .personhead{gap:7px}
+ .sidebar .guide{font-size:10px;padding:5px}
+ .sidebar .current p{font-size:11px}
+ .sidebar .current .muted{font-size:10px}
+}
+@media (orientation:landscape) and (max-height:600px) and (max-width:1000px){
+ .sidebar{padding:6px 8px}
+ .sidebar .portrait{width:36px;height:42px}
+ .sidebar .portrait canvas{width:34px;height:40px}
+ .sidebar .controls button{min-height:33px}
+ .sidebar .guide{font-size:10px;padding:4px}
+}
 </style></head><body>
-<main class="game"><header class="top"><h1>神は死なない</h1><span class="date" id="date"></span><button id="menu">☰ メニュー</button></header><div class="layout"><section class="world"><div class="stats"><div class="stat"><small>神力</small><b id="power">8</b><small id="origin">創世の名残</small></div><div class="stat"><small>出会った人</small><b id="population">2</b></div></div><div class="mapframe"><canvas id="map" aria-label="世界の地図。人物をタップして観察する"></canvas><div class="maptip">人物をタップ · ドラッグで視点移動</div><div class="names" id="names"></div></div><div class="toolbar"><button id="pause" aria-label="時間を止める">Ⅱ</button><button data-speed="800" class="active" aria-label="通常速度">▶</button><button data-speed="160" aria-label="高速">▶▶</button><button id="zoomOut" aria-label="縮小">−</button><button id="zoomIn" aria-label="拡大">＋</button><button id="return" aria-label="最初の場所へ視点を戻す">⌂</button><span class="hint">人間への移動命令はできません</span></div><div class="notice" id="notice" hidden></div><p class="note">動作検証版 · 神力は時間では回復しません。数値・老化・病気は仮設定です。</p></section><aside class="sidebar"><div class="guide" id="guide"></div><div id="person"></div><div id="outcome"></div><div id="voice"></div></aside></div></main>
+<main class="game"><header class="top"><h1>神は死なない</h1><span class="date" id="date"></span><button id="menu">☰ メニュー</button></header><div class="layout"><section class="world"><div class="stats"><div class="stat"><small>神力</small><b id="power">8</b><small id="origin">創世の名残</small></div><div class="stat"><small>出会った人</small><b id="population">2</b></div></div><div class="mapframe"><canvas id="map" aria-label="世界の地図。人物をタップして観察する"></canvas><div class="maptip">人物をタップ · ドラッグで視点移動</div><div class="names" id="names"></div></div><div class="toolbar"><button id="pause" aria-label="時間を止める">Ⅱ</button><button data-speed="800" class="active" aria-label="通常速度">▶</button><button data-speed="160" aria-label="高速">▶▶</button><button id="zoomOut" aria-label="縮小">−</button><button id="zoomIn" aria-label="拡大">＋</button><button id="return" aria-label="最初の場所へ視点を戻す">⌂</button><span class="hint">人間への移動命令はできません</span></div><div class="notice" id="notice" hidden></div><p class="note">動作検証版 · 神力は時間では回復しません。数値・老化・病気は仮設定です。</p></section><aside class="sidebar" data-mobile-tab="person"><nav class="mobile-tabs" aria-label="情報を切り替える"><button type="button" data-panel="person" class="active">人物</button><button type="button" data-panel="outcome">介入結果</button><button type="button" data-panel="voice">禍の声</button></nav><div class="guide" id="guide"></div><div id="person"></div><div id="outcome"></div><div id="voice"></div></aside></div></main>
 <div class="shade" id="shade" hidden><section class="dialog" role="dialog" aria-modal="true" aria-labelledby="dialogTitle"><span class="eyebrow">神は死なない</span><h2 id="dialogTitle"></h2><div id="dialogBody"></div><div class="actions" id="dialogActions"></div></section></div><div class="toast" id="toast" hidden role="status"></div>
 <script>/* New implementation: provisional balance, world facts, decisions, knowledge. */
 const BALANCE = Object.freeze({initialPower:8,nudgeCost:4,powerCap:24,hoursPerYear:576,adaptationPerDay:0.12,illnessPerDay:0.002});
@@ -223,6 +268,7 @@ function boot(){let loaded=false;try{const s=localStorage.getItem(SAVE_KEY);if(s
 function frame(now){const dt=Math.min(150,now-(lastTime||now));lastTime=now;if(!world.pause&&!dialogOpen){accumulator+=dt;while(accumulator>=speed){accumulator-=speed;advance(world);if(world.pause)break;}}renderWorld($('map'),world,selected,now);if(now-lastUI>250){updateUI();lastUI=now;}requestAnimationFrame(frame);}
 $('names').addEventListener('click',e=>{const b=e.target.closest('[data-person]');if(b)choose(+b.dataset.person);});$('menu').onclick=menu;$('pause').onclick=()=>{world.pause=!world.pause;accumulator=0;updateUI();};document.querySelectorAll('[data-speed]').forEach(b=>b.onclick=()=>{speed=+b.dataset.speed;world.pause=false;document.querySelectorAll('[data-speed]').forEach(q=>q.classList.toggle('active',q===b));updateUI();});$('zoomIn').onclick=()=>world.camera.zoom=clamp(world.camera.zoom+.3,.8,3);$('zoomOut').onclick=()=>world.camera.zoom=clamp(world.camera.zoom-.3,.8,3);$('return').onclick=()=>{world.camera.x=14;world.camera.y=11;observe(world);updateUI();};
 let pointer=null;$('map').addEventListener('pointerdown',e=>{pointer={x:e.clientX,y:e.clientY,camera:{...world.camera},moved:false};$('map').setPointerCapture(e.pointerId);});$('map').addEventListener('pointermove',e=>{if(!pointer)return;const v=$('map')._view,dx=e.clientX-pointer.x,dy=e.clientY-pointer.y;if(Math.hypot(dx,dy)>7)pointer.moved=true;if(pointer.moved){world.camera.x=clamp(pointer.camera.x-dx/v.scale,0,38);world.camera.y=clamp(pointer.camera.y-dy/v.scale,0,26);observe(world);}});$('map').addEventListener('pointerup',e=>{if(!pointer)return;if(!pointer.moved){const r=$('map').getBoundingClientRect(),v=$('map')._view,q={x:v.ox+(e.clientX-r.left)/v.scale,y:v.oy+(e.clientY-r.top)/v.scale};const p=world.people.filter(p=>isObserved(world,p)&&p.alive).sort((a,b)=>distance(a,q)-distance(b,q))[0];if(p&&distance(p,q)<.9)choose(p.id);}pointer=null;updateUI();});$('map').addEventListener('pointercancel',()=>pointer=null);
+document.querySelectorAll('.mobile-tabs [data-panel]').forEach(b=>b.addEventListener('click',()=>{const side=document.querySelector('.sidebar');side.dataset.mobileTab=b.dataset.panel;document.querySelectorAll('.mobile-tabs [data-panel]').forEach(t=>t.classList.toggle('active',t===b));if(b.dataset.panel==='outcome'&&!world.interventions.length)$('outcome').innerHTML='<p class="muted">まだ介入結果はありません。人物を選んで「気づき」を試せます。</p>';if(b.dataset.panel==='voice'&&!world.knowledge.maga.voice)$('voice').innerHTML='<p class="muted">まだ声は聞こえていません。</p>'; }));
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();world.pause=true;accumulator=0;}});window.addEventListener('pagehide',persist);setInterval(persist,20000);boot();
 </script>
 </body></html>
