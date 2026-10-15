@@ -912,7 +912,7 @@ function act(a,el){
       var c2=$("#cpTa");if(c2){c2.focus();c2.select()}});break;
   case "bk-open":var w3=$(".sheetwrap");if(w3)w3.remove();$("#layer").insertAdjacentHTML("beforeend",restoreModal());setTimeout(function(){var t=$("#bkTa");if(t)t.focus()},50);break;
   case "bk-go":stageRestore($("#bkTa")?$("#bkTa").value:'','貼り付けたバックアップ');break;
-  case "memodone":if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();document.body.classList.remove("typing");render();break;
+  case "memodone":if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();document.body.classList.remove("typing");S.sel=null;render();break;
   case "pedit":S.pedit=!S.pedit;render();break;
   case "phnew":$("#layer").insertAdjacentHTML("beforeend",phraseModal());setTimeout(function(){var t=$("#phNew");if(t)t.focus()},50);break;
   case "phdel":S.phrases.splice(+v,1);savePh();render();break;
