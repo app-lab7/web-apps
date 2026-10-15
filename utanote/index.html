@@ -195,6 +195,34 @@ input[type=range]{padding:0;border:0;background:none;accent-color:var(--accent)}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
 button:disabled{opacity:.4;cursor:default}
 @media(min-width:600px){.grid{grid-template-columns:repeat(6,minmax(0,1fr))}}
+
+/* モードを色・形・言葉で区別する */
+#app{--mode-ink:#304bd4;--mode-soft:#e9eeff}
+#app[data-mode="mark"]{--mode-ink:#087767;--mode-soft:#e2f5ef}
+#app[data-mode="edit"]{--mode-ink:#9a4a09;--mode-soft:#fff0dc}
+.mode-top{border-bottom:3px solid var(--mode-ink)}
+.mode-tabs{gap:7px;background:transparent;border:0;padding:0;overflow:visible}
+.mode-tabs button{position:relative;min-width:0;min-height:83px;padding:9px 3px 7px;border:1px solid var(--line);border-radius:13px;background:var(--surface);color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;line-height:1.2}
+.mode-tabs .mode-label{display:flex;align-items:center;justify-content:center;gap:5px;font-size:15px;font-weight:700;white-space:nowrap}
+.mode-icon{display:inline-flex;align-items:center;justify-content:center;flex:none}
+.mode-icon svg{width:20px;height:20px;display:block}
+.mode-tabs small{font-size:10px;font-weight:500;white-space:nowrap}
+.mode-tabs .mode-current{font-size:10px;font-weight:700;visibility:hidden;line-height:1.1}
+.mode-tabs button[aria-pressed="true"]{background:var(--mode-ink);border-color:var(--mode-ink);color:#fff;box-shadow:0 3px 0 color-mix(in srgb,var(--mode-ink) 60%,#000);outline:2px solid var(--mode-ink);outline-offset:2px}
+.mode-tabs button[aria-pressed="true"] .mode-current{visibility:visible}
+.mode-top .tools{max-width:640px;margin:9px auto 0;align-items:center}
+.mode-top .save-state{margin:0 0 0 auto;font-size:11px}
+.mode-banner{display:flex;align-items:center;gap:10px;border-radius:12px;padding:10px 12px;margin-top:12px;background:var(--mode-soft);color:var(--mode-ink);border-left:5px solid var(--mode-ink)}
+.mode-banner .mode-icon svg{width:24px;height:24px}
+.mode-banner h2{margin:0;font-size:16px;line-height:1.4}
+.mode-banner p{margin:2px 0 0;font-size:12px;line-height:1.5;color:var(--fg)}
+#app[data-mode="mark"] .dock{border-top:3px solid var(--mode-ink)}
+#app[data-mode="sing"] .dock{border-top:3px solid var(--mode-ink)}
+.mode-enter{animation:mode-enter .18s ease-out}
+@keyframes mode-enter{from{opacity:.4;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@media(prefers-color-scheme:dark){#app{--mode-soft:#202b47}#app[data-mode="mark"]{--mode-soft:#15372f}#app[data-mode="edit"]{--mode-soft:#422b1b}.mode-banner h2,.mode-banner>.mode-icon{color:var(--fg)}}
+@media(prefers-reduced-motion:reduce){.mode-enter{animation:none}}
+@media(max-height:500px) and (orientation:landscape){.mode-tabs button{min-height:55px;padding:5px 3px}.mode-tabs .mode-current{display:none}.mode-banner{padding:6px 10px}.mode-top .tools{margin-top:6px}}
 </style>
 
 </head>
@@ -484,18 +512,24 @@ function songHead(s){
 }
 function lyricsHTML(s,mark){
   if(!s.secs.some(function(x){return x.lines.some(function(l){return l.t})}))
-    return '<div class="empty">まだ歌詞がありません。<br>「歌詞」タブで入力してください。</div>';
+    return '<div class="empty">まだ歌詞がありません。<br>「歌詞編集」タブで入力してください。</div>';
   return s.secs.map(function(sec){
     return '<section class="sec t-'+sec.type+'"><div class="sh"><b>'+esc(secName(sec))+'</b>'+(sec.memo?'<span class="sm">'+esc(sec.memo)+'</span>':"")+'</div>'+
       sec.lines.map(function(l){return lineHTML(l,mark)}).join("")+'</section>';
   }).join("");
 }
+var MODES={
+  sing:{label:"歌う",short:"見ながら練習",title:"歌うモード",hint:"歌詞を見ながら練習。下のボタンで自動スクロールできます。",path:'<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v2a7 7 0 0 0 14 0v-2M12 19v3M8 22h8"/>'},
+  mark:{label:"メモする",short:"記号・色を付ける",title:"メモ・記号モード",hint:"歌詞の文字をタップして、歌い方のメモ・記号・色を付けます。",path:'<path d="m16 3 5 5L9 20l-6 1 1-6L16 3ZM13 6l5 5"/>'},
+  edit:{label:"歌詞編集",short:"入力・貼り付け",title:"歌詞編集モード",hint:"曲名や歌詞を入力・修正します。まとめて貼り付けもできます。",path:'<path d="M14 2H5v20h14V7l-5-5ZM14 2v5h5M8 11h8M8 15h8M8 19h5"/>'}
+};
+function modeIcon(m){return '<span class="mode-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">'+MODES[m].path+'</svg></span>'}
+function modeBanner(){var d=MODES[S.mode];return '<div class="mode-banner">'+modeIcon(S.mode)+'<div><h2>'+d.title+'</h2><p>'+d.hint+'</p></div></div>'}
 function topBar(s){
   var m=S.mode;
-  return '<div class="top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div>'+
-   (m==="sing"?'<button class="btn sm pri" data-act="mode" data-v="mark">✎ 書き込む</button>':m==="mark"?'<button class="btn sm pri" data-act="mode" data-v="sing">'+IC.play+' 歌う</button>':"")+'</div>'+
-   '<div class="seg" role="group" aria-label="表示モード">'+[["sing","歌う"],["mark","メモ・記号"],["edit","歌詞"]].map(function(x){
-     return '<button data-act="mode" data-v="'+x[0]+'" aria-pressed="'+(m===x[0])+'">'+x[1]+'</button>'}).join("")+'</div><div class="tools">'+undoButtons()+'</div><span class="save-state" data-save-state role="status">'+esc(saveState)+'</span></div>';
+  return '<div class="top mode-top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div></div>'+
+   '<div class="seg mode-tabs" role="group" aria-label="操作モードを切り替え">'+["sing","mark","edit"].map(function(k){var d=MODES[k];
+     return '<button data-act="mode" data-v="'+k+'" aria-label="'+d.label+'：'+d.short+'" aria-pressed="'+(m===k)+'"><span class="mode-label">'+modeIcon(k)+d.label+'</span><small>'+d.short+'</small><span class="mode-current" aria-hidden="true">✓ 選択中</span></button>'}).join("")+'</div><div class="tools">'+undoButtons()+'<span class="save-state" data-save-state role="status">'+esc(saveState)+'</span></div></div>';
 }
 function listView(){
   var h='<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:8px"><div class="h1">うたノート</div><button class="btn sm" data-act="help" style="margin-bottom:4px">使い方</button></div><div class="sub">歌詞を区切って、歌い方をメモ。'+(Store.kind==="db"?"データはあなた専用の領域に保存されます。":"データはこの端末に保存されます。")+'</div>';
@@ -553,7 +587,7 @@ function markDock(){
   return h+'</div></div>';
 }
 function songView(s){
-  var h=topBar(s)+'<div class="wrap">';
+  var h=topBar(s)+'<div class="wrap song-pane'+(S.modeChanged?' mode-enter':'')+'">'+modeBanner();
   var cls=(S.mode==="edit")?"":(" m"+S.show.memo+(S.show.sym?"":" nosym")+(S.show.hl?"":" nohl")+(S.mode==="mark"?" mark":""));
   if(S.mode==="edit")return h+editView(s)+'</div>';
   h+='<div class="'+cls.trim()+'" style="--fs:'+S.fs+'px">'+(S.mode==='mark'?guideHTML():'')+songHead(s)+lyricsHTML(s,S.mode==="mark")+'</div></div>';
@@ -592,8 +626,8 @@ function phraseModal(){
 function helpModal(){
   var db=Store.kind==="db";
   return '<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="使い方"><h3>うたノートの使い方</h3>'+
-   '<ol class="how"><li><b>歌詞</b>タブで歌詞を入力します。貼り付けもできて、空行や【サビ】の見出しで自動的にセクションに分かれます。</li>'+
-   '<li><b>メモ・記号</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
+   '<ol class="how"><li><b>歌詞編集</b>タブで歌詞を入力します。貼り付けもできて、空行や【サビ】の見出しで自動的にセクションに分かれます。</li>'+
+   '<li><b>メモする</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
    '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。</li></ol>'+
    '<h3>保存について</h3><p class="sub" style="margin:0 0 10px;font-size:13px">'+(db?"ログインしているアカウントの専用領域に保存されます。ほかの人には見えません。":"この端末のアプリ内に保存されます。アプリの削除やブラウザのデータ消去で失われるので、バックアップを取っておくと安心です。")+'</p>'+
    '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
@@ -622,8 +656,10 @@ function normSong(s){
 }
 function render(){
   var y=window.scrollY,app=$("#app"),s=cur();
+  app.setAttribute("data-mode",S.view==="song"&&s?S.mode:"list");
   if(S.view==="song"&&s){app.className="";app.innerHTML=songView(s)}
   else{app.className="wrap";app.innerHTML=listView()}
+  S.modeChanged=false;
   var d=$(".dock");document.body.style.setProperty("--dock-h",d?d.offsetHeight+"px":"0px");
   document.querySelectorAll("textarea[data-sec]").forEach(autosize);
   window.scrollTo(0,y);
@@ -658,7 +694,7 @@ document.addEventListener("touchstart",function(e){if(S.play&&!e.target.closest(
 /* ---------- 操作 ---------- */
 function secById(s,id){return s.secs.filter(function(x){return x.id===id})[0]}
 function go(view,id){S.view=view;if(id)S.id=id;S.sel=null;S.play=false;S.confirm=null;render();window.scrollTo(0,0)}
-function setMode(m){commitEdits();S.mode=m;S.sel=null;S.tab="sym";S.play=false;S.confirm=null;setWake(m==="sing");render();window.scrollTo(0,0)}
+function setMode(m){if(!MODES[m]||S.mode===m)return;commitEdits();S.modeChanged=true;S.mode=m;S.sel=null;S.tab="sym";S.play=false;S.confirm=null;setWake(m==="sing");render();window.scrollTo(0,0);var active=document.querySelector('.mode-tabs button[aria-pressed="true"]');if(active)active.focus({preventScroll:true})}
 function tapChar(el){
   var line=el.dataset.line,i=+el.dataset.i,sel=S.sel;if(S.tab==="memo")S.tab="sym";
   if(!sel||sel.line!==line||sel.lineOnly)S.sel={line:line,a:i,b:i};
