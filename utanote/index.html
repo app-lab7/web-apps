@@ -372,6 +372,9 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 #liveScreen .live-top [data-act="live-collapse"]{font-size:13px;padding:7px 10px}
 @media(max-width:380px){#liveScreen .live-top{gap:4px}#liveScreen .live-top button{padding:6px;font-size:12px}#liveScreen .live-top #liveState{font-size:11px}}
 </style>
+<style>
+#videoPanel{width:min(660px,100%)}.video-options{display:grid;gap:12px;margin:16px 0}.video-options label{display:flex;align-items:center;gap:8px;font-size:14px}.video-options select{min-height:44px;max-width:100%;padding:5px}.video-options input[type=checkbox]{width:22px;height:22px;flex:none}.video-actions{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.video-actions .btn{min-height:44px}.video-entry{margin-top:18px}.video-entry button{width:100%}#videoCanvas,#videoResult{display:block;width:100%;max-height:320px;object-fit:contain;background:#10141c;border:1px solid var(--line);border-radius:6px;margin:12px 0}#videoCanvas{height:auto}#videoStatus{font-size:14px;line-height:1.7}#videoProgress{width:100%;height:20px;accent-color:var(--accent)}.video-explain{font-size:12px;line-height:1.7}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -751,7 +754,7 @@ function singDock(){
   var toggle='<button class="pill sing-dock-toggle" data-act="sing-dock-collapse" aria-expanded="'+!collapsed+'">'+(collapsed?'操作を開く ▴':'たたむ ▾')+'</button>';
   if(collapsed)return '<div class="dock sing-dock is-collapsed"><div class="in" role="group" aria-label="自動スクロールのミニメニュー"><button class="pill" data-act="play" aria-pressed="'+S.play+'" aria-label="自動スクロールを'+(S.play?'一時停止':'開始・再開')+'">'+(S.play?IC.pause+'一時停止':IC.play+'再生')+'</button>'+toggle+'</div></div>';
   var m=["","無","小","大"][S.show.memo];
-  return '<div class="dock sing-dock"><div class="in"><div class="sing-dock-heading"><span>歌うときの操作</span>'+toggle+'</div><div class="drow"><button class="pill" data-act="live-setup">ライブ用プロンプター</button></div><div class="drow">'+
+  return '<div class="dock sing-dock"><div class="in"><div class="sing-dock-heading"><span>歌うときの操作</span>'+toggle+'</div><div class="drow"><button class="pill" data-act="live-setup">ライブ用プロンプター</button><button class="pill" data-act="video-open">動画として保存</button></div><div class="drow">'+
    '<button class="pill" data-act="play" aria-pressed="'+S.play+'">'+(S.play?IC.pause+"停止":IC.play+"自動スクロール")+'</button>'+
    '<div class="kv"><button class="pill" data-act="spd" data-v="-1" aria-label="遅く">−</button><span>速さ '+S.speed+'</span><button class="pill" data-act="spd" data-v="1" aria-label="速く">＋</button></div></div>'+
    '<div class="drow"><button class="pill" data-act="fs" data-v="-2" aria-label="文字を小さく">A−</button><button class="pill" data-act="fs" data-v="2" aria-label="文字を大きく">A＋</button>'+
@@ -916,16 +919,17 @@ function liveSetup(){
  if(!cur())return;commitEdits();var items=livePhrases(cur());if(!items.length){toast('歌詞編集で歌詞を入力してください');return}
  S.play=false;render();var p=livePrefs(cur().live),timeline=liveTimeline(items,p),old=$('#liveSetup');if(old)old.remove();Live.setupItems=items;
  var rows=items.map(function(item,i){return '<div class="live-timing-row"><div class="live-timing-lyric"><small>'+esc(item.section)+' · '+(i+1)+'</small><p>'+esc(item.line.t)+'</p><span id="livePhraseStamp'+i+'"></span></div><label class="live-seconds-label" for="livePhraseSeconds'+i+'"><span>表示時間</span><span><input id="livePhraseSeconds'+i+'" data-live-seconds="'+i+'" type="number" inputmode="decimal" min="0.1" max="7200" step="0.1" required value="'+timeline.durations[i]+'" aria-label="'+esc((i+1)+'番目のフレーズの表示時間（秒）')+'"> 秒</span></label></div>'}).join('');
- $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" id="liveSetup"><form class="modal" id="liveForm" novalidate role="dialog" aria-modal="true" aria-labelledby="liveSetupTitle"><h3 id="liveSetupTitle" tabindex="-1">フレーズの表示時間</h3><p class="sub live-setup-intro">各フレーズを何秒表示するか決めます。<br>歌詞の1行ごとに切り替わります。</p><div class="live-timing-summary"><span>'+items.length+'フレーズ</span><span>合計 <b id="liveTimingTotal">'+liveStamp(timeline.total)+'</b></span></div><details class="live-setup-details"><summary>全体の時間から均等に分ける</summary><div class="live-even-controls"><label>分 <input id="liveMin" type="number" inputmode="numeric" min="0" max="120" value="'+Math.floor(timeline.total/60)+'"></label><label>秒 <input id="liveSec" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" value="'+Math.round((timeline.total%60)*10)/10+'"></label><button class="btn sm" type="button" data-act="live-even">均等に分ける</button></div><p class="sub">下の秒数をすべて入れ替えます。</p></details><div class="live-timing-rows">'+rows+'</div><div class="live-count-setting"><label for="liveCount">開始までの待ち時間</label><span><input id="liveCount" type="number" inputmode="numeric" min="0" max="30" required value="'+p.count+'"> 秒</span><p class="sub">「開始」を押してから待つ時間。合計には含みません。</p></div><details class="live-setup-details"><summary>文字サイズ・メモなど</summary><div class="live-settings"><label>文字サイズ<select id="liveSize">'+[24,32,40,48,56,64,80,96].map(function(n){return '<option value="'+n+'"'+(p.fs===n?' selected':'')+'>'+n+'px</option>'}).join('')+'</select></label><label><input id="liveMemo" type="checkbox"'+(p.memo?' checked':'')+'> メモを表示する</label><label><input id="liveMirror" type="checkbox"'+(p.mirror?' checked':'')+'> 左右反転する</label><p class="sub">左右反転は、プロンプターの反射板を使う場合に選びます。</p></div></details><p class="sub live-setup-note">プレビューは停止した状態で開きます。<br>音源との自動同期はしません。</p><p id="liveError" role="alert"></p><div class="live-actions"><button class="btn pri" type="submit">保存してプレビュー</button><button class="btn" type="button" data-act="live-cancel">閉じる</button></div></form></div>');
+ $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" id="liveSetup"><form class="modal" id="liveForm" novalidate role="dialog" aria-modal="true" aria-labelledby="liveSetupTitle"><h3 id="liveSetupTitle" tabindex="-1">フレーズの表示時間</h3><p class="sub live-setup-intro">各フレーズを何秒表示するか決めます。<br>歌詞の1行ごとに切り替わります。</p><div class="live-timing-summary"><span>'+items.length+'フレーズ</span><span>合計 <b id="liveTimingTotal">'+liveStamp(timeline.total)+'</b></span></div><details class="live-setup-details"><summary>全体の時間から均等に分ける</summary><div class="live-even-controls"><label>分 <input id="liveMin" type="number" inputmode="numeric" min="0" max="120" value="'+Math.floor(timeline.total/60)+'"></label><label>秒 <input id="liveSec" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" value="'+Math.round((timeline.total%60)*10)/10+'"></label><button class="btn sm" type="button" data-act="live-even">均等に分ける</button></div><p class="sub">下の秒数をすべて入れ替えます。</p></details><div class="live-timing-rows">'+rows+'</div><div class="live-count-setting"><label for="liveCount">開始までの待ち時間</label><span><input id="liveCount" type="number" inputmode="numeric" min="0" max="30" required value="'+p.count+'"> 秒</span><p class="sub">「開始」を押してから待つ時間。合計には含みません。</p></div><details class="live-setup-details"><summary>文字サイズ・メモなど</summary><div class="live-settings"><label>文字サイズ<select id="liveSize">'+[24,32,40,48,56,64,80,96].map(function(n){return '<option value="'+n+'"'+(p.fs===n?' selected':'')+'>'+n+'px</option>'}).join('')+'</select></label><label><input id="liveMemo" type="checkbox"'+(p.memo?' checked':'')+'> メモを表示する</label><label><input id="liveMirror" type="checkbox"'+(p.mirror?' checked':'')+'> 左右反転する</label><p class="sub">左右反転は、プロンプターの反射板を使う場合に選びます。</p></div></details><div class="video-entry"><button class="btn" type="button" data-act="video-from-settings">この設定で動画を作る</button></div><p class="sub live-setup-note">プレビューは停止した状態で開きます。<br>音源との自動同期はしません。</p><p id="liveError" role="alert"></p><div class="live-actions"><button class="btn pri" type="submit">保存してプレビュー</button><button class="btn" type="button" data-act="live-cancel">閉じる</button></div></form></div>');
  liveTimingSummary();$('#liveSetupTitle').focus({preventScroll:true});
 }
-function liveReadSetup(){
+function liveSaveSetup(){
  var result=liveTimingSummary(),count=Number($('#liveCount').value);
  if(!result.valid||result.total<.1){$('#liveError').textContent='各フレーズを0.1秒単位で入力してください（合計120分以内）。';return}
  if($('#liveCount').value.trim()===''||!Number.isInteger(count)||count<0||count>30){$('#liveError').textContent='開始までの待ち時間は0〜30秒で入力してください。';return}
- var p=livePrefs({duration:result.total,timings:Live.setupItems.map(function(item,i){return {lineId:item.line.id,seconds:result.times[i]}}),count:count,fs:Number($('#liveSize').value),memo:$('#liveMemo').checked,mirror:$('#liveMirror').checked});cur().live=p;queueSave(cur());flushAllSaves();$('#liveSetup').remove();liveOpen(p);
+ var p=livePrefs({duration:result.total,timings:Live.setupItems.map(function(item,i){return {lineId:item.line.id,seconds:result.times[i]}}),count:count,fs:Number($('#liveSize').value),memo:$('#liveMemo').checked,mirror:$('#liveMirror').checked});cur().live=p;queueSave(cur());flushAllSaves();return p;
 }
 
+function liveReadSetup(){var p=liveSaveSetup();if(p){$('#liveSetup').remove();liveOpen(p)}}
 function liveOpen(p){
  Live.expanded=false;Live.nativeFull=false;Live.prefs=p;Live.items=livePhrases(cur());Live.timeline=liveTimeline(Live.items,p);p.duration=Live.timeline.total;Live.phraseIndex=-1;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
  document.body.classList.add('live-open');
@@ -998,6 +1002,106 @@ document.addEventListener('visibilitychange',function(){if(Live.open){if(documen
 window.addEventListener('resize',function(){if(Live.open)livePaint()});
 window.addEventListener('pagehide',function(){if(Live.open)livePause('一時停止')});
 
+/* ---------- 動画描画（音声なし） ---------- */
+var VIDEO_COLORS={dyn:'#ffc8df',pitch:'#a8d9ff',voice:'#d7c4ff',brk:'#c0cada',att:'#ffdc8b'};
+function videoIndex(t,starts){var a=0,b=starts.length;while(a<b){var m=(a+b)>>1;if(starts[m]<=t+1e-8)a=m+1;else b=m}return Math.max(0,a-1)}
+function videoFormat(){if(typeof MediaRecorder==='undefined'||typeof HTMLCanvasElement==='undefined'||!HTMLCanvasElement.prototype.captureStream)return null;var types=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8','video/webm;codecs=vp9','video/webm'];for(var i=0;i<types.length;i++)if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(types[i]))return types[i];return null}
+function videoRecorder(stream){var types=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8','video/webm;codecs=vp9','video/webm'];for(var i=0;i<types.length;i++){if(!MediaRecorder.isTypeSupported(types[i]))continue;try{return new MediaRecorder(stream,{mimeType:types[i],videoBitsPerSecond:1800000})}catch(e){}}throw Error('この端末で動画の保存処理を開始できませんでした。');}
+function videoFont(ctx,size,bold,italic){ctx.font=(italic?'italic ':'')+(bold?'600 ':'400 ')+size+'px system-ui, "Hiragino Sans", "Yu Gothic", sans-serif'}
+function videoChars(text){var out=[],index=0;Array.from(String(text)).forEach(function(t){out.push({t:t,index:index});index+=t.length});return out}
+function videoWrap(ctx,text,width,size,maxLines){videoFont(ctx,size,false);var lines=[''];videoChars(text).forEach(function(c){if(c.t==='\n'){lines.push('');return}var last=lines.length-1;if(lines[last]&&ctx.measureText(lines[last]+c.t).width>width)lines.push(c.t);else lines[last]+=c.t});if(maxLines&&lines.length>maxLines){lines=lines.slice(0,maxLines);var last=lines.length-1;while(lines[last]&&ctx.measureText(lines[last]+'…').width>width)lines[last]=Array.from(lines[last]).slice(0,-1).join('');lines[last]+='…'}return lines}
+function videoLineLayout(ctx,line,width,size){
+ var rows=[{tokens:[],width:0}];videoChars(line.t).forEach(function(c){var ranges=(line.r[c.index]||'').split(','),ids=(line.m[c.index]||'').split(',').filter(function(k){return SYM[k]}),after=ids.filter(function(k){return SYM[k].pos==='f'});videoFont(ctx,size,ranges.indexOf('bold')>=0);var glyph=ctx.measureText(c.t).width,w=glyph+size*.015+after.length*size*.48,row=rows[rows.length-1];if(row.tokens.length&&row.width+w>width){row={tokens:[],width:0};rows.push(row)}row.tokens.push({t:c.t,index:c.index,x:row.width,width:w,glyph:glyph,ranges:ranges,ids:ids});row.width+=w});
+ var height=0;rows.forEach(function(row){row.annotated=row.tokens.some(function(c){return c.ids.some(function(k){return SYM[k].pos==='a'})||(line.sp||[]).some(function(sp){return c.index>=sp.a&&c.index<=sp.b&&SYM[sp.k]})});row.ascent=size*(row.annotated?2.05:1.15);row.height=row.ascent+size*.5;row.offset=height;height+=row.height});return {rows:rows,height:height};
+}
+function videoLayout(ctx,item,width,height,initial,memo){
+ for(var fs=initial;fs>=16;fs-=2){var lyric=videoLineLayout(ctx,item.line,width,fs),noteSize=Math.max(16,fs*.55),notes=memo&&item.line.n?videoWrap(ctx,item.line.n,width,noteSize):[],section=memo&&item.memo?videoWrap(ctx,item.memo,width,Math.max(16,fs*.4)):[],used=lyric.height+notes.length*noteSize*1.5+section.length*Math.max(16,fs*.4)*1.5+12;if(used<=height)return {fs:fs,lyric:lyric,notes:notes,noteSize:noteSize,section:section,height:used}}
+ throw Error('長いフレーズやメモが画面に収まりません。歌詞編集で行を分けるか、メモ表示をオフにしてください。');
+}
+var videoAssetsPromise=null;
+function videoAssets(){if(videoAssetsPromise)return videoAssetsPromise;videoAssetsPromise=Promise.all(SYMS.filter(function(s){return s[4].indexOf('<svg')>=0}).map(function(s){return new Promise(function(resolve,reject){var im=new Image(),svg=s[4].replace('<svg ','<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" ').replace(/currentColor/g,VIDEO_COLORS[s[2]]);im.onload=function(){resolve([s[0],im])};im.onerror=function(){reject(Error('記号の画像を準備できませんでした。画面を開き直してください。'))};im.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg)})})).then(function(entries){var map={};entries.forEach(function(e){map[e[0]]=e[1]});return map},function(e){videoAssetsPromise=null;throw e});return videoAssetsPromise}
+function videoDrawSymbol(ctx,key,x,y,size,assets){var d=SYM[key];if(!d)return;if(assets[key]){ctx.drawImage(assets[key],x,y,size,size);return}var text=d.h.replace(/<[^>]*>/g,'');ctx.fillStyle=VIDEO_COLORS[d.k];videoFont(ctx,size*.9,true,/class="it"/.test(d.h));ctx.fillText(text,x,y+size*.85)}
+function videoDrawRange(ctx,k,x,y,w,h,t0,t1,first,last){
+ ctx.save();ctx.strokeStyle=VIDEO_COLORS[SYM[k].k];ctx.lineWidth=Math.max(1.5,h*.07);ctx.lineCap='round';ctx.beginPath();
+ if(k==='cresc'||k==='dim'){var g=function(t){return h*(.05+.42*(k==='dim'?1-t:t))};ctx.moveTo(x,y+h/2-g(t0));ctx.lineTo(x+w,y+h/2-g(t1));ctx.moveTo(x,y+h/2+g(t0));ctx.lineTo(x+w,y+h/2+g(t1))}
+ else if(k==='vib'){for(var j=0;j<=24;j++){var xx=x+w*j/24,yy=y+h/2+Math.sin((t0+(t1-t0)*j/24)*Math.PI*12)*h*.23;if(j)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)}}
+ else if(k==='ten'||LABELED[k]){ctx.moveTo(x,y+h*.7);ctx.lineTo(x+w,y+h*.7);if(last&&k==='ten'){ctx.moveTo(x+w,y+h*.4);ctx.lineTo(x+w,y+h)}if(first&&LABELED[k]){ctx.fillStyle=ctx.strokeStyle;videoFont(ctx,h*.65,true);ctx.fillText(LABELED[k],x,y+h*.4)}}
+ else{var f=k==='slur'?function(t){return 34-104*t*(1-t)}:GL[k];if(f)for(var j=0;j<=16;j++){var xx=x+w*j/16,yy=y+f(t0+(t1-t0)*j/16)/40*h;if(j)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)}}ctx.stroke();ctx.restore();
+}
+function videoDrawLyric(ctx,line,layout,x,y,assets){
+ var fs=layout.fs;layout.lyric.rows.forEach(function(row){var baseline=y+row.offset+row.ascent;
+ (line.sp||[]).forEach(function(sp){if(!SYM[sp.k])return;var chars=row.tokens.filter(function(c){return c.index>=sp.a&&c.index<=sp.b});if(!chars.length)return;var first=chars[0],last=chars[chars.length-1],n=sp.b-sp.a+1;videoDrawRange(ctx,sp.k,x+first.x,baseline-fs*1.4,last.x+last.glyph-first.x,fs*.4,(first.index-sp.a)/n,Math.min(1,(last.index+last.t.length-sp.a)/n),first.index<=sp.a,last.index+last.t.length>sp.b)});
+ row.tokens.forEach(function(c){var px=x+c.x,high=c.ranges.filter(function(k){return /^hl[1-4]$/.test(k)})[0],colors={hl1:'#ffe5a0',hl2:'#ffd0e1',hl3:'#c5e0ff',hl4:'#bcebd1'};if(high){ctx.fillStyle=colors[high];ctx.fillRect(px,baseline-fs*.88,c.glyph,fs*1.1)}videoFont(ctx,fs,c.ranges.indexOf('bold')>=0);ctx.fillStyle=high?'#141a24':c.ranges.indexOf('soft')>=0?'#b4bfce':'#f5f7ff';ctx.fillText(c.t,px,baseline);
+ var top=c.ids.filter(function(k){return SYM[k].pos==='a'}),after=c.ids.filter(function(k){return SYM[k].pos==='f'});top.forEach(function(k,j){videoDrawSymbol(ctx,k,px+c.glyph/2+(j-(top.length-1)/2)*fs*.45-fs*.23,baseline-fs*1.95,fs*.46,assets)});after.forEach(function(k,j){videoDrawSymbol(ctx,k,px+c.glyph+j*fs*.48,baseline-fs*.7,fs*.46,assets)});
+ if(c.ranges.indexOf('long')>=0){ctx.fillStyle='#7fdec9';ctx.fillRect(px,baseline+fs*.2,c.glyph,Math.max(2,fs*.05))}if(c.ranges.indexOf('wave')>=0){ctx.beginPath();ctx.strokeStyle='#a8d9ff';ctx.lineWidth=2;for(var j=0;j<=12;j++){var xx=px+c.glyph*j/12,yy=baseline+fs*.24+Math.sin(j/12*Math.PI*4)*fs*.04;if(j)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)}ctx.stroke()}
+ });
+ });
+ var yy=y+layout.lyric.height+12;ctx.fillStyle='#ffe3a0';videoFont(ctx,layout.noteSize,false);layout.notes.forEach(function(note){ctx.fillText(note,x,yy+layout.noteSize);yy+=layout.noteSize*1.5});
+}
+function videoDraw(job,time){
+ var ctx=job.ctx,w=job.canvas.width,h=job.canvas.height;ctx.save();ctx.fillStyle='#10141c';ctx.fillRect(0,0,w,h);if(job.options.mirror){ctx.translate(w,0);ctx.scale(-1,1)}
+ var pad=w*.06,max=w-pad*2;ctx.fillStyle='#b4bfce';videoFont(ctx,22,true);ctx.fillText(videoWrap(ctx,job.song.title||'無題',max,22,1)[0],pad,40);
+ if(time<job.lead){ctx.fillStyle='#fff';videoFont(ctx,100,true);ctx.textAlign='center';ctx.fillText(String(Math.ceil(job.lead-time)),w/2,h/2);ctx.restore();return}
+ var elapsed=Math.max(0,Math.min(job.timeline.total,time-job.lead)),i=videoIndex(elapsed,job.timeline.starts),item=job.items[i],layout=job.layouts[i],next=job.items[i+1];ctx.fillStyle='#b9d3ff';videoFont(ctx,20,true);ctx.fillText(item.section+'   '+(i+1)+' / '+job.items.length,pad,85);
+ var y=112;videoFont(ctx,Math.max(16,layout.fs*.4),false);ctx.fillStyle='#ffe3a0';layout.section.forEach(function(text){ctx.fillText(text,pad,y+Math.max(16,layout.fs*.4));y+=Math.max(16,layout.fs*.4)*1.5});
+ var endY=h*(job.options.next?0.72:0.9),block=layout.lyric.height+layout.notes.length*layout.noteSize*1.5+12;videoDrawLyric(ctx,item.line,layout,pad,y+Math.max(0,(endY-y-block)/2),job.assets);
+ if(job.options.next){ctx.strokeStyle='#43516b';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,h*.77);ctx.lineTo(w-pad,h*.77);ctx.stroke();ctx.fillStyle='#b4bfce';videoFont(ctx,16,false);ctx.fillText('次',pad,h*.77+25);var size=Math.max(20,Math.min(34,layout.fs*.6)),lines=videoWrap(ctx,next?next.line.t:'最後のフレーズ',max,size,h>w?3:2);videoFont(ctx,size,false);lines.forEach(function(text,j){ctx.fillText(text,pad,h*.77+56+j*size*1.35)})}
+ ctx.fillStyle='#43516b';ctx.fillRect(pad,h-18,max,3);ctx.fillStyle='#9dbdff';ctx.fillRect(pad,h-18,max*elapsed/job.timeline.total,3);ctx.restore();
+}
+
+/* ---------- 動画の作成・確認・保存 ---------- */
+var VExport=null;
+function videoStatus(job,text){if(VExport!==job||job.closed)return;var el=$('#videoStatus');if(el)el.textContent=text}
+function videoSetup(p){
+ if(VExport&&VExport.recording)return;commitEdits();S.play=false;if(Live.open)liveClose();if(VExport)videoClose();
+ var currentSong=cur();if(!currentSong)return;var song=JSON.parse(JSON.stringify(currentSong));var items=livePhrases(song);if(!items.length){toast('歌詞を入力してください');return}
+ var prefs=livePrefs(p||song.live),timeline=liveTimeline(items,prefs),format=videoFormat();var job={song:song,items:items,prefs:prefs,timeline:timeline,format:format,open:true,recording:false,ready:false,closed:false,assets:null,resultURL:null,wasWake:S.view==='song'&&S.mode==='sing',serial:0};VExport=job;
+ $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" id="videoExport"><div class="modal" id="videoPanel" role="dialog" aria-modal="true" aria-labelledby="videoTitle"><h3 id="videoTitle" tabindex="-1">動画として保存</h3><p class="sub">音声なし · フレーズの表示時間 '+liveStamp(timeline.total)+'</p><div class="video-options"><label>画面の向き<select id="videoAspect"><option value="wide">横長（1280 × 720）</option><option value="tall">縦長（720 × 1280）</option></select></label><label><input id="videoMemo" type="checkbox"'+(prefs.memo?' checked':'')+'> メモも入れる</label><label><input id="videoNext" type="checkbox" checked> 次のフレーズも表示</label><label><input id="videoMirror" type="checkbox"'+(prefs.mirror?' checked':'')+'> 左右反転</label><label><input id="videoLead" type="checkbox"> 開始前の待ち時間（'+prefs.count+'秒）も入れる</label></div><p class="sub" id="videoFormat">保存形式：'+(format&&format.indexOf('mp4')>=0?'MP4':format?'WebM':'この端末では動画保存に対応していません')+'</p><canvas id="videoCanvas" aria-label="保存する動画のプレビュー"></canvas><p class="sub video-explain">10分まで。作成には動画と同じくらいの時間がかかります。画面を開いたままお待ちください。</p><progress id="videoProgress" value="0" max="1" hidden></progress><p id="videoStatus" role="status" aria-live="polite">準備中…</p><div id="videoResultArea" hidden><video id="videoResult" controls playsinline preload="metadata" aria-label="作成した動画の確認"></video><p class="sub" id="videoResultInfo"></p><div class="video-actions"><button class="btn pri" type="button" data-act="video-download">ファイルに保存</button><button class="btn" type="button" id="videoShare" data-act="video-share" hidden>共有・写真に保存</button></div><p class="sub">保存先は端末の共有・ダウンロード画面で選べます。</p></div><div class="video-actions"><button class="btn pri" id="videoStart" type="button" data-act="video-start" disabled>動画を作成</button><button class="btn" id="videoEditTiming" type="button" data-act="video-timings">表示時間を調整</button><button class="btn" id="videoCancel" type="button" data-act="video-cancel" hidden>作成を中止</button><button class="btn" id="videoClose" type="button" data-act="video-close">閉じる</button></div></div></div>');
+ $('#app').inert=true;$('#videoTitle').focus({preventScroll:true});job.canvas=$('#videoCanvas');job.ctx=job.canvas.getContext('2d');videoPrepare(job);
+}
+async function videoPrepare(job){
+ if(!job||job.recording||job.closed)return;var serial=++job.serial;if(job.resultURL){videoRevoke(job);var previous=$('#videoResult');previous.pause();previous.removeAttribute('src');previous.load();$('#videoResultArea').hidden=true;$('#videoCanvas').hidden=false}job.ready=false;$('#videoStart').disabled=true;var tall=$('#videoAspect').value==='tall';job.canvas.width=tall?720:1280;job.canvas.height=tall?1280:720;
+ job.options={memo:$('#videoMemo').checked,next:$('#videoNext').checked,mirror:$('#videoMirror').checked};job.lead=$('#videoLead').checked?job.prefs.count:0;job.total=job.timeline.total+job.lead;
+ try{
+  if(!job.ctx)throw Error('この端末では動画の描画に対応していません。');if(document.fonts&&document.fonts.ready)await document.fonts.ready;job.assets=await videoAssets();if(VExport!==job||job.closed||job.serial!==serial)return;
+  var w=job.canvas.width,h=job.canvas.height,available=h*(job.options.next?0.72:0.9)-112;job.layouts=job.items.map(function(item){return videoLayout(job.ctx,item,w*.88,available,Math.min(120,Math.max(28,Math.round(job.prefs.fs/40*52))),job.options.memo)});videoDraw(job,0);
+  if(!job.format)throw Error('このブラウザは動画保存に対応していません。対応する別のブラウザや端末で開いてください。');if(job.total>600)throw Error('動画保存は合計10分までです。表示時間を調整してください。');job.ready=true;$('#videoStart').disabled=false;videoStatus(job,'保存前の見た目を確認できます。「動画を作成」で開始します。');
+ }catch(e){if(VExport===job&&job.serial===serial)videoStatus(job,e.message||'動画を準備できませんでした。')}
+}
+function videoBusy(job,on){if(VExport!==job||job.closed)return;document.querySelectorAll('#videoExport .video-options input,#videoExport .video-options select').forEach(function(el){el.disabled=on});$('#videoStart').hidden=on;$('#videoEditTiming').hidden=on;$('#videoCancel').hidden=!on;$('#videoProgress').hidden=!on;$('#videoClose').hidden=on;var focus=on?$('#videoCancel'):$('#videoStart');if(focus)focus.focus({preventScroll:true})}
+function videoCleanup(job){if(job.raf)cancelAnimationFrame(job.raf);job.raf=0;if(job.stream)job.stream.getTracks().forEach(function(t){t.stop()});job.stream=null;job.recording=false;if(VExport===job)setWake(job.wasWake)}
+function videoRevoke(job){if(job.resultURL){URL.revokeObjectURL(job.resultURL);job.resultURL=null}job.file=null}
+function videoFinish(job){
+ if(job.finished)return;job.finished=true;videoCleanup(job);if(job.closed||VExport!==job){job.chunks=[];return}videoBusy(job,false);$('#videoStart').textContent='もう一度作成';
+ if(job.cancelled||job.error){job.chunks=[];videoStatus(job,job.error||'作成を中止しました。設定を変えて作り直せます。');return}
+ try{var type=(job.recorder.mimeType||job.chunks[0]&&job.chunks[0].type||job.format).split(';')[0];if(type!=='video/mp4'&&type!=='video/webm')throw Error('対応する動画形式で保存できませんでした。');var blob=new Blob(job.chunks,{type:type});job.chunks=[];if(!blob.size)throw Error('動画データを作成できませんでした。');videoRevoke(job);job.resultURL=URL.createObjectURL(blob);var name=(job.song.title||'リリペン').replace(/[\\/:*?"<>|\u0000-\u001f]/g,'_').slice(0,60)+'-プロンプター.'+(type==='video/mp4'?'mp4':'webm');job.file=new File([blob],name,{type:type});$('#videoResult').src=job.resultURL;$('#videoResultArea').hidden=false;$('#videoCanvas').hidden=true;$('#videoResultInfo').textContent=(type==='video/mp4'?'MP4':'WebM')+' · '+(blob.size/1024/1024).toFixed(1)+' MB · '+liveStamp(job.total);var share=false;try{share=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:[job.file]}))}catch(e){}$('#videoShare').hidden=!share;videoStatus(job,'動画ができました。再生して確認してから保存してください。');
+ }catch(e){videoStatus(job,e.message||'動画ファイルを作成できませんでした。')}
+}
+function videoAbort(job,message){if(!job||!job.recording)return;job.cancelled=true;job.error=message||'';if(job.raf)cancelAnimationFrame(job.raf);job.raf=0;videoStatus(job,'作成を中止しています…');try{if(job.recorder&&job.recorder.state!=='inactive')job.recorder.stop();else videoFinish(job)}catch(e){videoFinish(job)}}
+function videoStart(){
+ var job=VExport;if(!job||!job.ready||job.recording||job.closed)return;videoRevoke(job);$('#videoResult').removeAttribute('src');$('#videoResult').load();$('#videoResultArea').hidden=true;$('#videoCanvas').hidden=false;job.chunks=[];job.bytes=0;job.cancelled=false;job.error='';job.finished=false;
+ try{
+  videoDraw(job,0);job.stream=job.canvas.captureStream(30);if(!job.stream.getVideoTracks().length)throw Error('動画の映像を取得できませんでした。');job.recorder=videoRecorder(job.stream);
+  job.recorder.ondataavailable=function(e){if(e.data&&e.data.size&&!job.cancelled){job.chunks.push(e.data);job.bytes+=e.data.size;if(job.bytes>150*1024*1024)videoAbort(job,'動画のサイズが大きくなったため中止しました。短い時間に分けてください。')}};
+  job.recorder.onerror=function(){videoAbort(job,'この端末で動画を作成できませんでした。別の形式・端末でお試しください。')};job.recorder.onstop=function(){videoFinish(job)};
+  job.recorder.start(1000);job.recording=true;job.started=performance.now();job.progressSecond=-1;setWake(true);videoBusy(job,true);$('#videoProgress').value=0;videoFrame(job,job.started);
+ }catch(e){job.error=e.message||'動画の作成を開始できませんでした。';job.cancelled=true;videoFinish(job)}
+}
+function videoFrame(job,now){
+ if(!job.recording||job.cancelled||job.closed)return;
+ try{var elapsed=Math.min(job.total,Math.max(0,(now-job.started)/1000));videoDraw(job,elapsed);$('#videoProgress').value=elapsed/job.total;var second=Math.floor(elapsed);if(second!==job.progressSecond){job.progressSecond=second;videoStatus(job,'作成中 '+liveTime(second)+' / '+liveTime(job.total)+' — この画面を開いたままお待ちください。')}if(elapsed>=job.total){job.recorder.stop();return}job.raf=requestAnimationFrame(function(t){videoFrame(job,t)})}catch(e){videoAbort(job,'動画の描画中に問題が起きました。歌詞やメモの長さを確認してください。')}
+}
+function videoClose(){var job=VExport;if(!job)return;var player=$('#videoResult');if(player){player.pause();player.removeAttribute('src');player.load()}job.closed=true;if(job.recording)videoAbort(job);else videoCleanup(job);videoRevoke(job);var root=$('#videoExport');if(root)root.remove();$('#app').inert=false;VExport=null;setWake(job.wasWake);var b=$('[data-act="video-open"]')||$('[data-act="live-setup"]');if(b)b.focus({preventScroll:true})}
+function videoAction(a){
+ if(a==='video-open'){videoSetup();return true}if(a==='video-from-settings'){var p=liveSaveSetup();if(p){$('#liveSetup').remove();videoSetup(p)}return true}
+ if(['video-start','video-cancel','video-close','video-timings','video-download','video-share'].indexOf(a)<0)return false;var job=VExport;if(!job)return true;
+ if(a==='video-start')videoStart();else if(a==='video-cancel')videoAbort(job);else if(a==='video-close')videoClose();else if(a==='video-timings'){videoClose();liveSetup()}else if(a==='video-download'&&job.resultURL&&job.file){var link=document.createElement('a');link.href=job.resultURL;link.download=job.file.name;document.body.appendChild(link);link.click();link.remove()}else if(a==='video-share'&&job.file&&navigator.share){navigator.share({files:[job.file]}).catch(function(e){if(e.name!=='AbortError')videoStatus(job,'共有できませんでした。「ファイルに保存」も使えます。')})}return true;
+}
+document.addEventListener('change',function(e){if(e.target.closest&&e.target.closest('#videoExport .video-options'))videoPrepare(VExport)});
+document.addEventListener('visibilitychange',function(){if(document.hidden&&VExport&&VExport.recording)videoAbort(VExport,'画面から離れたため作成を中止しました。画面を開いたまま作り直してください。')});
+window.addEventListener('pagehide',function(){if(VExport&&VExport.recording)videoAbort(VExport,'画面から離れたため作成を中止しました。')});
+document.addEventListener('keydown',function(e){if(!VExport)return;if(e.key==='Escape'){e.preventDefault();if(VExport.recording)videoAbort(VExport);else videoClose()}else if(e.key==='Tab'){var root=$('#videoExport'),nodes=Array.prototype.slice.call(root.querySelectorAll('button,input,select,video')).filter(function(el){return !el.disabled&&el.getClientRects().length}),first=nodes[0],last=nodes[nodes.length-1];if(e.shiftKey&&(document.activeElement===first||document.activeElement===$('#videoTitle'))){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}});
+
 /* ---------- 自動スクロール・画面常時ON ---------- */
 var raf=0,acc=0,lastT=0,wake=null;
 function loop(t){
@@ -1037,7 +1141,7 @@ function tapLine(id){
 }
 function savePh(){Store.savePhrases(S.phrases)}
 function act(a,el){
-  if(liveAction(a))return;
+  if(videoAction(a)||liveAction(a))return;
   var s=cur(),v=el.dataset.v,sid=el.dataset.sid,l,sec,i;
   switch(a){
   case "line-note":S.sel={line:el.dataset.id,a:0,b:0,lineOnly:true};S.tab='memo';S.dockCollapsed=false;render();focusMemo();break;
