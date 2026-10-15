@@ -348,6 +348,14 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 #liveFullHelp p{margin:0 0 12px}
 #liveScreen:fullscreen{width:100%;height:100%}#liveScreen:-webkit-full-screen{width:100%;height:100%}
 </style>
+<style>
+#liveForm{width:min(640px,100%);padding:22px 18px}#liveForm h3{margin:0 0 10px}.live-setup-intro{line-height:1.7;margin:0 0 16px}
+.live-timing-summary{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px;background:var(--accent-soft);border-radius:8px;font-size:14px;font-variant-numeric:tabular-nums}.live-timing-summary b{font-size:22px;color:var(--fg)}
+.live-setup-details{border-bottom:1px solid var(--line);padding:14px 0}.live-setup-details summary{cursor:pointer;min-height:30px;font-size:14px;font-weight:600}.live-even-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}.live-even-controls label{display:flex;align-items:center;gap:5px}#liveForm .live-even-controls input{width:70px;min-height:44px}
+.live-timing-row{display:grid;grid-template-columns:minmax(0,1fr) 108px;gap:14px;padding:16px 0;border-bottom:1px solid var(--line);align-items:center}.live-timing-lyric{min-width:0}.live-timing-lyric small{color:var(--muted);font-size:11px}.live-timing-lyric p{font-size:16px;line-height:1.6;overflow-wrap:anywhere;margin:5px 0}.live-timing-lyric>span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}.live-seconds-label{display:flex;flex-direction:column;gap:6px}.live-seconds-label>span:first-child{font-size:11px;color:var(--muted)}.live-seconds-label>span:last-child{display:flex;align-items:center;gap:6px;font-size:13px}#liveForm .live-seconds-label input{width:80px;min-width:0;min-height:46px;padding:8px;font-size:18px;font-variant-numeric:tabular-nums}
+.live-count-setting{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:20px;font-size:14px}#liveForm .live-count-setting input{width:70px;min-height:44px;padding:8px}.live-count-setting p{grid-column:1/-1;margin:0;font-size:12px}.live-setup-note{margin-top:18px;font-size:12px;line-height:1.7}#liveForm .live-actions{position:sticky;bottom:-22px;margin-top:14px;padding:12px 0 calc(12px + env(safe-area-inset-bottom));background:var(--surface);display:flex;gap:8px}#liveForm .live-actions .pri{flex:1}
+@media(max-width:360px){.live-timing-row{grid-template-columns:minmax(0,1fr) 96px;gap:8px}#liveForm .live-seconds-label input{width:70px}}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -802,7 +810,7 @@ function helpModal(){
   return '<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="使い方"><h3>リリペンの使い方</h3>'+
    '<ol class="how"><li><b>歌詞編集</b>タブで歌詞を入力します。貼り付けもできて、空行や【サビ】の見出しで自動的にセクションに分かれます。</li>'+
    '<li><b>メモする</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
-   '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。ライブでは「ライブ用プロンプター」から曲の長さを設定して、大きな歌詞とメモを表示できます。</li></ol>'+
+   '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。ライブでは「ライブ用プロンプター」からフレーズごとの表示時間を設定して、大きな歌詞とメモを表示できます。</li></ol>'+
    '<h3>印刷・PDF保存</h3><p class="sub">曲を開いて右上の「印刷」を押すと、記号・色・メモを付けた歌詞を印刷できます。PDF保存は端末の印刷画面から選べます。</p><h3>保存について</h3><p class="sub" style="margin:0 0 10px;font-size:13px">'+(db?"ログインしているアカウントの専用領域に保存されます。ほかの人には見えません。":"この端末のアプリ内に保存されます。アプリの削除やブラウザのデータ消去で失われるので、バックアップを取っておくと安心です。")+'</p>'+
    '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-act="bk-download">ファイルに保存</button><button class="btn sm" data-act="bk-file">ファイルから復元</button><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
 }
@@ -814,7 +822,7 @@ function restoreModal(){
 function normSong(s){
   if(!s||typeof s!=="object"||!Array.isArray(s.secs))return null;
   var out={id:String(s.id||"").replace(/[^A-Za-z0-9_\-]/g,"").slice(0,40)||uid(),title:String(s.title||""),artist:String(s.artist||""),key:String(s.key||""),bpm:String(s.bpm||""),memo:String(s.memo||""),u:Date.now(),secs:[]};
-  if(s.live)out.live=livePrefs(s.live);
+  var liveIds=Object.create(null);if(s.live)out.live=livePrefs(s.live);
   s.secs.forEach(function(x){
     if(!x||!Array.isArray(x.lines))return;
     var sec={id:uid(),type:TNAME[x.type]?x.type:"etc",label:String(x.label||""),memo:String(x.memo||""),lines:[]};
@@ -823,11 +831,11 @@ function normSong(s){
       Object.keys(l.m||{}).forEach(function(k){if(/^\d+$/.test(k))m[k]=String(l.m[k])});
       Object.keys(l.r||{}).forEach(function(k){if(/^\d+$/.test(k))r[k]=String(l.r[k])});
       var sp=(Array.isArray(l.sp)?l.sp:[]).filter(function(q){return q&&Number.isInteger(q.a)&&Number.isInteger(q.b)&&SYM[q.k]}).map(function(q){return {a:q.a,b:q.b,k:q.k}});
-      sec.lines.push({id:uid(),t:l.t,m:m,r:r,sp:sp,n:String(l.n||"")});
+      var lineId=uid();liveIds[String(l.id)]=lineId;sec.lines.push({id:lineId,t:l.t,m:m,r:r,sp:sp,n:String(l.n||"")});
     });
     if(!sec.lines.length)sec.lines=[newLine("")];out.secs.push(sec);
   });
-  if(!out.secs.length)out.secs=[newSec("a")];return out;
+  if(!out.secs.length)out.secs=[newSec("a")];if(out.live)out.live.timings=out.live.timings.filter(function(t){return liveIds[t.lineId]}).map(function(t){return {lineId:liveIds[t.lineId],seconds:t.seconds}});return out;
 }
 function render(){
   var y=window.scrollY,app=$("#app"),s=cur();
@@ -851,32 +859,55 @@ function ensureVisible(){
 "use strict";
 /* ---------- ライブ用プロンプター ---------- */
 var Live={open:false,running:false,elapsed:0,remainingCount:0,last:0,raf:0,prefs:null,scrollY:0,wasWake:false};
-function livePrefs(p){p=p||{};return {duration:Number.isFinite(+p.duration)?Math.max(10,Math.min(7200,Math.round(+p.duration))):240,count:Number.isFinite(+p.count)?Math.max(0,Math.min(30,Math.round(+p.count))):3,fs:Number.isFinite(+p.fs)?Math.max(24,Math.min(96,Math.round(+p.fs))):40,memo:p.memo!==false,mirror:p.mirror===true}}
+function livePrefs(p){p=p||{};return {duration:Number.isFinite(+p.duration)?Math.max(.1,Math.min(7200,Math.round(+p.duration*10)/10)):240,count:Number.isFinite(+p.count)?Math.max(0,Math.min(30,Math.round(+p.count))):3,fs:Number.isFinite(+p.fs)?Math.max(24,Math.min(96,Math.round(+p.fs))):40,memo:p.memo!==false,mirror:p.mirror===true,timings:(Array.isArray(p.timings)?p.timings:[]).filter(function(t){return t&&typeof t.lineId==='string'&&Number.isFinite(t.seconds)&&t.seconds>=.1&&t.seconds<=7200}).map(function(t){return {lineId:t.lineId,seconds:Math.round(t.seconds*10)/10}})}}
 function livePhrases(song){var out=[];song.secs.forEach(function(sec){sec.lines.forEach(function(line){if(line.t.trim())out.push({line:line,section:secName(sec),memo:sec.memo||''})})});return out}
-function livePhraseIndex(elapsed,duration,length){return length?Math.max(0,Math.min(length-1,Math.floor(Math.max(0,elapsed)/duration*length+1e-9))):0}
+function liveEvenTimes(total,length){if(!length)return [];var units=Math.max(length,Math.round(total*10)),base=Math.floor(units/length),extra=units%length;return Array.from({length:length},function(_,i){return (base+(i<extra?1:0))/10})}
+function liveTimeline(items,p){
+ var defaults=liveEvenTimes(p.duration,items.length),saved=Object.create(null);(p.timings||[]).forEach(function(t){saved[t.lineId]=t.seconds});
+ var starts=[],durations=[],units=0;items.forEach(function(item,i){var n=saved[item.line.id],value=Number.isFinite(n)&&n>=.1?n:defaults[i];starts.push(units/10);durations.push(value);units+=Math.round(value*10)});
+ return {starts:starts,durations:durations,total:units/10};
+}
+function liveActiveIndex(){var starts=Live.timeline.starts,lo=0,hi=starts.length;while(lo<hi){var mid=(lo+hi)>>1;if(starts[mid]<=Live.elapsed+1e-8)lo=mid+1;else hi=mid}return Math.max(0,lo-1)}
+function liveStamp(n){var units=Math.max(0,Math.round(n*10)),whole=Math.floor(units/10);return Math.floor(whole/60)+':'+String(whole%60).padStart(2,'0')+(units%10?'.'+units%10:'')}
+function liveTimingValues(){return Live.setupItems.map(function(_,i){var el=$('#livePhraseSeconds'+i);return el&&el.value.trim()!==''?Number(el.value):NaN})}
+function liveTimingSummary(){
+ var times=liveTimingValues(),units=0,valid=true;times.forEach(function(n,i){var stamp=$('#livePhraseStamp'+i);if(stamp)stamp.textContent=valid&&Number.isFinite(n)&&n>=.1?liveStamp(units/10)+' → '+liveStamp((units+Math.round(n*10))/10):'—';if(!Number.isFinite(n)||n<.1||n>7200||Math.abs(n*10-Math.round(n*10))>1e-7)valid=false;else units+=Math.round(n*10)});
+ var total=$('#liveTimingTotal');if(total)total.textContent=valid?liveStamp(units/10):'—';var error=$('#liveError');if(error)error.textContent=valid&&units>72000?'合計時間は120分以内にしてください。':'';
+ return {valid:valid&&units<=72000,total:units/10,times:times};
+}
+function liveEvenApply(){
+ var min=Number($('#liveMin').value),sec=Number($('#liveSec').value),total=min*60+sec;
+ if(!Number.isInteger(min)||min<0||!Number.isFinite(sec)||sec<0||sec>=60||total<Live.setupItems.length*.1||total>7200){$('#liveError').textContent='全体の時間は、1フレーズ0.1秒以上・合計120分以内で入力してください。';return}
+ liveEvenTimes(total,Live.setupItems.length).forEach(function(n,i){$('#livePhraseSeconds'+i).value=String(n)});liveTimingSummary();
+}
+
 function livePhrasePaint(){
- var index=livePhraseIndex(Live.elapsed,Live.prefs.duration,Live.items.length);if(index===Live.phraseIndex)return;Live.phraseIndex=index;
+ var index=liveActiveIndex();if(index===Live.phraseIndex)return;Live.phraseIndex=index;
  var item=Live.items[index],next=Live.items[index+1],content=$('#liveContent');
  if(!item){content.innerHTML='<p class="empty">歌詞がありません。歌詞編集で入力してください。</p>';return}
  var sel=S.sel;S.sel=null;var current=lineHTML(item.line,false);S.sel=sel;
  content.innerHTML='<div class="live-phrase-heading"><span>'+esc(item.section)+'</span><span>'+(index+1)+' / '+Live.items.length+'</span></div>'+(Live.prefs.memo&&item.memo?'<p class="live-section-memo">'+esc(item.memo)+'</p>':'')+'<div class="live-current">'+current+'</div><div class="live-next"><span>次</span><p>'+esc(next?next.line.t:'最後のフレーズ')+'</p></div>';
  $('#liveViewport').scrollTop=0;
 }
-function liveStep(delta){if(!Live.items.length)return;var index=livePhraseIndex(Live.elapsed,Live.prefs.duration,Live.items.length);liveSeek(Math.max(0,Math.min(Live.items.length-1,index+delta))*Live.prefs.duration/Live.items.length)}
+function liveStep(delta){if(!Live.items.length)return;var index=liveActiveIndex();liveSeek(Live.timeline.starts[Math.max(0,Math.min(Live.items.length-1,index+delta))])}
 
 function liveTime(n){n=Math.max(0,Math.ceil(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
 function liveSetup(){
- if(!cur())return;commitEdits();if(!livePhrases(cur()).length){toast('歌詞編集で歌詞を入力してください');return}S.play=false;render();var p=livePrefs(cur().live),old=$('#liveSetup');if(old)old.remove();
- $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" id="liveSetup"><form class="modal" id="liveForm" role="dialog" aria-modal="true" aria-labelledby="liveSetupTitle"><h3 id="liveSetupTitle">ライブ用プロンプター</h3><p class="sub">歌詞の1行を1フレーズとして、大きく表示します。曲の長さをフレーズ数で均等に分け、順番に切り替えます。次のフレーズも下に表示します。音源との自動同期はしません。</p><div class="live-settings"><fieldset><legend>曲の長さ（10秒〜120分）</legend><label>分 <input id="liveMin" type="number" inputmode="numeric" min="0" max="120" required value="'+Math.floor(p.duration/60)+'"></label><label>秒 <input id="liveSec" type="number" inputmode="numeric" min="0" max="59" required value="'+p.duration%60+'"></label></fieldset><label>開始前のカウントダウン（秒）<input id="liveCount" type="number" inputmode="numeric" min="0" max="30" required value="'+p.count+'"></label><label>文字サイズ<select id="liveSize">'+[24,32,40,48,56,64,80,96].map(function(n){return '<option value="'+n+'"'+(p.fs===n?' selected':'')+'>'+n+'px</option>'}).join('')+'</select></label><label><input id="liveMemo" type="checkbox"'+(p.memo?' checked':'')+'> メモも表示</label><label><input id="liveMirror" type="checkbox"'+(p.mirror?' checked':'')+'> 左右反転（反射板を使う場合）</label></div><p id="liveError" role="alert"></p><p class="sub">プレビューを開いたあと「開始」で動きます。画面から離れると一時停止します。Space：停止・再開 ／ ← →：前・次のフレーズ ／ Esc：終了</p><div class="live-actions"><button class="btn pri" type="submit">プレビューを開く</button><button class="btn" type="button" data-act="live-cancel">閉じる</button></div></form></div>');
- $('#liveMin').focus();
+ if(!cur())return;commitEdits();var items=livePhrases(cur());if(!items.length){toast('歌詞編集で歌詞を入力してください');return}
+ S.play=false;render();var p=livePrefs(cur().live),timeline=liveTimeline(items,p),old=$('#liveSetup');if(old)old.remove();Live.setupItems=items;
+ var rows=items.map(function(item,i){return '<div class="live-timing-row"><div class="live-timing-lyric"><small>'+esc(item.section)+' · '+(i+1)+'</small><p>'+esc(item.line.t)+'</p><span id="livePhraseStamp'+i+'"></span></div><label class="live-seconds-label" for="livePhraseSeconds'+i+'"><span>表示時間</span><span><input id="livePhraseSeconds'+i+'" data-live-seconds="'+i+'" type="number" inputmode="decimal" min="0.1" max="7200" step="0.1" required value="'+timeline.durations[i]+'" aria-label="'+esc((i+1)+'番目のフレーズの表示時間（秒）')+'"> 秒</span></label></div>'}).join('');
+ $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" id="liveSetup"><form class="modal" id="liveForm" novalidate role="dialog" aria-modal="true" aria-labelledby="liveSetupTitle"><h3 id="liveSetupTitle" tabindex="-1">フレーズの表示時間</h3><p class="sub live-setup-intro">各フレーズを何秒表示するか決めます。<br>歌詞の1行ごとに切り替わります。</p><div class="live-timing-summary"><span>'+items.length+'フレーズ</span><span>合計 <b id="liveTimingTotal">'+liveStamp(timeline.total)+'</b></span></div><details class="live-setup-details"><summary>全体の時間から均等に分ける</summary><div class="live-even-controls"><label>分 <input id="liveMin" type="number" inputmode="numeric" min="0" max="120" value="'+Math.floor(timeline.total/60)+'"></label><label>秒 <input id="liveSec" type="number" inputmode="decimal" min="0" max="59.9" step="0.1" value="'+Math.round((timeline.total%60)*10)/10+'"></label><button class="btn sm" type="button" data-act="live-even">均等に分ける</button></div><p class="sub">下の秒数をすべて入れ替えます。</p></details><div class="live-timing-rows">'+rows+'</div><div class="live-count-setting"><label for="liveCount">開始までの待ち時間</label><span><input id="liveCount" type="number" inputmode="numeric" min="0" max="30" required value="'+p.count+'"> 秒</span><p class="sub">「開始」を押してから待つ時間。合計には含みません。</p></div><details class="live-setup-details"><summary>文字サイズ・メモなど</summary><div class="live-settings"><label>文字サイズ<select id="liveSize">'+[24,32,40,48,56,64,80,96].map(function(n){return '<option value="'+n+'"'+(p.fs===n?' selected':'')+'>'+n+'px</option>'}).join('')+'</select></label><label><input id="liveMemo" type="checkbox"'+(p.memo?' checked':'')+'> メモを表示する</label><label><input id="liveMirror" type="checkbox"'+(p.mirror?' checked':'')+'> 左右反転する</label><p class="sub">左右反転は、プロンプターの反射板を使う場合に選びます。</p></div></details><p class="sub live-setup-note">プレビューは停止した状態で開きます。<br>音源との自動同期はしません。</p><p id="liveError" role="alert"></p><div class="live-actions"><button class="btn pri" type="submit">保存してプレビュー</button><button class="btn" type="button" data-act="live-cancel">閉じる</button></div></form></div>');
+ liveTimingSummary();$('#liveSetupTitle').focus({preventScroll:true});
 }
 function liveReadSetup(){
- var min=Number($('#liveMin').value),sec=Number($('#liveSec').value),count=Number($('#liveCount').value),duration=min*60+sec;
- if(!Number.isInteger(min)||!Number.isInteger(sec)||sec<0||sec>59||min<0||duration<10||duration>7200||!Number.isInteger(count)||count<0||count>30){$('#liveError').textContent='曲の長さを10秒〜120分、カウントダウンを0〜30秒で入力してください。';return}
- var p=livePrefs({duration:duration,count:count,fs:Number($('#liveSize').value),memo:$('#liveMemo').checked,mirror:$('#liveMirror').checked});cur().live=p;queueSave(cur());flushAllSaves();$('#liveSetup').remove();liveOpen(p);
+ var result=liveTimingSummary(),count=Number($('#liveCount').value);
+ if(!result.valid||result.total<.1){$('#liveError').textContent='各フレーズを0.1秒単位で入力してください（合計120分以内）。';return}
+ if($('#liveCount').value.trim()===''||!Number.isInteger(count)||count<0||count>30){$('#liveError').textContent='開始までの待ち時間は0〜30秒で入力してください。';return}
+ var p=livePrefs({duration:result.total,timings:Live.setupItems.map(function(item,i){return {lineId:item.line.id,seconds:result.times[i]}}),count:count,fs:Number($('#liveSize').value),memo:$('#liveMemo').checked,mirror:$('#liveMirror').checked});cur().live=p;queueSave(cur());flushAllSaves();$('#liveSetup').remove();liveOpen(p);
 }
+
 function liveOpen(p){
- Live.expanded=false;Live.nativeFull=false;Live.prefs=p;Live.items=livePhrases(cur());Live.phraseIndex=-1;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
+ Live.expanded=false;Live.nativeFull=false;Live.prefs=p;Live.items=livePhrases(cur());Live.timeline=liveTimeline(Live.items,p);p.duration=Live.timeline.total;Live.phraseIndex=-1;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
  document.body.classList.add('live-open');
  document.body.insertAdjacentHTML('beforeend','<div id="liveScreen" role="dialog" aria-modal="true" aria-label="ライブ用プロンプター"><header class="live-top"><span class="live-title">'+esc(cur().title||'無題')+'</span><span id="liveState" role="status">待機中</span><button type="button" data-act="live-full">全画面</button><button type="button" data-act="live-close">終了</button></header><div id="liveViewport" tabindex="0" aria-label="現在のフレーズと次のフレーズ"><div id="liveContent" class="'+(p.memo?'m3':'m1')+'" style="--fs:'+p.fs+'px;'+(p.mirror?'transform:scaleX(-1)':'')+'"></div></div><div id="liveCountdown" hidden></div><footer class="live-bottom"><div class="live-clock"><span>経過 <b id="liveElapsed">0:00</b></span><span>残り <b id="liveRemaining">'+liveTime(p.duration)+'</b></span></div><input id="liveSeek" type="range" min="0" max="'+p.duration+'" step="0.1" value="0" aria-label="曲の再生位置（秒）"><div class="live-controls"><button type="button" data-act="live-reset">先頭</button><button type="button" data-act="live-back">前のフレーズ</button><button type="button" data-act="live-toggle" id="liveToggle">開始</button><button type="button" data-act="live-forward">次のフレーズ</button></div></footer><div id="liveCompact" hidden><button type="button" data-act="live-back" aria-label="前のフレーズ">前へ</button><button type="button" data-act="live-toggle" id="liveCompactToggle">開始</button><button type="button" data-act="live-forward" aria-label="次のフレーズ">次へ</button><button type="button" data-act="live-expand-exit" id="liveExpandExit">操作を戻す</button></div><aside id="liveFullHelp" hidden aria-label="全画面表示の案内"></aside></div>');
  liveFullscreenLabel();
@@ -932,12 +963,12 @@ document.addEventListener('fullscreenchange',liveFullscreenChanged);document.add
 
 function liveClose(){if(!Live.open)return;livePause();Live.open=false;var root=$('#liveScreen');liveExitFullscreen();root.remove();document.body.classList.remove('live-open');$('#app').inert=false;$('#layer').inert=false;setWake(Live.wasWake);window.scrollTo(0,Live.scrollY);var b=$('[data-act="live-setup"]');if(b)b.focus({preventScroll:true})}
 function liveAction(a){
- if(a==='live-setup'){liveSetup();return true}if(a==='live-cancel'){var setup=$('#liveSetup');if(setup)setup.remove();var b=$('[data-act="live-setup"]');if(b)b.focus();return true}
+ if(a==='live-even'){liveEvenApply();return true}if(a==='live-setup'){liveSetup();return true}if(a==='live-cancel'){var setup=$('#liveSetup');if(setup)setup.remove();var b=$('[data-act="live-setup"]');if(b)b.focus();return true}
  if(!Live.open)return false;
  if(a==='live-close')liveClose();else if(a==='live-toggle')liveToggle();else if(a==='live-reset'){liveSeek(0);Live.remainingCount=Live.prefs.count;$('#liveToggle').textContent='開始';$('#liveState').textContent='待機中';livePaint()}else if(a==='live-back')liveStep(-1);else if(a==='live-forward')liveStep(1);else if(a==='live-full')liveEnterFullscreen();else if(a==='live-expand-exit')liveExitFullscreen();else if(a==='live-full-help-close'){$('#liveFullHelp').hidden=true;$('#liveExpandExit').focus()}else return false;return true;
 }
 document.addEventListener('submit',function(e){if(e.target.id==='liveForm'){e.preventDefault();liveReadSetup()}});
-document.addEventListener('input',function(e){if(e.target.id==='liveSeek'&&Live.open)liveSeek(+e.target.value)});
+document.addEventListener('input',function(e){if(e.target.id==='liveSeek'&&Live.open)liveSeek(+e.target.value);else if(e.target.dataset&&e.target.dataset.liveSeconds!==undefined)liveTimingSummary()});
 document.addEventListener('keydown',function(e){
  if(Live.open&&e.key==='Tab'){var nodes=Array.prototype.slice.call($('#liveScreen').querySelectorAll('button,input,[tabindex="0"]')).filter(function(el){return el.getClientRects().length&&!el.closest('[inert]')}),i=nodes.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();nodes[nodes.length-1].focus()}else if(!e.shiftKey&&(i<0||i===nodes.length-1)){e.preventDefault();nodes[0].focus()}return}
  if(!Live.open||e.target.matches('input,textarea,select')||e.altKey||e.ctrlKey||e.metaKey)return;
