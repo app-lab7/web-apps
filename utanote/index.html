@@ -295,12 +295,60 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 @media(prefers-reduced-motion:reduce){.mode-enter{animation:none}}
 @media(max-width:360px){.track{gap:10px;grid-template-columns:50px minmax(0,1fr) 15px}.track-cover{width:50px;height:56px}.mode-tabs .mode-label{font-size:13px}.mode-tabs small{font-size:9px}}
 @media(max-height:500px) and (orientation:landscape){.mode-tabs button{min-height:48px}.mode-banner p{display:none}}
+
+/* 歌詞を広く、道具は必要なときだけ。 */
+.mode-top{padding-top:4px;padding-bottom:4px}
+.mode-top .row{gap:4px}.mode-top .ttl{font-size:12px}
+.header-action{min-height:44px;padding:0 8px;font-size:11px;border-radius:6px;white-space:nowrap}
+.header-action[aria-pressed="true"]{background:var(--electric);color:#293221}
+.mode-tabs{margin-top:3px;padding:3px}.mode-tabs button{min-height:52px;padding:6px 2px 9px;gap:3px}
+.mode-top .tools{display:none}
+.mode-top .tools.is-open{display:flex;position:absolute;top:48px;right:max(16px,env(safe-area-inset-right));padding:8px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px #0002;z-index:24;flex-wrap:wrap;max-width:calc(100% - 32px)}
+.mode-top .save-state{max-width:680px;display:block;margin:2px auto 0;text-align:right;font-size:9px;line-height:1.2}
+.mode-banner{margin:10px 0 5px}.mode-banner p{display:none}.mode-banner .mode-icon{padding:4px}.mode-banner .mode-icon svg{width:14px;height:14px}
+.songhead{padding:10px 0 4px}.songhead .t{font-size:23px}.sec{margin-top:22px}
+.writing-hint{margin:8px 0;font-size:11px;color:var(--muted)}
+.writing-hint summary{cursor:pointer;min-height:34px;padding:7px 0}
+.writing-hint p{line-height:1.7;margin:4px 0 8px}.writing-hint .btn{min-height:36px}
+.mark-dock{max-height:32dvh;overflow-y:auto;padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+.dock-heading{display:flex;align-items:center;gap:8px;min-height:40px}
+.dock-heading .selinfo{flex:1;min-width:0;margin:0;font-size:11px}
+.dock-heading button{min-height:40px;flex:none;padding:0 8px;font-size:11px;color:var(--muted)}
+.mark-dock .tabs{margin:0 0 5px}.mark-dock .tabs button{min-height:38px;padding:5px 0}
+.mark-dock .grid{display:flex;overflow-x:auto;overflow-y:hidden;gap:6px;max-height:none;padding:2px 1px 6px;scrollbar-width:thin;scroll-snap-type:x proximity}
+.mark-dock .grid .g{flex:0 0 70px;min-height:58px;scroll-snap-align:start;font-size:10px}
+.mark-dock .grid.r4 .g{flex-direction:column;gap:5px}
+.symbol-row-label{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--muted);gap:8px}
+.symbol-row-label button{min-height:34px;padding:0 8px;font-size:10px;text-decoration:underline;text-underline-offset:3px}
+.mark-dock .pal{padding-bottom:5px}.mark-dock .pal button{min-height:38px}
+#app[data-reading="true"] .mode-tabs,#app[data-reading="true"] .mode-banner,#app[data-reading="true"] .writing-hint{display:none}
+#app[data-reading="true"] .song-pane{padding-top:8px}
+#printRoot{display:none}
+@media(max-height:500px){.mark-dock{max-height:35dvh}.mode-tabs button{min-height:44px}.mode-tabs small{display:none}}
+@media print{
+ @page{size:A4;margin:14mm}
+ :root,:root[data-theme="dark"],#printRoot{color-scheme:light;--bg:#fff;--surface:#fff;--fg:#111;--muted:#555;--memo:#5a4924;--memo-bg:#f6f0db;--h1:#fff1a8;--h2:#ffdce2;--h3:#dcefff;--h4:#e0f5df;--dyn:#a33b13;--pitch:#185792;--voice:#176457;--brk:#555;--att:#875714;--s-intro:#555;--s-a:#396747;--s-b:#805c24;--s-sabi:#9a4053;--s-c:#694988;--s-ochi:#784361;--s-dai:#915129;--s-kan:#346967;--s-out:#555;--s-etc:#555;padding:0!important}
+ html,body{margin:0!important;padding:0!important;background:#fff!important;color:#111!important;height:auto!important;overflow:visible!important}
+ #app,#layer{display:none!important}#printRoot{display:block!important;width:100%;max-width:none;--fs:14pt;font-family:"Hiragino Sans","Yu Gothic",sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+ #printRoot *{animation:none!important;box-shadow:none!important}
+ #printRoot .songhead{padding:0 0 8pt;border-bottom:1px solid #bbb;break-after:avoid}
+ #printRoot .songhead .t{font-size:21pt;color:#111}#printRoot .sub{font-size:10pt;color:#555}
+ #printRoot .memo{color:#5a4924;font-size:10pt;line-height:1.6;break-before:avoid}
+ #printRoot .m3 .memo{background:#f6f0db;border-radius:0;padding:4pt 6pt;margin:3pt 0 6pt;font-size:10pt}
+ #printRoot .sec{margin-top:14pt;break-inside:auto;padding-left:9pt;border-left-width:2pt}
+ #printRoot .sh{break-after:avoid}#printRoot .sh b{font-size:10pt}
+ #printRoot .ln{font-size:14pt;line-height:1.9;break-inside:avoid;overflow:visible;color:#111}
+ #printRoot .ln.hs{padding-top:.8em}#printRoot .ln.hs2{padding-top:1.2em}
+ #printRoot .c.sel{background:transparent;outline:none}#printRoot .long{box-shadow:inset 0 -2px 0 var(--voice)!important}
+ #printRoot .print-caption{font-size:9pt;color:#555;margin:0 0 8pt;letter-spacing:.06em}
+}
 </style>
 
 </head>
 <body>
 <div id="app"></div>
 <div id="layer"></div>
+<div id="printRoot"></div>
 <script>
 "use strict";
 var $=function(s,r){return (r||document).querySelector(s)};
@@ -461,10 +509,15 @@ function loadPrefs(){try{var p=JSON.parse(Store.lsGet('prefs')||'null');if(!p)re
   if(p.show){S.show.sym=p.show.sym!==false;S.show.hl=p.show.hl!==false;if([1,2,3].indexOf(p.show.memo)>=0)S.show.memo=p.show.memo}
 }catch(e){}}
 function guideHTML(){
-  if(Store.lsGet('markguide')==='1')return '';
-  var step=!S.sel?'① 色を付けたい最初の文字をタップ':S.sel.a===S.sel.b?'② 最後の文字をタップ（1文字だけでもOK）':'③ 下の「色・線」から色を選ぶ';
-  return '<div class="guide"><b>はじめての書き込み</b><p>'+step+'<br>範囲を選んだら、下のボタンで記号や色を付けます。行の余白を押すと行メモを選べます。</p><button class="btn sm" data-act="guide-close">案内を閉じる</button></div>';
+ if(Store.lsGet('markguide')==='1')return '';
+ return '<details class="writing-hint"><summary>書き込みのヒント</summary><p>最初と最後の文字をタップして範囲を選び、下の道具から記号や色を付けます。行の余白をタップすると行メモを書けます。</p><button class="btn sm" data-act="guide-close">次回から表示しない</button></details>';
 }
+S.reading=false;S.dockCollapsed=false;S.toolsOpen=false;
+function printMarkup(song){var selected=S.sel;S.sel=null;try{return '<p class="print-caption">うたノート ／ 歌い方メモ</p><div class="m3">'+songHead(song)+lyricsHTML(song,false)+'</div>'}finally{S.sel=selected}}
+function preparePrint(){commitEdits();flushAllSaves();var song=cur(),root=document.querySelector('#printRoot');if(root)root.innerHTML=song?printMarkup(song):''}
+function printSong(){if(!cur())return;commitEdits();S.play=false;S.toolsOpen=false;render();preparePrint();window.print()}
+window.addEventListener('beforeprint',preparePrint);
+window.addEventListener('afterprint',function(){var root=document.querySelector('#printRoot');if(root)root.innerHTML=''}) ;
 loadPrefs();
 function cur(){return S.songs.filter(function(s){return s.id===S.id})[0]}
 var toastT;
@@ -599,9 +652,9 @@ function modeIcon(m){return '<span class="mode-icon" aria-hidden="true"><svg vie
 function modeBanner(){var d=MODES[S.mode];return '<div class="mode-banner">'+modeIcon(S.mode)+'<div><h2>'+d.title+'</h2><p>'+d.hint+'</p></div></div>'}
 function topBar(s){
   var m=S.mode;
-  return '<div class="top mode-top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div></div>'+
+  return '<div class="top mode-top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div>'+(m==='edit'?'':'<button class="header-action" data-act="reading" aria-pressed="'+!!S.reading+'">'+(S.reading?'戻す':'広く見る')+'</button>')+'<button class="header-action" data-act="print" aria-label="メモ付きの歌詞を印刷・PDF保存">印刷</button><button class="header-action" data-act="tools" aria-label="元に戻す・やり直す" aria-expanded="'+!!S.toolsOpen+'">⋯</button></div>'+
    '<div class="seg mode-tabs" role="group" aria-label="操作モードを切り替え">'+["sing","mark","edit"].map(function(k){var d=MODES[k];
-     return '<button data-act="mode" data-v="'+k+'" aria-label="'+d.label+'：'+d.short+'" aria-pressed="'+(m===k)+'"><span class="mode-label">'+modeIcon(k)+d.label+'</span><small>'+d.short+'</small><span class="mode-current" aria-hidden="true">✓ 選択中</span></button>'}).join("")+'</div><div class="tools">'+undoButtons()+'<span class="save-state" data-save-state role="status">'+esc(saveState)+'</span></div></div>';
+     return '<button data-act="mode" data-v="'+k+'" aria-label="'+d.label+'：'+d.short+'" aria-pressed="'+(m===k)+'"><span class="mode-label">'+modeIcon(k)+d.label+'</span><small>'+d.short+'</small><span class="mode-current" aria-hidden="true">✓ 選択中</span></button>'}).join("")+'</div><div class="tools'+(S.toolsOpen?' is-open':'')+'">'+undoButtons()+'</div><span class="save-state" data-save-state role="status">'+esc(saveState)+'</span></div>';
 }
 function brandMark(){return '<span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 10v4M10 5v14M15 8v8M20 11v2"/></svg></span>'}
 function coverArt(i){
@@ -646,32 +699,28 @@ function palHTML(l){
   return h;
 }
 function markDock(){
-  var l=selLine();
-  if(!l)return '<div class="dock"><div class="in"><div class="selinfo" style="margin:0;white-space:normal">行や文字をタップすると、メモと記号を付けられます。文字を2か所タップすると範囲選択になります。</div></div></div>';
-  var lo=S.sel.lineOnly,a=S.sel.a,b=S.sel.b,txt=lo?l.t:l.t.slice(a,b+1);
-  var h='<div class="dock"><div class="in"><div class="selinfo">'+(lo?"この行":"選択中")+': <b>「'+esc(txt)+'」</b>'+(!lo&&a<b?' <span style="color:var(--accent)">・記号は範囲に合わせて伸びます</span>':"")+'</div>'+palHTML(l)+
-   '<div class="tabs">'+[["sym","記号"],["rng","色・線"],["memo","メモ(自由入力)"]].map(function(x){
-     return '<button data-act="tab" data-v="'+x[0]+'" aria-pressed="'+(S.tab===x[0])+'">'+x[1]+(x[0]==="memo"&&l.n?'<i class="dot"></i>':"")+'</button>'}).join("")+'</div>';
-  if(S.tab==="memo"){
-    h+='<div class="selinfo" style="margin:4px 0 0;white-space:normal">メモは、選んだ行のすぐ下の入力欄に書けます。</div>';
-  }else if(lo){
-    h+='<div class="selinfo" style="margin:4px 0 0;white-space:normal">記号や色は、付けたい文字をタップして選んでください。</div>';
-  }else if(S.tab==="sym"){
-    h+='<div class="grid">'+(S.allSymbols?SYMS:SYMS.filter(function(d){return ["f","p","cresc","ten","vib","fal","breath","star"].indexOf(d[0])>=0})).map(function(d){var idx=d[3]==="a"?a:b;
-      return gridBtn("sym",d[0],symOn(l,d[0]),'<span class="k-'+d[2]+'">'+d[4]+'</span>',d[1])}).join("")+'</div><button class="btn sm" style="margin-top:8px" data-act="symbols-toggle">'+(S.allSymbols?'よく使う記号だけ表示':'すべての記号（23種類）')+'</button>';
-  }else{
-    h+='<div class="grid r4">'+RANGES.map(function(r){var all=true;for(var i=a;i<=b;i++)if(!csvHas(l.r,i,r[0]))all=false;
-      return gridBtn("rng",r[0],all,r[2]?'<span class="sw" style="background:'+r[3]+'"></span>':"",r[1])}).join("")+'</div>'+
-      '<div style="margin-top:8px"><button class="btn sm dng" data-act="clr">選択範囲の記号・色をすべて消す</button></div>';
-  }
-  return h+'</div></div>';
+ if(S.reading)return '';
+ var l=selLine();
+ if(!l)return '<div class="dock mark-dock"><div class="in"><div class="dock-heading"><span class="selinfo">文字や行をタップして書き込む</span></div></div></div>';
+ var lo=S.sel.lineOnly,a=S.sel.a,b=S.sel.b,txt=lo?l.t:l.t.slice(a,b+1);
+ var h='<div class="dock mark-dock"><div class="in"><div class="dock-heading"><div class="selinfo">'+(lo?'この行':'選択中')+'：<b>'+esc(txt)+'</b></div><button data-act="dock-collapse" aria-expanded="'+!S.dockCollapsed+'">'+(S.dockCollapsed?'道具を開く ▴':'たたむ ▾')+'</button><button data-act="selection-clear" aria-label="選択を解除">×</button></div>';
+ if(S.dockCollapsed)return h+'</div></div>';
+ h+='<div class="tabs">'+[['sym','記号'],['rng','色・線'],['memo','行メモ']].map(function(x){return '<button data-act="tab" data-v="'+x[0]+'" aria-pressed="'+(S.tab===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>';
+ if(S.tab==='memo')h+=palHTML(l)+'<div class="selinfo">行の下の入力欄にメモを書けます。</div>';
+ else if(lo)h+='<div class="selinfo">記号や色は、付けたい文字をタップしてください。</div>';
+ else if(S.tab==='sym'){
+  h+='<div class="grid">'+(S.allSymbols?SYMS:SYMS.filter(function(d){return ['f','p','cresc','ten','vib','fal','breath','star'].indexOf(d[0])>=0})).map(function(d){return gridBtn('sym',d[0],symOn(l,d[0]),'<span class="k-'+d[2]+'">'+d[4]+'</span>',d[1])}).join('')+'</div><div class="symbol-row-label"><span>左右にスクロール</span><button data-act="symbols-toggle">'+(S.allSymbols?'よく使う8種類':'すべての記号')+'</button></div>';
+ }else{
+  h+='<div class="grid r4">'+RANGES.map(function(r){var all=true;for(var i=a;i<=b;i++)if(!csvHas(l.r,i,r[0]))all=false;return gridBtn('rng',r[0],all,r[2]?'<span class="sw" style="background:'+r[3]+'"></span>':'',r[1])}).join('')+'</div><div class="symbol-row-label"><span>左右にスクロール</span><button data-act="clr">選んだ範囲の記号・色を消す</button></div>';
+ }
+ return h+'</div></div>';
 }
 function songView(s){
   var h=topBar(s)+'<div class="wrap song-pane'+(S.modeChanged?' mode-enter':'')+'">'+modeBanner();
-  var cls=(S.mode==="edit")?"":(" m"+S.show.memo+(S.show.sym?"":" nosym")+(S.show.hl?"":" nohl")+(S.mode==="mark"?" mark":""));
+  var cls=(S.mode==="edit")?"":(" m"+(S.mode==="mark"?3:S.show.memo)+(S.show.sym?"":" nosym")+(S.show.hl?"":" nohl")+(S.mode==="mark"?" mark":""));
   if(S.mode==="edit")return h+editView(s)+'</div>';
   h+='<div class="'+cls.trim()+'" style="--fs:'+S.fs+'px">'+(S.mode==='mark'?guideHTML():'')+songHead(s)+lyricsHTML(s,S.mode==="mark")+'</div></div>';
-  return h+(S.mode==="sing"?singDock():markDock());
+  return h+(S.reading?"":S.mode==="sing"?singDock():markDock());
 }
 function editView(s){
   var h='<div class="guide"><b>歌詞をまとめて入力</b><p>歌詞を貼り付けて、Aメロやサビに分けられます。</p><button class="btn pri" data-act="imp">歌詞をまとめて貼り付ける</button></div><div class="fld"><label for="f-title">曲名</label><input id="f-title" data-f="title" value="'+esc(s.title)+'" placeholder="曲名"></div>'+
@@ -709,7 +758,7 @@ function helpModal(){
    '<ol class="how"><li><b>歌詞編集</b>タブで歌詞を入力します。貼り付けもできて、空行や【サビ】の見出しで自動的にセクションに分かれます。</li>'+
    '<li><b>メモする</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
    '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。</li></ol>'+
-   '<h3>保存について</h3><p class="sub" style="margin:0 0 10px;font-size:13px">'+(db?"ログインしているアカウントの専用領域に保存されます。ほかの人には見えません。":"この端末のアプリ内に保存されます。アプリの削除やブラウザのデータ消去で失われるので、バックアップを取っておくと安心です。")+'</p>'+
+   '<h3>印刷・PDF保存</h3><p class="sub">曲を開いて右上の「印刷」を押すと、記号・色・メモを付けた歌詞を印刷できます。PDF保存は端末の印刷画面から選べます。</p><h3>保存について</h3><p class="sub" style="margin:0 0 10px;font-size:13px">'+(db?"ログインしているアカウントの専用領域に保存されます。ほかの人には見えません。":"この端末のアプリ内に保存されます。アプリの削除やブラウザのデータ消去で失われるので、バックアップを取っておくと安心です。")+'</p>'+
    '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
 }
 function restoreModal(){
@@ -737,6 +786,7 @@ function normSong(s){
 function render(){
   var y=window.scrollY,app=$("#app"),s=cur();
   app.setAttribute("data-mode",S.view==="song"&&s?S.mode:"list");
+  app.setAttribute("data-reading",String(!!S.reading));
   if(S.view==="song"&&s){app.className="";app.innerHTML=songView(s)}
   else{app.className="wrap";app.innerHTML=listView()}
   S.modeChanged=false;
@@ -774,8 +824,9 @@ document.addEventListener("touchstart",function(e){if(S.play&&!e.target.closest(
 /* ---------- 操作 ---------- */
 function secById(s,id){return s.secs.filter(function(x){return x.id===id})[0]}
 function go(view,id){S.view=view;if(id)S.id=id;S.sel=null;S.play=false;S.confirm=null;render();window.scrollTo(0,0)}
-function setMode(m){if(!MODES[m]||S.mode===m)return;commitEdits();S.modeChanged=true;S.mode=m;S.sel=null;S.tab="sym";S.play=false;S.confirm=null;setWake(m==="sing");render();window.scrollTo(0,0);var active=document.querySelector('.mode-tabs button[aria-pressed="true"]');if(active)active.focus({preventScroll:true})}
+function setMode(m){if(!MODES[m]||S.mode===m)return;commitEdits();S.reading=false;S.toolsOpen=false;S.modeChanged=true;S.mode=m;S.sel=null;S.tab="sym";S.play=false;S.confirm=null;setWake(m==="sing");render();window.scrollTo(0,0);var active=document.querySelector('.mode-tabs button[aria-pressed="true"]');if(active)active.focus({preventScroll:true})}
 function tapChar(el){
+  S.dockCollapsed=false;
   var line=el.dataset.line,i=+el.dataset.i,sel=S.sel;if(S.tab==="memo")S.tab="sym";
   if(!sel||sel.line!==line||sel.lineOnly)S.sel={line:line,a:i,b:i};
   else if(sel.a===sel.b){if(i===sel.a)S.sel=null;else S.sel={line:line,a:Math.min(i,sel.a),b:Math.max(i,sel.a)}}
@@ -784,6 +835,7 @@ function tapChar(el){
 }
 function focusMemo(){setTimeout(function(){var t=$("#memoTa");if(t){t.focus();try{t.setSelectionRange(t.value.length,t.value.length)}catch(e){}t.scrollIntoView({block:"center"})}},40)}
 function tapLine(id){
+  S.dockCollapsed=false;
   if(S.sel&&S.sel.line===id&&S.sel.lineOnly)S.sel=null;else S.sel={line:id,a:0,b:0,lineOnly:true};
   render();
 }
@@ -791,12 +843,17 @@ function savePh(){Store.savePhrases(S.phrases)}
 function act(a,el){
   var s=cur(),v=el.dataset.v,sid=el.dataset.sid,l,sec,i;
   switch(a){
+  case "print":printSong();break;
+  case "reading":commitEdits();S.reading=!S.reading;S.toolsOpen=false;S.play=false;render();break;
+  case "tools":commitEdits();S.toolsOpen=!S.toolsOpen;render();break;
+  case "dock-collapse":S.dockCollapsed=!S.dockCollapsed;render();break;
+  case "selection-clear":S.sel=null;render();break;
   case "undo":restoreHistory(false);break;
   case "redo":restoreHistory(true);break;
   case "guide-close":Store.lsSet('markguide','1');render();break;
   case "symbols-toggle":S.allSymbols=!S.allSymbols;render();break;
-  case "open":S.mode=(S.songs.filter(function(x){return x.id===el.dataset.id})[0].secs.some(function(x){return x.lines.some(function(l){return l.t})}))?"sing":"edit";S.tab="sym";go("song",el.dataset.id);setWake(S.mode==="sing");break;
-  case "new":s=newSong();S.songs.push(s);recordHistory();S.mode="edit";flushSave(s);go("song",s.id);setWake(false);break;
+  case "open":S.reading=false;S.toolsOpen=false;S.mode=(S.songs.filter(function(x){return x.id===el.dataset.id})[0].secs.some(function(x){return x.lines.some(function(l){return l.t})}))?"sing":"edit";S.tab="sym";go("song",el.dataset.id);setWake(S.mode==="sing");break;
+  case "new":S.reading=false;S.toolsOpen=false;s=newSong();S.songs.push(s);recordHistory();S.mode="edit";flushSave(s);go("song",s.id);setWake(false);break;
   case "back":commitEdits();flushAllSaves();setWake(false);go("list");break;
   case "mode":setMode(v);break;
   case "fs":S.fs=Math.max(16,Math.min(40,S.fs+(+v)));savePrefs();render();break;
