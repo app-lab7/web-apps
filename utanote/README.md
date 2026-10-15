@@ -1,4 +1,4 @@
-# うたしるし
+# リリペン（Lyripen）
 
 公開先: https://app-lab7.github.io/web-apps/utanote/
 

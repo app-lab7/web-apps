@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="うたしるし">
+<meta name="apple-mobile-web-app-title" content="リリペン">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 :root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
@@ -19,7 +19,7 @@ body{margin:0;overscroll-behavior-y:none}
 [hidden]{display:none!important}img{max-width:100%}
 .mark .ln{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 </style>
-<title>うたしるし</title>
+<title>リリペン（Lyripen）</title>
 
 <style>
 /* Layout: 一覧 → 曲ページ(歌う/記号/歌詞)。歌詞が主役、記号は文字の上に小さく、メモは行の下に控えめに。 */
@@ -497,7 +497,7 @@ function guideHTML(){
  return '<details class="writing-hint"><summary>書き込みのヒント</summary><p>最初と最後の文字をタップして範囲を選び、下の道具から記号や色を付けます。各行の右にある「メモ」から、その行のメモを書けます。</p><button class="btn sm" data-act="guide-close">次回から表示しない</button></details>';
 }
 S.reading=false;S.dockCollapsed=false;S.toolsOpen=false;
-function printMarkup(song){var selected=S.sel;S.sel=null;try{return '<p class="print-caption">うたしるし ／ 歌い方メモ</p><div class="m3">'+songHead(song)+lyricsHTML(song,false)+'</div>'}finally{S.sel=selected}}
+function printMarkup(song){var selected=S.sel;S.sel=null;try{return '<p class="print-caption">リリペン ／ 歌い方メモ</p><div class="m3">'+songHead(song)+lyricsHTML(song,false)+'</div>'}finally{S.sel=selected}}
 function preparePrint(){commitEdits();flushAllSaves();var song=cur(),root=document.querySelector('#printRoot');if(root)root.innerHTML=song?printMarkup(song):''}
 function printSong(){if(!cur())return;commitEdits();S.play=false;S.toolsOpen=false;render();preparePrint();window.print()}
 window.addEventListener('beforeprint',preparePrint);
@@ -519,13 +519,13 @@ function restorePosition(pos){
 function backupData(){commitEdits();flushAllSaves();return {app:'utanote',v:1,songs:S.songs,phrases:S.phrases}}
 function downloadBackup(){
  try{var blob=new Blob([JSON.stringify(backupData(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
- a.href=url;a.download='utanote-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},30000);toast('バックアップを保存します');
+ a.href=url;a.download='lyripen-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},30000);toast('バックアップを保存します');
  }catch(e){toast('ファイルを保存できませんでした。コピーをご利用ください')}
 }
 var pendingRestore=null;
 function stageRestore(raw,name){
  var data;try{data=JSON.parse(raw)}catch(e){toast('バックアップの形式が正しくありません');return false}
- if(!data||!Array.isArray(data.songs)||(data.app&&data.app!=='utanote')||data.songs.length>5000){toast('うたしるしのバックアップを選んでください');return false}
+ if(!data||!Array.isArray(data.songs)||(data.app&&data.app!=='utanote')||data.songs.length>5000){toast('リリペンのバックアップを選んでください');return false}
  var songs;try{songs=data.songs.map(normSong).filter(Boolean)}catch(e){toast('読み込めない曲データがあります');return false}
  if(songs.length!==data.songs.length){toast('読み込めない曲データがあります');return false}
  var ids=Object.create(null);songs=songs.filter(function(song){if(ids[song.id])return false;ids[song.id]=true;return true});
@@ -686,7 +686,7 @@ function coverArt(i){
  return '<svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" aria-hidden="true">'+arts[i%3]+'</svg>';
 }
 function listView(){
- var h='<header class="masthead"><div class="wordmark">'+brandMark()+'うたしるし</div><button class="help-link" data-act="help">使い方</button></header>'+
+ var h='<header class="masthead"><div class="wordmark">'+brandMark()+'リリペン</div><button class="help-link" data-act="help">使い方</button></header>'+
  '<div class="home-hero"><div class="eyebrow">MY SONGBOOK</div><h1>歌の練習メモ</h1><p>歌詞にメモや記号を書き込めます。</p></div>';
  if(!S.ready)return h+'<div class="empty">読み込み中…</div>';
  h+='<div class="library-head"><h2>マイソング<small>'+S.songs.length+'曲</small></h2><button class="new-track" data-act="new"><span aria-hidden="true">＋</span> 曲を追加</button></div>'+
@@ -778,7 +778,7 @@ function phraseModal(){
 }
 function helpModal(){
   var db=Store.kind==="db";
-  return '<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="使い方"><h3>うたしるしの使い方</h3>'+
+  return '<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="使い方"><h3>リリペンの使い方</h3>'+
    '<ol class="how"><li><b>歌詞編集</b>タブで歌詞を入力します。貼り付けもできて、空行や【サビ】の見出しで自動的にセクションに分かれます。</li>'+
    '<li><b>メモする</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
    '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。</li></ol>'+

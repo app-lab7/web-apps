@@ -1,6 +1,6 @@
 {
-  "name": "うたしるし",
-  "short_name": "うたしるし",
+  "name": "リリペン（Lyripen）",
+  "short_name": "リリペン",
   "description": "歌詞をセクションに分け、メモ・記号・色を付けて歌の練習ができるアプリ",
   "lang": "ja",
   "start_url": "./",
