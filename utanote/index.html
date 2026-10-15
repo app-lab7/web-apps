@@ -257,7 +257,7 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 .fld label{font-size:11px;font-weight:500}.modal{border-radius:15px 15px 0 0}.modal h3{font-size:17px;letter-spacing:-.03em}
 .toast{border-radius:7px;font-size:12px;font-weight:500}
 .mode-enter{animation:mode-enter .18s ease-out}
-@keyframes mode-enter{from{opacity:.4;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes mode-enter{from{opacity:.4}to{opacity:1}}
 @media(prefers-reduced-motion:reduce){.mode-enter{animation:none}}
 @media(max-width:360px){.track{gap:10px;grid-template-columns:50px minmax(0,1fr) 15px}.track-cover{width:50px;height:56px}.mode-tabs .mode-label{font-size:13px}.mode-tabs small{font-size:9px}}
 @media(max-height:500px) and (orientation:landscape){.mode-tabs button{min-height:48px}.mode-banner p{display:none}}
@@ -315,6 +315,16 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
  #printRoot .c.sel{background:transparent;outline:none}#printRoot .long{box-shadow:inset 0 -2px 0 var(--voice)!important}
  #printRoot .print-caption{font-size:9pt;color:#555;margin:0 0 8pt;letter-spacing:.06em}
 }
+
+.note-line{position:relative;padding-right:50px}
+.row-note{position:absolute;right:0;top:0;display:flex;margin:0}
+.row-note button{min-height:44px;min-width:44px;padding:0 5px;font-size:11px;color:var(--accent);border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.row-note button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.quick-undo{min-height:38px;font-size:11px;border:1px solid var(--line);padding:0 9px;border-radius:6px;background:var(--surface);white-space:nowrap}
+.dock-heading .quick-undo{color:var(--accent)}
+#app[data-mode="edit"] .mode-top .tools:not(.is-open){display:flex;margin-top:3px}
+#app[data-mode="edit"] .mode-top .tools.is-open{position:static;box-shadow:none;padding:0;border:0}
+@media print{.row-note,.quick-undo{display:none!important}}
 </style>
 
 </head>
@@ -322,6 +332,7 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 <div id="app"></div>
 <div id="layer"></div>
 <div id="printRoot"></div>
+<input type="file" id="backupFile" accept=".json,application/json" hidden>
 <script>
 "use strict";
 var $=function(s,r){return (r||document).querySelector(s)};
@@ -483,7 +494,7 @@ function loadPrefs(){try{var p=JSON.parse(Store.lsGet('prefs')||'null');if(!p)re
 }catch(e){}}
 function guideHTML(){
  if(Store.lsGet('markguide')==='1')return '';
- return '<details class="writing-hint"><summary>書き込みのヒント</summary><p>最初と最後の文字をタップして範囲を選び、下の道具から記号や色を付けます。行の余白をタップすると行メモを書けます。</p><button class="btn sm" data-act="guide-close">次回から表示しない</button></details>';
+ return '<details class="writing-hint"><summary>書き込みのヒント</summary><p>最初と最後の文字をタップして範囲を選び、下の道具から記号や色を付けます。各行の右にある「メモ」から、その行のメモを書けます。</p><button class="btn sm" data-act="guide-close">次回から表示しない</button></details>';
 }
 S.reading=false;S.dockCollapsed=false;S.toolsOpen=false;
 function printMarkup(song){var selected=S.sel;S.sel=null;try{return '<p class="print-caption">うたノート ／ 歌い方メモ</p><div class="m3">'+songHead(song)+lyricsHTML(song,false)+'</div>'}finally{S.sel=selected}}
@@ -492,6 +503,45 @@ function printSong(){if(!cur())return;commitEdits();S.play=false;S.toolsOpen=fal
 window.addEventListener('beforeprint',preparePrint);
 window.addEventListener('afterprint',function(){var root=document.querySelector('#printRoot');if(root)root.innerHTML=''}) ;
 loadPrefs();
+function quickUndo(){return '<button class="quick-undo" data-act="undo" '+(historyPast.length<2?'disabled':'')+'>↶ 戻す</button>'}
+function headerEdge(){var h=document.querySelector('.mode-top');return h?h.getBoundingClientRect().bottom+8:8}
+function capturePosition(){
+ var edge=headerEdge(),nodes=document.querySelectorAll(S.mode==='edit'?'.ecard[data-view-sec]':'.ln[data-view-line]');
+ for(var i=0;i<nodes.length;i++){var r=nodes[i].getBoundingClientRect();if(r.bottom>edge){var sec=nodes[i].closest('[data-view-sec]');return {line:nodes[i].dataset.viewLine||null,section:sec?sec.dataset.viewSec:null,offset:r.top-edge,y:window.scrollY}}}
+ return {y:window.scrollY};
+}
+function restorePosition(pos){
+ if(!pos)return;var nodes=document.querySelectorAll('[data-view-line]'),target=null;
+ if(pos.line)for(var i=0;i<nodes.length;i++)if(nodes[i].dataset.viewLine===pos.line){target=nodes[i];break}
+ if(!target&&pos.section){nodes=document.querySelectorAll('[data-view-sec]');for(var j=0;j<nodes.length;j++)if(nodes[j].dataset.viewSec===pos.section){target=nodes[j];break}}
+ if(target)window.scrollBy(0,target.getBoundingClientRect().top-headerEdge()-(pos.offset||0));else window.scrollTo(0,pos.y||0);
+}
+function backupData(){commitEdits();flushAllSaves();return {app:'utanote',v:1,songs:S.songs,phrases:S.phrases}}
+function downloadBackup(){
+ try{var blob=new Blob([JSON.stringify(backupData(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
+ a.href=url;a.download='utanote-backup-'+new Date().toISOString().slice(0,10)+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},30000);toast('バックアップを保存します');
+ }catch(e){toast('ファイルを保存できませんでした。コピーをご利用ください')}
+}
+var pendingRestore=null;
+function stageRestore(raw,name){
+ var data;try{data=JSON.parse(raw)}catch(e){toast('バックアップの形式が正しくありません');return false}
+ if(!data||!Array.isArray(data.songs)||(data.app&&data.app!=='utanote')||data.songs.length>5000){toast('うたノートのバックアップを選んでください');return false}
+ var songs;try{songs=data.songs.map(normSong).filter(Boolean)}catch(e){toast('読み込めない曲データがあります');return false}
+ if(songs.length!==data.songs.length){toast('読み込めない曲データがあります');return false}
+ var ids=Object.create(null);songs=songs.filter(function(song){if(ids[song.id])return false;ids[song.id]=true;return true});
+ var overwrite=songs.filter(function(song){return S.songs.some(function(old){return old.id===song.id})}).length;
+ pendingRestore={songs:songs,phrases:Array.isArray(data.phrases)?data.phrases.map(String).filter(Boolean).slice(0,60):null};
+ var old=document.querySelector('.sheetwrap');if(old)old.remove();
+ document.querySelector('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="復元内容の確認"><h3>バックアップから復元</h3><p class="sub">'+esc(name||'バックアップ')+'</p><p>'+songs.length+'曲を取り込みます。<br>新しく追加：'+(songs.length-overwrite)+'曲<br>同じ曲を上書き：'+overwrite+'曲</p><p class="sub">バックアップにない曲は残ります。曲の取り込みは「元に戻す」で取り消せます。</p><div class="tools"><button class="btn pri" data-act="bk-apply">復元する</button><button class="btn" data-act="imp-x">キャンセル</button></div></div></div>');return true;
+}
+function applyRestore(){
+ if(!pendingRestore)return;commitEdits();var data=pendingRestore;pendingRestore=null;
+ data.songs.forEach(function(song){var i=S.songs.findIndex(function(old){return old.id===song.id});if(i<0)S.songs.push(song);else S.songs[i]=song});
+ if(data.phrases&&data.phrases.length){S.phrases=data.phrases;savePh()}
+ recordHistory();var modal=document.querySelector('.sheetwrap');if(modal)modal.remove();render();setSaveState('保存中…');
+ Promise.all(data.songs.map(function(song){return Promise.resolve().then(function(){return Store.save(song)})})).then(function(){setSaveState('保存済み');toast(data.songs.length+'曲を復元しました')}).catch(function(){setSaveState('保存できませんでした');toast('保存できませんでした。バックアップを保管してください')});
+}
+document.addEventListener('change',function(e){if(e.target.id!=='backupFile')return;var file=e.target.files&&e.target.files[0];e.target.value='';if(!file)return;if(file.size>20*1024*1024){toast('20MB以下のファイルを選んでください');return}file.text().then(function(raw){stageRestore(raw,file.name)}).catch(function(){toast('ファイルを読み込めませんでした')})});
 function cur(){return S.songs.filter(function(s){return s.id===S.id})[0]}
 var toastT;
 function toast(msg){var l=$("#layer");var old=$(".toast",l);if(old)old.remove();var d=document.createElement("div");d.className="toast";d.textContent=msg;l.appendChild(d);clearTimeout(toastT);toastT=setTimeout(function(){d.remove()},1800)}
@@ -597,10 +647,11 @@ function lineHTML(l,mark){
   }
   if(!t)h='<span style="opacity:.35">(空の行)</span>';
   var hs=Object.keys(l.m).length>0||(l.sp&&l.sp.length>0),hs2=(l.sp||[]).some(function(s){return LABELED[s.k]});
-  var out='<div class="ln'+(hs2?" hs2":hs?" hs":"")+(selOn&&S.sel.lineOnly?" lsel":"")+'"'+(mark?' data-lineid="'+l.id+'"':"")+'>'+h+'</div>';
+  var out='<div class="ln'+(hs2?" hs2":hs?" hs":"")+(selOn&&S.sel.lineOnly?" lsel":"")+'" data-view-line="'+l.id+'"'+(mark?' data-lineid="'+l.id+'"':"")+'>'+h+'</div>';
   var memoOpen=mark&&selOn&&S.tab==="memo";
   if(l.n)out+='<div class="memo"'+(mark?' data-memo-line="'+l.id+'"':"")+'>'+esc(l.n)+'</div>';
   if(memoOpen)out+='<div class="inmemo"><textarea id="memoTa" rows="2" placeholder="この行の歌い方(例: 息多めで、語尾は抜く)" aria-label="この行のメモ">'+esc(l.n)+'</textarea><div style="text-align:right;margin-top:6px"><button class="btn sm pri" data-act="memodone">完了</button></div></div>';
+  if(mark&&!S.reading)out='<div class="note-line">'+out+'<div class="row-note"><button data-act="line-note" data-id="'+l.id+'" aria-pressed="'+!!memoOpen+'" aria-label="'+esc((l.t||'空の行').slice(0,40))+' の行メモ" title="'+(l.n?'行メモを編集':'行メモを書く')+'">メモ</button></div></div>';
   return out;
 }
 function songHead(s){
@@ -612,7 +663,7 @@ function lyricsHTML(s,mark){
   if(!s.secs.some(function(x){return x.lines.some(function(l){return l.t})}))
     return '<div class="empty">まだ歌詞がありません。<br>「歌詞編集」タブで入力してください。</div>';
   return s.secs.map(function(sec){
-    return '<section class="sec t-'+sec.type+'"><div class="sh"><b>'+esc(secName(sec))+'</b>'+(sec.memo?'<span class="sm">'+esc(sec.memo)+'</span>':"")+'</div>'+
+    return '<section class="sec t-'+sec.type+'" data-view-sec="'+sec.id+'"><div class="sh"><b>'+esc(secName(sec))+'</b>'+(sec.memo?'<span class="sm">'+esc(sec.memo)+'</span>':"")+'</div>'+
       sec.lines.map(function(l){return lineHTML(l,mark)}).join("")+'</section>';
   }).join("");
 }
@@ -674,9 +725,9 @@ function palHTML(l){
 function markDock(){
  if(S.reading)return '';
  var l=selLine();
- if(!l)return '<div class="dock mark-dock"><div class="in"><div class="dock-heading"><span class="selinfo">文字や行をタップして書き込む</span></div></div></div>';
+ if(!l)return '<div class="dock mark-dock"><div class="in"><div class="dock-heading"><span class="selinfo">文字をタップして書き込む</span>'+quickUndo()+'</div></div></div>';
  var lo=S.sel.lineOnly,a=S.sel.a,b=S.sel.b,txt=lo?l.t:l.t.slice(a,b+1);
- var h='<div class="dock mark-dock"><div class="in"><div class="dock-heading"><div class="selinfo">'+(lo?'この行':'選択中')+'：<b>'+esc(txt)+'</b></div><button data-act="dock-collapse" aria-expanded="'+!S.dockCollapsed+'">'+(S.dockCollapsed?'道具を開く ▴':'たたむ ▾')+'</button><button data-act="selection-clear" aria-label="選択を解除">×</button></div>';
+ var h='<div class="dock mark-dock"><div class="in"><div class="dock-heading"><div class="selinfo">'+(lo?'この行':'選択中')+'：<b>'+esc(txt)+'</b></div>'+quickUndo()+'<button data-act="dock-collapse" aria-expanded="'+!S.dockCollapsed+'">'+(S.dockCollapsed?'道具を開く ▴':'たたむ ▾')+'</button><button data-act="selection-clear" aria-label="選択を解除">×</button></div>';
  if(S.dockCollapsed)return h+'</div></div>';
  h+='<div class="tabs">'+[['sym','記号'],['rng','色・線'],['memo','行メモ']].map(function(x){return '<button data-act="tab" data-v="'+x[0]+'" aria-pressed="'+(S.tab===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>';
  if(S.tab==='memo')h+=palHTML(l)+'<div class="selinfo">行の下の入力欄にメモを書けます。</div>';
@@ -690,7 +741,7 @@ function markDock(){
 }
 function songView(s){
   var h=topBar(s)+'<div class="wrap song-pane'+(S.modeChanged?' mode-enter':'')+'">'+modeBanner();
-  var cls=(S.mode==="edit")?"":(" m"+(S.mode==="mark"?3:S.show.memo)+(S.show.sym?"":" nosym")+(S.show.hl?"":" nohl")+(S.mode==="mark"?" mark":""));
+  var cls=(S.mode==="edit")?"":(" m"+(S.mode==="mark"?3:S.show.memo)+(S.mode==="mark"||S.show.sym?"":" nosym")+(S.mode==="mark"||S.show.hl?"":" nohl")+(S.mode==="mark"?" mark":""));
   if(S.mode==="edit")return h+editView(s)+'</div>';
   h+='<div class="'+cls.trim()+'" style="--fs:'+S.fs+'px">'+(S.mode==='mark'?guideHTML():'')+songHead(s)+lyricsHTML(s,S.mode==="mark")+'</div></div>';
   return h+(S.reading?"":S.mode==="sing"?singDock():markDock());
@@ -702,7 +753,7 @@ function editView(s){
    '<div class="fld"><label for="f-bpm">BPM</label><input id="f-bpm" data-f="bpm" inputmode="numeric" value="'+esc(s.bpm)+'"></div></div>'+
    '<div class="fld"><label for="f-memo">曲全体のメモ</label><input id="f-memo" data-f="memo" value="'+esc(s.memo)+'" placeholder="例: 全体は力を抜いて、サビで開く"></div>';
   s.secs.forEach(function(sec,i){
-    h+='<div class="ecard t-'+sec.type+'"><div class="tchips">'+TYPES.map(function(t){return '<button data-act="type" data-sid="'+sec.id+'" data-v="'+t[0]+'" aria-pressed="'+(sec.type===t[0])+'">'+t[1]+'</button>'}).join("")+'</div>'+
+    h+='<div class="ecard t-'+sec.type+'" data-view-sec="'+sec.id+'"><div class="tchips">'+TYPES.map(function(t){return '<button data-act="type" data-sid="'+sec.id+'" data-v="'+t[0]+'" aria-pressed="'+(sec.type===t[0])+'">'+t[1]+'</button>'}).join("")+'</div>'+
      '<div class="two"><input data-f="label" data-sid="'+sec.id+'" value="'+esc(sec.label)+'" placeholder="見出し(例: Aメロ 2番)" aria-label="見出し"><input data-f="memo" data-sid="'+sec.id+'" value="'+esc(sec.memo)+'" placeholder="区間のメモ" aria-label="区間のメモ"></div>'+
      '<textarea data-sec="'+sec.id+'" rows="'+(sec.lines.length+1)+'" placeholder="歌詞を1行ずつ入力" aria-label="歌詞">'+esc(sec.lines.map(function(l){return l.t}).join("\n"))+'</textarea>'+
      '<div class="acts"><button class="btn sm" data-act="up" data-sid="'+sec.id+'"'+(i===0?" disabled":"")+'>↑ 上へ</button><button class="btn sm" data-act="down" data-sid="'+sec.id+'"'+(i===s.secs.length-1?" disabled":"")+'>↓ 下へ</button>'+
@@ -732,7 +783,7 @@ function helpModal(){
    '<li><b>メモする</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
    '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。</li></ol>'+
    '<h3>印刷・PDF保存</h3><p class="sub">曲を開いて右上の「印刷」を押すと、記号・色・メモを付けた歌詞を印刷できます。PDF保存は端末の印刷画面から選べます。</p><h3>保存について</h3><p class="sub" style="margin:0 0 10px;font-size:13px">'+(db?"ログインしているアカウントの専用領域に保存されます。ほかの人には見えません。":"この端末のアプリ内に保存されます。アプリの削除やブラウザのデータ消去で失われるので、バックアップを取っておくと安心です。")+'</p>'+
-   '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
+   '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-act="bk-download">ファイルに保存</button><button class="btn sm" data-act="bk-file">ファイルから復元</button><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
 }
 function restoreModal(){
   return '<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="バックアップから復元"><h3>バックアップから復元</h3>'+
@@ -797,7 +848,8 @@ document.addEventListener("touchstart",function(e){if(S.play&&!e.target.closest(
 /* ---------- 操作 ---------- */
 function secById(s,id){return s.secs.filter(function(x){return x.id===id})[0]}
 function go(view,id){S.view=view;if(id)S.id=id;S.sel=null;S.play=false;S.confirm=null;render();window.scrollTo(0,0)}
-function setMode(m){if(!MODES[m]||S.mode===m)return;commitEdits();S.reading=false;S.toolsOpen=false;S.modeChanged=true;S.mode=m;S.sel=null;S.tab="sym";S.play=false;S.confirm=null;setWake(m==="sing");render();window.scrollTo(0,0);var active=document.querySelector('.mode-tabs button[aria-pressed="true"]');if(active)active.focus({preventScroll:true})}
+function setMode(m){if(!MODES[m]||S.mode===m)return;var position=capturePosition();commitEdits();S.reading=false;S.toolsOpen=false;S.modeChanged=true;S.mode=m;S.sel=null;S.tab="sym";S.play=false;S.confirm=null;setWake(m==="sing");render();restorePosition(position);var active=document.querySelector('.mode-tabs button[aria-pressed="true"]');if(active)active.focus({preventScroll:true})}
+
 function tapChar(el){
   S.dockCollapsed=false;
   var line=el.dataset.line,i=+el.dataset.i,sel=S.sel;if(S.tab==="memo")S.tab="sym";
@@ -816,6 +868,10 @@ function savePh(){Store.savePhrases(S.phrases)}
 function act(a,el){
   var s=cur(),v=el.dataset.v,sid=el.dataset.sid,l,sec,i;
   switch(a){
+  case "line-note":S.sel={line:el.dataset.id,a:0,b:0,lineOnly:true};S.tab='memo';S.dockCollapsed=false;render();focusMemo();break;
+  case "bk-download":downloadBackup();break;
+  case "bk-file":document.querySelector('#backupFile').click();break;
+  case "bk-apply":applyRestore();break;
   case "print":printSong();break;
   case "reading":commitEdits();S.reading=!S.reading;S.toolsOpen=false;S.play=false;render();break;
   case "tools":commitEdits();S.toolsOpen=!S.toolsOpen;render();break;
@@ -849,18 +905,13 @@ function act(a,el){
     if(pk>=0)pa.splice(pk,1);else pa.push(ph);l.n=pa.join("、");touch();render();break;
   case "help":Store.lsSet("helpseen","1");$("#layer").insertAdjacentHTML("beforeend",helpModal());if(S.view==="list")render();break;
   case "hidehelp":Store.lsSet("helpseen","1");render();break;
-  case "bk-copy":var bt=JSON.stringify({app:"utanote",v:1,songs:S.songs,phrases:S.phrases});
+  case "bk-copy":var bt=JSON.stringify(backupData());
     (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(bt):Promise.reject()).then(function(){toast("バックアップをコピーしました")}).catch(function(){
       var w2=$(".sheetwrap");if(w2)w2.remove();
       $("#layer").insertAdjacentHTML("beforeend",'<div class="sheetwrap top" data-act="imp-x"><div class="modal"><h3>バックアップ</h3><div class="sub" style="margin-bottom:8px">全体をコピーして保管してください。</div><textarea id="cpTa" readonly>'+esc(bt)+'</textarea><div style="margin-top:10px"><button class="btn" data-act="imp-x">閉じる</button></div></div></div>');
       var c2=$("#cpTa");if(c2){c2.focus();c2.select()}});break;
   case "bk-open":var w3=$(".sheetwrap");if(w3)w3.remove();$("#layer").insertAdjacentHTML("beforeend",restoreModal());setTimeout(function(){var t=$("#bkTa");if(t)t.focus()},50);break;
-  case "bk-go":var raw=$("#bkTa")?$("#bkTa").value:"",data=null;try{data=JSON.parse(raw)}catch(e){}
-    if(!data||!Array.isArray(data.songs)){toast("バックアップの形式が正しくありません");break}
-    var cnt=0;data.songs.forEach(function(x){var n=normSong(x);if(!n)return;var ix=S.songs.map(function(y){return y.id}).indexOf(n.id);
-      if(ix>=0)S.songs[ix]=n;else S.songs.push(n);Store.save(n).catch(function(){});cnt++});
-    if(Array.isArray(data.phrases)&&data.phrases.length){S.phrases=data.phrases.map(String).filter(Boolean).slice(0,60);savePh()}
-    recordHistory();var w4=$(".sheetwrap");if(w4)w4.remove();render();toast(cnt+"曲を復元しました");break;
+  case "bk-go":stageRestore($("#bkTa")?$("#bkTa").value:'','貼り付けたバックアップ');break;
   case "memodone":if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();document.body.classList.remove("typing");render();break;
   case "pedit":S.pedit=!S.pedit;render();break;
   case "phnew":$("#layer").insertAdjacentHTML("beforeend",phraseModal());setTimeout(function(){var t=$("#phNew");if(t)t.focus()},50);break;
@@ -876,7 +927,7 @@ function act(a,el){
   case "addsec":commitEdits();var last=s.secs[s.secs.length-1],nt={a:"b",b:"sabi",sabi:"a",intro:"a",kan:"a",c:"sabi",ochi:"sabi",dai:"out"}[last?last.type:"a"]||"a";
     s.secs.push(newSec(nt));touch();render();var tas=document.querySelectorAll("textarea[data-sec]");if(tas.length){var ta=tas[tas.length-1];ta.focus();ta.scrollIntoView({block:"center"})}break;
   case "imp":commitEdits();$("#layer").insertAdjacentHTML("beforeend",importModal());setTimeout(function(){var t=$("#impTa");if(t)t.focus()},50);break;
-  case "imp-x":var w=$(".sheetwrap");if(w)w.remove();break;
+  case "imp-x":pendingRestore=null;var w=$(".sheetwrap");if(w)w.remove();break;
   case "imp-go":var txt=$("#impTa").value;var secs=parseLyrics(txt,v==="add"?s.secs.length:0);
     if(!secs.length){toast("歌詞が入力されていません");break}
     if(v==="rep")s.secs=secs;else{var empty=s.secs.length===1&&!s.secs[0].lines.some(function(x){return x.t});s.secs=empty?secs:s.secs.concat(secs)}
