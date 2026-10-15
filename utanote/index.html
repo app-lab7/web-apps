@@ -339,6 +339,15 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 @media(max-width:480px){.live-controls button{padding:7px 5px!important;font-size:12px!important}.live-controls #liveToggle{min-width:74px}}
 @media(max-height:500px){#liveContent{padding-top:2vh;padding-bottom:3vh;gap:8px}.live-next{padding-top:8px;margin-top:4px}}
 </style>
+<style>
+#liveScreen.is-expanded .live-top,#liveScreen.is-expanded .live-bottom{display:none}
+#liveScreen.is-expanded #liveContent{padding-bottom:76px}
+#liveCompact{position:absolute;bottom:max(8px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;gap:6px;max-width:calc(100% - 16px);padding:6px;border-radius:12px;background:#10141ce8;border:1px solid #43516b}
+#liveCompact button{white-space:nowrap;min-height:44px;padding:6px 10px;font-size:13px}
+#liveFullHelp{position:absolute;left:50%;top:max(12px,env(safe-area-inset-top));transform:translateX(-50%);width:min(520px,calc(100% - 24px));max-height:65%;overflow:auto;background:#202d43;color:#fff;padding:16px;border:1px solid #8cb5ff;border-radius:12px;box-shadow:0 8px 24px #0007;font-size:14px;line-height:1.7}
+#liveFullHelp p{margin:0 0 12px}
+#liveScreen:fullscreen{width:100%;height:100%}#liveScreen:-webkit-full-screen{width:100%;height:100%}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -867,9 +876,10 @@ function liveReadSetup(){
  var p=livePrefs({duration:duration,count:count,fs:Number($('#liveSize').value),memo:$('#liveMemo').checked,mirror:$('#liveMirror').checked});cur().live=p;queueSave(cur());flushAllSaves();$('#liveSetup').remove();liveOpen(p);
 }
 function liveOpen(p){
- Live.prefs=p;Live.items=livePhrases(cur());Live.phraseIndex=-1;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
+ Live.expanded=false;Live.nativeFull=false;Live.prefs=p;Live.items=livePhrases(cur());Live.phraseIndex=-1;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
  document.body.classList.add('live-open');
- document.body.insertAdjacentHTML('beforeend','<div id="liveScreen" role="dialog" aria-modal="true" aria-label="ライブ用プロンプター"><header class="live-top"><span class="live-title">'+esc(cur().title||'無題')+'</span><span id="liveState" role="status">待機中</span><button type="button" data-act="live-full">全画面</button><button type="button" data-act="live-close">終了</button></header><div id="liveViewport" tabindex="0" aria-label="現在のフレーズと次のフレーズ"><div id="liveContent" class="'+(p.memo?'m3':'m1')+'" style="--fs:'+p.fs+'px;'+(p.mirror?'transform:scaleX(-1)':'')+'"></div></div><div id="liveCountdown" hidden></div><footer class="live-bottom"><div class="live-clock"><span>経過 <b id="liveElapsed">0:00</b></span><span>残り <b id="liveRemaining">'+liveTime(p.duration)+'</b></span></div><input id="liveSeek" type="range" min="0" max="'+p.duration+'" step="0.1" value="0" aria-label="曲の再生位置（秒）"><div class="live-controls"><button type="button" data-act="live-reset">先頭</button><button type="button" data-act="live-back">前のフレーズ</button><button type="button" data-act="live-toggle" id="liveToggle">開始</button><button type="button" data-act="live-forward">次のフレーズ</button></div></footer></div>');
+ document.body.insertAdjacentHTML('beforeend','<div id="liveScreen" role="dialog" aria-modal="true" aria-label="ライブ用プロンプター"><header class="live-top"><span class="live-title">'+esc(cur().title||'無題')+'</span><span id="liveState" role="status">待機中</span><button type="button" data-act="live-full">全画面</button><button type="button" data-act="live-close">終了</button></header><div id="liveViewport" tabindex="0" aria-label="現在のフレーズと次のフレーズ"><div id="liveContent" class="'+(p.memo?'m3':'m1')+'" style="--fs:'+p.fs+'px;'+(p.mirror?'transform:scaleX(-1)':'')+'"></div></div><div id="liveCountdown" hidden></div><footer class="live-bottom"><div class="live-clock"><span>経過 <b id="liveElapsed">0:00</b></span><span>残り <b id="liveRemaining">'+liveTime(p.duration)+'</b></span></div><input id="liveSeek" type="range" min="0" max="'+p.duration+'" step="0.1" value="0" aria-label="曲の再生位置（秒）"><div class="live-controls"><button type="button" data-act="live-reset">先頭</button><button type="button" data-act="live-back">前のフレーズ</button><button type="button" data-act="live-toggle" id="liveToggle">開始</button><button type="button" data-act="live-forward">次のフレーズ</button></div></footer><div id="liveCompact" hidden><button type="button" data-act="live-back" aria-label="前のフレーズ">前へ</button><button type="button" data-act="live-toggle" id="liveCompactToggle">開始</button><button type="button" data-act="live-forward" aria-label="次のフレーズ">次へ</button><button type="button" data-act="live-expand-exit" id="liveExpandExit">操作を戻す</button></div><aside id="liveFullHelp" hidden aria-label="全画面表示の案内"></aside></div>');
+ liveFullscreenLabel();
  $('#app').inert=true;$('#layer').inert=true;$('#liveToggle').focus();setWake(true);livePaint();
  var viewport=$('#liveViewport');viewport.addEventListener('wheel',liveManual,{passive:true});viewport.addEventListener('pointerdown',liveManual,{passive:true});viewport.addEventListener('keydown',function(e){if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].indexOf(e.key)>=0)liveManual()});
 }
@@ -877,7 +887,7 @@ function liveManual(){Live.manual=true;if(Live.running)livePause('一時停止')
 function livePaint(move){
  if(!Live.open)return;var p=Live.prefs,v=$('#liveViewport');$('#liveElapsed').textContent=liveTime(Math.floor(Live.elapsed));$('#liveRemaining').textContent=liveTime(p.duration-Live.elapsed);$('#liveSeek').value=Live.elapsed;
  var count=$('#liveCountdown');count.hidden=!(Live.running&&Live.remainingCount>0);count.textContent=Math.ceil(Live.remainingCount);
- livePhrasePaint();
+ livePhrasePaint();var toggle=$('#liveCompactToggle');if(toggle)toggle.textContent=Live.running?'一時停止':Live.elapsed>=p.duration?'もう一度':Live.elapsed===0&&Live.remainingCount===p.count?'開始':'再開';
 }
 function livePause(label){if(!Live.open)return;Live.running=false;cancelAnimationFrame(Live.raf);Live.raf=0;$('#liveToggle').textContent=Live.elapsed>=Live.prefs.duration?'もう一度':'再開';$('#liveState').textContent=label||'一時停止';livePaint(false)}
 function liveToggle(){
@@ -891,18 +901,47 @@ function liveTick(now){
  livePaint();if(Live.elapsed>=Live.prefs.duration){livePause('終了時間');return}Live.raf=requestAnimationFrame(liveTick);
 }
 function liveSeek(t){Live.manual=false;livePause();Live.remainingCount=0;Live.elapsed=Math.max(0,Math.min(Live.prefs.duration,t));livePaint();$('#liveToggle').textContent=Live.elapsed>=Live.prefs.duration?'もう一度':'再開'}
-function liveClose(){if(!Live.open)return;livePause();Live.open=false;var root=$('#liveScreen');if(document.fullscreenElement===root&&document.exitFullscreen)document.exitFullscreen().catch(function(){});root.remove();document.body.classList.remove('live-open');$('#app').inert=false;$('#layer').inert=false;setWake(Live.wasWake);window.scrollTo(0,Live.scrollY);var b=$('[data-act="live-setup"]');if(b)b.focus({preventScroll:true})}
+function liveFullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement||null}
+function liveFullscreenSupported(root){return !!((root.requestFullscreen&&document.fullscreenEnabled!==false)||(root.webkitRequestFullscreen&&document.webkitFullscreenEnabled!==false))}
+function liveFullscreenLabel(){var b=$('[data-act="live-full"]'),root=$('#liveScreen');if(!b||!root)return;b.textContent=liveFullscreenSupported(root)?'全画面':'表示を広げる';b.setAttribute('aria-label',liveFullscreenSupported(root)?'全画面表示にする':'操作欄を隠して表示を広げる')}
+function liveSetExpanded(on){
+ var root=$('#liveScreen');if(!root)return;Live.expanded=on;root.classList.toggle('is-expanded',on);
+ var bar=$('#liveCompact');bar.hidden=!on;
+ root.querySelector('.live-top').inert=on;root.querySelector('.live-bottom').inert=on;
+ var target=on?$('#liveExpandExit'):$('[data-act="live-full"]');if(target)target.focus({preventScroll:true});
+}
+function liveFullscreenHelp(){
+ if(typeof isStandalone==='function'&&isStandalone())return;
+ livePause('表示方法の案内');var box=$('#liveFullHelp');box.hidden=false;
+ box.innerHTML='<p>歌詞の表示を広げました。ブラウザのアドレス欄はこのボタンでは消せません。</p><p>iPhone：Safariの共有 →「ホーム画面に追加」→「Webアプリとして開く」があればオン → 追加したリリペンから開いてください。</p><button type="button" data-act="live-full-help-close">閉じる</button>';
+}
+function liveExitFullscreen(){
+ var root=$('#liveScreen'),current=liveFullscreenElement();
+ if(current===root){var exit=document.exitFullscreen||document.webkitExitFullscreen;if(exit){try{Promise.resolve(exit.call(document)).catch(function(){})}catch(e){}}}
+ Live.nativeFull=false;liveSetExpanded(false);var help=$('#liveFullHelp');if(help)help.hidden=true;
+}
+function liveEnterFullscreen(){
+ var root=$('#liveScreen');if(!root)return;
+ liveSetExpanded(true);
+ if(!liveFullscreenSupported(root)){liveFullscreenHelp();return}
+ var request=root.requestFullscreen||root.webkitRequestFullscreen;
+ try{Promise.resolve(request.call(root)).then(function(){if(Live.open&&liveFullscreenElement()===root)Live.nativeFull=true},function(){if(Live.open&&$('#liveScreen')===root)liveFullscreenHelp()})}catch(e){liveFullscreenHelp()}
+}
+function liveFullscreenChanged(){if(!Live.open)return;var root=$('#liveScreen');if(liveFullscreenElement()===root){Live.nativeFull=true;liveSetExpanded(true)}else if(Live.nativeFull){Live.nativeFull=false;liveSetExpanded(false)}}
+document.addEventListener('fullscreenchange',liveFullscreenChanged);document.addEventListener('webkitfullscreenchange',liveFullscreenChanged);
+
+function liveClose(){if(!Live.open)return;livePause();Live.open=false;var root=$('#liveScreen');liveExitFullscreen();root.remove();document.body.classList.remove('live-open');$('#app').inert=false;$('#layer').inert=false;setWake(Live.wasWake);window.scrollTo(0,Live.scrollY);var b=$('[data-act="live-setup"]');if(b)b.focus({preventScroll:true})}
 function liveAction(a){
  if(a==='live-setup'){liveSetup();return true}if(a==='live-cancel'){var setup=$('#liveSetup');if(setup)setup.remove();var b=$('[data-act="live-setup"]');if(b)b.focus();return true}
  if(!Live.open)return false;
- if(a==='live-close')liveClose();else if(a==='live-toggle')liveToggle();else if(a==='live-reset'){liveSeek(0);Live.remainingCount=Live.prefs.count;$('#liveToggle').textContent='開始';$('#liveState').textContent='待機中'}else if(a==='live-back')liveStep(-1);else if(a==='live-forward')liveStep(1);else if(a==='live-full'){var root=$('#liveScreen');if(document.fullscreenElement){document.exitFullscreen().catch(function(){})}else if(root.requestFullscreen){root.requestFullscreen().catch(function(){toast('この端末では全画面にできません。横向き表示も使えます')})}else toast('この端末ではホーム画面に追加して開くと広く表示できます')}else return false;return true;
+ if(a==='live-close')liveClose();else if(a==='live-toggle')liveToggle();else if(a==='live-reset'){liveSeek(0);Live.remainingCount=Live.prefs.count;$('#liveToggle').textContent='開始';$('#liveState').textContent='待機中';livePaint()}else if(a==='live-back')liveStep(-1);else if(a==='live-forward')liveStep(1);else if(a==='live-full')liveEnterFullscreen();else if(a==='live-expand-exit')liveExitFullscreen();else if(a==='live-full-help-close'){$('#liveFullHelp').hidden=true;$('#liveExpandExit').focus()}else return false;return true;
 }
 document.addEventListener('submit',function(e){if(e.target.id==='liveForm'){e.preventDefault();liveReadSetup()}});
 document.addEventListener('input',function(e){if(e.target.id==='liveSeek'&&Live.open)liveSeek(+e.target.value)});
 document.addEventListener('keydown',function(e){
- if(Live.open&&e.key==='Tab'){var nodes=Array.prototype.slice.call($('#liveScreen').querySelectorAll('button,input,[tabindex="0"]')),i=nodes.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();nodes[nodes.length-1].focus()}else if(!e.shiftKey&&(i<0||i===nodes.length-1)){e.preventDefault();nodes[0].focus()}return}
+ if(Live.open&&e.key==='Tab'){var nodes=Array.prototype.slice.call($('#liveScreen').querySelectorAll('button,input,[tabindex="0"]')).filter(function(el){return el.getClientRects().length&&!el.closest('[inert]')}),i=nodes.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();nodes[nodes.length-1].focus()}else if(!e.shiftKey&&(i<0||i===nodes.length-1)){e.preventDefault();nodes[0].focus()}return}
  if(!Live.open||e.target.matches('input,textarea,select')||e.altKey||e.ctrlKey||e.metaKey)return;
- if(e.key===' '&&(e.target.tagName!=='BUTTON')){e.preventDefault();liveToggle()}else if(e.key==='ArrowLeft'){e.preventDefault();liveStep(-1)}else if(e.key==='ArrowRight'){e.preventDefault();liveStep(1)}else if(e.key==='Escape'){e.preventDefault();liveClose()}
+ if(e.key===' '&&(e.target.tagName!=='BUTTON')){e.preventDefault();liveToggle()}else if(e.key==='ArrowLeft'){e.preventDefault();liveStep(-1)}else if(e.key==='ArrowRight'){e.preventDefault();liveStep(1)}else if(e.key==='Escape'){e.preventDefault();if(Live.expanded)liveExitFullscreen();else liveClose()}
 });
 document.addEventListener('visibilitychange',function(){if(Live.open){if(document.hidden)livePause('画面から離れたため一時停止');else setWake(true)}});
 window.addEventListener('resize',function(){if(Live.open)livePaint()});
