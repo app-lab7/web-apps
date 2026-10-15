@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>歌の知識｜リリペン</title><meta name="description" content="音楽記号・楽典の基礎・歌い方・喉のケアを、意味と練習例で学べます。"><meta name="theme-color" content="#f5f7fa" media="(prefers-color-scheme:light)"><meta name="theme-color" content="#151b24" media="(prefers-color-scheme:dark)"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icon-192.png"><link rel="apple-touch-icon" href="apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><style>
+:root{color-scheme:light;--bg:#f5f7fa;--surface:#fff;--fg:#1f2937;--muted:#58677a;--line:#d4dce7;--blue:#2155c9;--blue-ink:#fff;--soft:#eaf0ff;--tip:#edf2f8}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#151b24;--surface:#1f2835;--fg:#edf2f7;--muted:#b2bed0;--line:#415166;--blue:#9dbdff;--blue-ink:#122039;--soft:#2b3c59;--tip:#27374a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,-apple-system,'Hiragino Sans','Yu Gothic',sans-serif;line-height:1.8;font-size:15px}button,input,a{font:inherit}button,a{-webkit-tap-highlight-color:transparent}a{color:var(--blue);text-underline-offset:3px}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--blue);outline-offset:3px}.page{max-width:760px;margin:auto;padding:0 max(18px,env(safe-area-inset-right)) 60px max(18px,env(safe-area-inset-left))}.top{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}.top-in{max-width:760px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:8px 18px;gap:12px}.top a{min-height:44px;display:inline-flex;align-items:center;font-size:13px;text-decoration:none}.brand{font-weight:650;font-size:14px;color:var(--muted)}h1{font-size:28px;line-height:1.4;margin:28px 0 10px;letter-spacing:.02em}.intro{margin:0 0 22px;color:var(--muted);font-size:14px}.start{margin:22px 0;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px}.start h2{font-size:14px;margin:0 0 8px}.start-links{display:flex;gap:8px;flex-wrap:wrap}.start-links a{padding:7px 11px;min-height:44px;border:1px solid var(--line);border-radius:7px;text-decoration:none;font-size:13px;display:inline-flex;align-items:center}.search{display:flex;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:2px 12px;margin:20px 0 12px;gap:8px}.search input{border:0;background:transparent;color:var(--fg);width:100%;min-height:46px;font-size:16px;min-width:0}.search button{background:none;border:0;color:var(--muted);min-height:44px;min-width:44px}.filters{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 14px}.filters button{min-height:44px;padding:7px 12px;border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:8px;font-size:13px}.filters button[aria-pressed=true]{background:var(--blue);color:var(--blue-ink);border-color:var(--blue)}.count-row{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--muted);font-size:12px;margin:12px 0}.legend{font-size:12px;color:var(--muted);margin:0 0 18px}.category-heading{font-size:19px;margin:26px 0 10px}.card{border:1px solid var(--line);background:var(--surface);border-radius:10px;margin:10px 0;overflow:hidden;scroll-margin-top:90px}.card summary{cursor:pointer;display:flex;align-items:center;gap:14px;min-height:90px;padding:15px;list-style:none}.card summary::-webkit-details-marker{display:none}.card summary:after{content:'＋';color:var(--muted);font-size:20px;margin-left:auto;flex:none}.card[open] summary:after{content:'−'}.card[open] summary{border-bottom:1px solid var(--line)}.sign{display:flex;align-items:center;justify-content:center;flex:none;width:54px;min-height:54px;background:var(--soft);color:var(--blue);border-radius:8px;font-size:20px;font-weight:600}.sign svg{width:38px;height:38px;display:block}.sign .it{font-family:Georgia,serif;font-style:italic;font-size:32px}.sign .tx{font-size:25px}.sign-text{font-size:14px;white-space:nowrap}.title{min-width:0}.title strong{font-size:15px;font-weight:650;display:block;line-height:1.6}.title small{display:block;font-size:11px;color:var(--muted);line-height:1.6}.kind{font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:4px;padding:1px 5px;display:inline-block;margin-top:5px}.body{padding:18px}.body p{margin:0 0 17px;line-height:1.9}.body h3{font-size:12px;margin:0 0 4px;color:var(--blue)}.practice{border-left:3px solid var(--blue);padding-left:12px;margin:16px 0}.pitfall{background:var(--tip);border-radius:6px;padding:12px;font-size:13px}.pitfall b{display:block;margin-bottom:4px;font-size:12px}.pitfall p{margin:0}.card-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:18px}.read{min-height:44px;padding:7px 12px;border:1px solid var(--line);border-radius:7px;background:var(--surface);color:var(--fg);font-size:13px}.read[aria-pressed=true]{background:var(--soft);color:var(--blue);border-color:var(--blue)}.reference{font-size:12px}.empty{padding:30px 0;color:var(--muted)}.sources{margin-top:40px;border-top:1px solid var(--line);padding-top:18px;font-size:12px;color:var(--muted)}.sources summary{cursor:pointer;min-height:44px;font-size:14px;color:var(--fg)}.sources li{margin:8px 0}.note-diagram{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.note-item{flex:1;min-width:90px;border:1px solid var(--line);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:var(--muted)}.note-item svg{display:block;width:54px;height:52px;margin:auto;color:var(--fg)}.note-item b{display:block;color:var(--fg);font-size:13px}#saveMessage{font-size:12px;color:var(--muted)}.visually-hidden{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:380px){.card summary{gap:10px;padding:12px}.sign{width:45px;min-height:48px}.title strong{font-size:14px}.body{padding:15px}.filters button{font-size:12px;padding:7px 9px}}@media print{.top,.search,.filters,.start,.read{display:none}.card{break-inside:avoid}.body{display:block}.page{max-width:none}}
+</style></head><body><header class="top"><div class="top-in"><a id="backLink" href="./">‹ 曲の一覧へ</a><span class="brand">リリペン · 学ぶ</span></div></header><main class="page"><h1>歌の知識</h1><p class="intro">音楽記号の意味や、歌うときの基本を調べられます。<br>気になる項目を開いて、練習に使ってみてください。</p><section class="start" aria-labelledby="firstTitle"><h2 id="firstTitle">どこから読む？</h2><div class="start-links"><a href="#f" data-jump>強弱の記号</a><a href="#theory-notes" data-jump>音符の長さ</a><a href="#sing-breath" data-jump>歌う前の準備</a></div></section><label class="visually-hidden" for="search">記号・用語を検索</label><div class="search"><span aria-hidden="true">⌕</span><input id="search" type="search" placeholder="例：クレッシェンド、息継ぎ、BPM" autocomplete="off"><button id="clearSearch" type="button" aria-label="検索をクリア">×</button></div><nav class="filters" id="filters" aria-label="学ぶ内容を選ぶ"></nav><div class="count-row"><span id="resultCount" role="status" aria-live="polite"></span><span id="readCount"></span></div><p class="legend">「アプリのメモ記号」は、リリペン内で歌い方を記録するための目印です。</p><div id="results"></div><p id="saveMessage" role="status"></p><details class="sources"><summary>参考資料・このページについて</summary><p>説明と練習例はリリペン用にまとめています。楽譜上の指示や発声用語は、曲・指導法・文脈によって扱いが異なることがあります。</p><ul id="sourceList"></ul><p>喉のケアは一般的な情報です。声の状態を診断するものではありません。痛みやかすれが続く場合は、医療機関に相談してください。</p><p>初回読み込み後は本文をオフラインでも読めます。参考資料のリンクには通信が必要です。「読んだ」の記録は、この端末のブラウザに保存します。</p></details><noscript><p>項目を表示するにはJavaScriptを有効にしてください。</p></noscript></main><script>
+'use strict';
+var ENTRIES=[
+  {
+    "id": "f",
+    "cat": "symbols",
+    "title": "フォルテ",
+    "read": "forte",
+    "sign": "f",
+    "kind": "楽譜の記号",
+    "meaning": "強く。前後との対比の中で、音の強さを決めます。",
+    "practice": "サビの一言を選び、ほかの部分よりしっかり届ける目印にします。",
+    "pitfall": "大声や、喉を締めることを意味する記号ではありません。",
+    "keys": "強弱 強い f",
+    "source": "dynamics"
+  },
+  {
+    "id": "mf",
+    "cat": "symbols",
+    "title": "メゾフォルテ",
+    "read": "mezzo forte",
+    "sign": "mf",
+    "kind": "楽譜の記号",
+    "meaning": "やや強く。フォルテより控えめな強さの目安です。",
+    "practice": "Aメロとサビの間など、強さの段階をつけたい場所に使います。",
+    "pitfall": "音量を何％にする、と決まっているわけではありません。",
+    "keys": "強弱 やや強く",
+    "source": "dynamics"
+  },
+  {
+    "id": "p",
+    "cat": "symbols",
+    "title": "ピアノ",
+    "read": "piano",
+    "sign": "p",
+    "kind": "楽譜の記号",
+    "meaning": "弱く。静かな表情をつける強弱記号です。",
+    "practice": "静かに伝えたい一節の前に置き、言葉が聞き取れる範囲で強さを落とします。",
+    "pitfall": "弱く歌うことと、息をたくさん漏らすことは別です。",
+    "keys": "強弱 小さい 弱い",
+    "source": "dynamics"
+  },
+  {
+    "id": "pp",
+    "cat": "symbols",
+    "title": "ピアニッシモ・フォルティッシモ",
+    "read": "pianissimo / fortissimo",
+    "sign": "pp / ff",
+    "kind": "楽譜の記号",
+    "meaning": "ppはごく弱く、ffはごく強く。mp（メゾピアノ）はやや弱く。",
+    "practice": "同じ一節をp・mf・fの3段階で歌い、表情の違いを録音で確かめます。",
+    "pitfall": "どれも前後や曲全体との関係で考えます。アプリで直接置ける強弱記号はp・mf・fです。",
+    "keys": "mp ff 強弱",
+    "source": "dynamics"
+  },
+  {
+    "id": "cresc",
+    "cat": "symbols",
+    "title": "クレッシェンド",
+    "read": "crescendo / cresc.",
+    "sign": "cresc",
+    "kind": "楽譜の記号",
+    "meaning": "だんだん強く。開いていくくさび形でも表します。",
+    "practice": "どこから、どこまで強くするかを決め、その範囲に記号を付けます。",
+    "pitfall": "だんだん速くする、音程を上げる、という意味ではありません。",
+    "keys": "盛り上げる 強弱",
+    "source": "changes"
+  },
+  {
+    "id": "dim",
+    "cat": "symbols",
+    "title": "ディミヌエンド",
+    "read": "diminuendo / dim.",
+    "sign": "dim",
+    "kind": "楽譜の記号",
+    "meaning": "だんだん弱く。デクレッシェンド（decrescendo）も、だんだん弱くする指示です。",
+    "practice": "フレーズの終わりに向け、言葉を残しながら強さを落とします。",
+    "pitfall": "テンポを遅くする指示とは別です。",
+    "keys": "decresc デクレッシェンド 小さく",
+    "source": "changes"
+  },
+  {
+    "id": "accent",
+    "cat": "symbols",
+    "title": "アクセント",
+    "read": "accent",
+    "sign": "accent",
+    "kind": "楽譜の記号",
+    "meaning": "その音を周囲より強調します。",
+    "practice": "大事な言葉の入りを、ほかの音より明確にする目印として使います。",
+    "pitfall": "毎回強くぶつけるとは限りません。曲の雰囲気も考えます。",
+    "keys": "強調 >",
+    "source": "articulation"
+  },
+  {
+    "id": "stac",
+    "cat": "symbols",
+    "title": "スタッカート",
+    "read": "staccato",
+    "sign": "stac",
+    "kind": "楽譜の記号",
+    "meaning": "音を短く区切って演奏します。",
+    "practice": "短い同じ言葉を、つなげた歌い方と区切った歌い方で比べます。",
+    "pitfall": "必ず半分の長さにする、という一律のルールではありません。",
+    "keys": "短く 切る 点",
+    "source": "articulation"
+  },
+  {
+    "id": "ten",
+    "cat": "symbols",
+    "title": "テヌート",
+    "read": "tenuto / ten.",
+    "sign": "ten",
+    "kind": "楽譜の記号",
+    "meaning": "音の長さを十分に保つ指示です。",
+    "practice": "語尾が早く消えないよう、決めた拍の終わりまで保つ目印にします。",
+    "pitfall": "アプリでは「伸ばす」と表示しますが、テヌート自体は拍を勝手に増やす指示ではありません。",
+    "keys": "伸ばす 横線",
+    "source": "articulation"
+  },
+  {
+    "id": "slur",
+    "cat": "symbols",
+    "title": "スラー・レガート",
+    "read": "slur / legato",
+    "sign": "slur",
+    "kind": "楽譜の記号",
+    "meaning": "スラーは複数の音をなめらかにつなぐ記号。レガートは、なめらかに演奏する指示です。",
+    "practice": "音が変わるたびに言葉や息を切らず、ひと続きのフレーズとして歌ってみます。",
+    "pitfall": "同じ高さの音の長さを足す「タイ」と区別します。音程を滑らせる指示とも限りません。",
+    "keys": "つなげる なめらか",
+    "source": "articulation"
+  },
+  {
+    "id": "fermata",
+    "cat": "symbols",
+    "title": "フェルマータ",
+    "read": "fermata",
+    "sign": "fermata",
+    "kind": "楽譜の記号",
+    "meaning": "音符や休符を、通常の長さより長く保ちます。",
+    "practice": "伴奏や共演者と、どこまで保ち、いつ次へ進むかを確認します。",
+    "pitfall": "必ず2倍などの固定した長さではありません。プロンプターの秒数は別に設定します。",
+    "keys": "停止 伸ばす",
+    "source": "score"
+  },
+  {
+    "id": "tempo",
+    "cat": "symbols",
+    "title": "テンポを変える用語",
+    "read": "rit. / accel. / a tempo",
+    "sign": "rit.",
+    "kind": "楽譜の用語",
+    "meaning": "ritardandoはだんだん遅く、accelerandoはだんだん速く。a tempoは元のテンポに戻す指示です。",
+    "practice": "語尾で間を取ったあと、次のフレーズをどのテンポへ戻すか決めます。",
+    "pitfall": "音の強さを変えるcresc.・dim.と混同しないようにします。",
+    "keys": "リタルダンド アッチェレランド アテンポ 速度",
+    "source": "score"
+  },
+  {
+    "id": "breath",
+    "cat": "symbols",
+    "title": "ブレスの位置",
+    "read": "breath",
+    "sign": "breath",
+    "kind": "歌唱の目印",
+    "meaning": "息を吸う位置を示す目印。楽譜ではカンマのような記号などが使われます。アプリでは∨を置きます。",
+    "practice": "歌詞を声に出して読み、意味が区切れる場所にブレスを計画します。",
+    "pitfall": "記号を置いただけで拍が増えるわけではありません。伴奏に戻るタイミングも確認します。",
+    "keys": "息継ぎ 呼吸 吸う",
+    "source": "voice"
+  },
+  {
+    "id": "scoop",
+    "cat": "symbols",
+    "title": "しゃくり",
+    "read": "scoop",
+    "sign": "scoop",
+    "kind": "歌い方の用語",
+    "meaning": "目標の音より低い位置から、その音へ上がる歌い方です。",
+    "practice": "使いたい言葉の入りを1か所だけ決め、まっすぐ入る場合と比べます。",
+    "pitfall": "毎回入れると、音程が定まるまで遅く聞こえることがあります。",
+    "keys": "ポップス 音程",
+    "source": "voice"
+  },
+  {
+    "id": "fall",
+    "cat": "symbols",
+    "title": "フォール",
+    "read": "fall",
+    "sign": "fall",
+    "kind": "歌い方の用語",
+    "meaning": "主に音の終わりで、音程を下へ落としていく表現です。",
+    "practice": "語尾をまっすぐ終える場合と、短く下へ抜く場合を録音で比べます。",
+    "pitfall": "元のメロディーの下降と、付け加える表現を分けて考えます。",
+    "keys": "下がる 語尾",
+    "source": "voice"
+  },
+  {
+    "id": "vib",
+    "cat": "symbols",
+    "title": "ビブラート",
+    "read": "vibrato",
+    "sign": "vib",
+    "kind": "歌い方の用語",
+    "meaning": "伸ばす音の音高が、規則的に揺れる表現です。",
+    "practice": "まずは楽に保てる音で、まっすぐ伸ばした録音を聞き、語尾にどんな表情がほしいか考えます。",
+    "pitfall": "顎や喉を無理に揺らして作ろうとせず、難しければ指導者に相談します。",
+    "keys": "揺らす ロングトーン",
+    "source": "voice"
+  },
+  {
+    "id": "up",
+    "cat": "symbols",
+    "title": "上がる・下がる",
+    "read": "pitch direction",
+    "sign": "up",
+    "kind": "アプリのメモ記号",
+    "meaning": "矢印で音程の方向を思い出すための目印です。",
+    "practice": "音を外しやすい箇所で、直前の音より上がるか下がるかを書き込みます。",
+    "pitfall": "正確な音の高さや音程幅は、この矢印だけでは分かりません。",
+    "keys": "down 音程 矢印",
+    "source": "app"
+  },
+  {
+    "id": "fal",
+    "cat": "symbols",
+    "title": "裏声・ファルセット",
+    "read": "falsetto",
+    "sign": "fal",
+    "kind": "歌い方の用語",
+    "meaning": "高い音や軽い音色を出すときなどに使う声の呼び方です。アプリでは「裏」を目印にします。",
+    "practice": "いつもの声と裏声で、同じ短いフレーズの響きや歌いやすさを比べます。",
+    "pitfall": "裏声・ファルセット・ヘッドボイスの区分は、指導法や文脈で違うことがあります。",
+    "keys": "ヘッドボイス 声区",
+    "source": "voice"
+  },
+  {
+    "id": "mix",
+    "cat": "symbols",
+    "title": "ミックスボイス",
+    "read": "mixed voice",
+    "sign": "mix",
+    "kind": "歌い方の用語",
+    "meaning": "声の切り替わり付近を滑らかに歌う方法などを指す呼び名です。定義は指導法によって異なります。",
+    "practice": "切り替えで急に大きくなったり苦しくなったりする場所を、キーと一緒にメモします。",
+    "pitfall": "「地声と裏声を何対何で混ぜる」といった数字だけで決められるものではありません。",
+    "keys": "ミックス 地声 裏声 切替",
+    "source": "voice"
+  },
+  {
+    "id": "chest",
+    "cat": "symbols",
+    "title": "地声の目印",
+    "read": "chest voice",
+    "sign": "chest",
+    "kind": "アプリのメモ記号",
+    "meaning": "アプリの「地」は、地声の音色で歌いたい場所を記録するための目印です。",
+    "practice": "同じ言葉を、話すときに近い自然な声の感じから確認します。",
+    "pitfall": "胸そのものが声の発生源という意味ではありません。高音を無理に押し上げないようにします。",
+    "keys": "地声 チェストボイス",
+    "source": "voice"
+  },
+  {
+    "id": "whisp",
+    "cat": "symbols",
+    "title": "息多めの表現",
+    "read": "breathy tone",
+    "sign": "whisp",
+    "kind": "アプリのメモ記号",
+    "meaning": "アプリの「息」は、息を含むような音色にしたい場所の目印です。",
+    "practice": "歌詞のどの一言を柔らかく伝えたいかを決め、必要な箇所だけに記します。",
+    "pitfall": "弱い音量のpと同じ意味ではありません。長時間ささやき続ける練習は避けます。",
+    "keys": "ウィスパー 息漏れ",
+    "source": "care"
+  },
+  {
+    "id": "memo-signs",
+    "cat": "symbols",
+    "title": "ロング・カット・重要・注意",
+    "read": "リリペンの使い分け",
+    "sign": "star",
+    "kind": "アプリのメモ記号",
+    "meaning": "横線・波線・「切る」・星・！は、自分の歌い方を思い出すためにも使える目印です。",
+    "practice": "星は歌詞の大事な言葉、！は出入りを間違えやすい場所、など自分のルールを決めます。",
+    "pitfall": "アプリの星や「切る」の線は、すべてが共通の楽譜記号というわけではありません。",
+    "keys": "bang cut long wave 重要 注意",
+    "source": "app"
+  },
+  {
+    "id": "theory-staff",
+    "cat": "theory",
+    "title": "五線・音の高さ",
+    "read": "ごせん・おとのたかさ",
+    "sign": "staff",
+    "kind": "楽典の基礎",
+    "meaning": "五線は音の高さを書く5本の線です。線の上にも、線の間にも音符を置きます。音部記号で高さの基準が決まります。",
+    "practice": "譜面を見て、音符が上がるところと下がるところを指で追います。",
+    "pitfall": "五線の下から数えます。線の位置だけで音名が決まるわけではありません。",
+    "keys": "ト音記号 ヘ音記号 加線",
+    "source": "score"
+  },
+  {
+    "id": "theory-notes",
+    "cat": "theory",
+    "title": "音符と休符の長さ",
+    "read": "おんぷ・きゅうふ",
+    "sign": "notes",
+    "kind": "楽典の基礎",
+    "meaning": "4分音符を1拍と数える場面では、全音符は4拍、2分音符は2拍、8分音符は半拍。休符は音を出さない長さです。",
+    "practice": "4つの拍を数えながら、2分音符1つと4分音符2つの合計が同じ長さになることを確かめます。",
+    "pitfall": "音符の長さは相対的です。「4分音符＝いつも1秒」ではありません。",
+    "keys": "全音符 二分音符 四分音符 八分音符",
+    "source": "rest"
+  },
+  {
+    "id": "theory-dot",
+    "cat": "theory",
+    "title": "付点・タイ",
+    "read": "ふてん・tie",
+    "sign": "dot",
+    "kind": "楽典の基礎",
+    "meaning": "付点は元の音符の長さの半分を足します。タイは、同じ高さの音の長さをつなぎます。",
+    "practice": "4分音符が1拍なら、付点4分音符は1.5拍。4分音符と8分音符をタイでつないでも合計1.5拍です。",
+    "pitfall": "音の上や下のスタッカートの点と、音符の右側にある付点を見分けます。",
+    "keys": "タイ 伸ばす 1.5拍",
+    "source": "rest"
+  },
+  {
+    "id": "theory-beat",
+    "cat": "theory",
+    "title": "拍・拍子・リズム",
+    "read": "はく・ひょうし・rhythm",
+    "sign": "4/4",
+    "kind": "楽典の基礎",
+    "meaning": "拍は時間を刻む基準。拍子はそのまとまり方、リズムは音や休みの長短の並びです。",
+    "practice": "4/4なら4分音符を単位に、1・2・3・4を繰り返して歌詞を読んでみます。",
+    "pitfall": "拍を数えることと、すべての音を同じ長さで歌うことは別です。",
+    "keys": "四拍子 三拍子 小節",
+    "source": "rest"
+  },
+  {
+    "id": "theory-bpm",
+    "cat": "theory",
+    "title": "BPM・テンポ",
+    "read": "beats per minute",
+    "sign": "BPM",
+    "kind": "楽典の基礎",
+    "meaning": "BPMは1分間の拍数です。♩＝60なら4分音符が1分間に60個、♩＝120なら120個の速さです。",
+    "practice": "♩＝60では4分音符が約1秒、♩＝120では約0.5秒になることを比べます。",
+    "pitfall": "BPMの数字だけでなく、どの音符を1拍としているかも確かめます。",
+    "keys": "速度 メトロノーム 60 120",
+    "source": "score"
+  },
+  {
+    "id": "theory-pitch",
+    "cat": "theory",
+    "title": "半音・全音・音程",
+    "read": "はんおん・ぜんおん・interval",
+    "sign": "♯ ♭",
+    "kind": "楽典の基礎",
+    "meaning": "12等分された鍵盤では、隣り合う鍵盤の間隔が半音、その2つ分が全音。音程は2つの音の高さの隔たりです。",
+    "practice": "鍵盤でミ→ファ、シ→ドが半音であることを確認します。",
+    "pitfall": "白鍵どうしでも全音とは限りません。音名の距離と半音の数を分けて考えます。",
+    "keys": "シャープ フラット ナチュラル ♮",
+    "source": "pitch"
+  },
+  {
+    "id": "theory-accidental",
+    "cat": "theory",
+    "title": "シャープ・フラット・ナチュラル",
+    "read": "sharp / flat / natural",
+    "sign": "♯ ♭ ♮",
+    "kind": "楽典の基礎",
+    "meaning": "♯は音を半音上げ、♭は半音下げます。♮は変化した音を元の高さに戻す記号です。",
+    "practice": "上げる・下げる基準になる音名を確認してから、その鍵盤を探します。",
+    "pitfall": "調号と、その小節に付いた臨時記号を見落とさないようにします。",
+    "keys": "変化記号 臨時記号 調号",
+    "source": "pitch"
+  },
+  {
+    "id": "theory-key",
+    "cat": "theory",
+    "title": "キー・移調・オクターブ",
+    "read": "key / transpose / octave",
+    "sign": "key",
+    "kind": "楽典の基礎",
+    "meaning": "移調は、メロディーなどの音の関係を保って全体の高さを移すこと。オクターブ違いでは、同じ音名が高低に離れます。",
+    "practice": "高いところと低いところの両方が歌いやすいキーを探し、曲のメモに残します。",
+    "pitfall": "カラオケのキー変更は、数字1つで半音移動する設定が一般的です。オクターブ移動とは幅が違います。",
+    "keys": "転調 原曲キー 音域",
+    "source": "scale"
+  },
+  {
+    "id": "theory-scale",
+    "cat": "theory",
+    "title": "音階・長調・短調",
+    "read": "おんかい・ちょうちょう・たんちょう",
+    "sign": "scale",
+    "kind": "楽典の基礎",
+    "meaning": "音階は音を一定の順序で並べたもの。長音階と短音階は、音と音の間隔の並びが異なります。",
+    "practice": "曲の始まりだけでなく、落ち着く音や伴奏の響きにも耳を向けます。",
+    "pitfall": "「長調はいつも明るい、短調はいつも暗い」と感情を固定することはできません。",
+    "keys": "メジャー マイナー スケール",
+    "source": "scale"
+  },
+  {
+    "id": "theory-phrase",
+    "cat": "theory",
+    "title": "フレーズ・歌詞の区切り",
+    "read": "phrase",
+    "sign": "phrase",
+    "kind": "楽典の基礎",
+    "meaning": "フレーズは、音楽のひとまとまり。言葉の文節や、息の使い方も手掛かりになります。",
+    "practice": "意味を途中で切りたくない箇所を探し、歌詞の行分けと息継ぎを決めます。",
+    "pitfall": "リリペンのプロンプターは1行を1フレーズとして扱います。音楽上の区切りと自動で一致するわけではありません。",
+    "keys": "改行 ブレス 息継ぎ",
+    "source": "app"
+  },
+  {
+    "id": "sing-breath",
+    "cat": "sing",
+    "title": "息継ぎを先に決める",
+    "read": "歌う前の準備",
+    "sign": "breath",
+    "kind": "歌い方の基礎",
+    "meaning": "息を吸う場所を先に考えると、途中で言葉が切れにくくなります。",
+    "practice": "歌詞を普通に読み、意味の切れ目にブレスを記録。短い一節から、楽に歌えるか試します。",
+    "pitfall": "大きく吸い込むことだけを目標にせず、肩や喉に余分な力が入っていないか確認します。",
+    "keys": "呼吸 ブレス 腹式呼吸",
+    "source": "voice"
+  },
+  {
+    "id": "sing-posture",
+    "cat": "sing",
+    "title": "姿勢と力みを確認する",
+    "read": "歌いやすい姿勢",
+    "sign": "姿勢",
+    "kind": "歌い方の基礎",
+    "meaning": "声を出しやすく、息をしやすい姿勢を探します。見た目を固めることが目的ではありません。",
+    "practice": "首を前に突き出していないか、肩が上がりっぱなしでないか、スマホの高さも含めて確認します。",
+    "pitfall": "「良い姿勢」を作ろうとして膝・首・顎を固定しすぎないようにします。",
+    "keys": "脱力 肩 首 あご",
+    "source": "voice"
+  },
+  {
+    "id": "sing-warmup",
+    "cat": "sing",
+    "title": "軽く声を出してから歌う",
+    "read": "ウォームアップ",
+    "sign": "準備",
+    "kind": "歌い方の基礎",
+    "meaning": "歌いやすい高さと無理のない強さから、声の出方を確認します。",
+    "practice": "話し声に近い楽な高さで短く声を出し、いきなり難しいサビから始めないようにします。",
+    "pitfall": "特定の練習をすれば必ず高音が出る、というものではありません。痛みがあるときは続けません。",
+    "keys": "発声 ウォーミングアップ",
+    "source": "voice"
+  },
+  {
+    "id": "sing-pitch",
+    "cat": "sing",
+    "title": "音程を取りやすくする",
+    "read": "ピッチの確認",
+    "sign": "音程",
+    "kind": "歌い方の基礎",
+    "meaning": "音を外した場所だけでなく、その直前からの動きを確かめます。",
+    "practice": "入りの音を鍵盤などで聞き、短いフレーズで合わせます。上がる・下がる場所を矢印でメモします。",
+    "pitfall": "大きな声で歌い直すことより、基準の音と自分の声を聞き比べることを優先します。",
+    "keys": "ピッチ チューニング",
+    "source": "voice"
+  },
+  {
+    "id": "sing-rhythm",
+    "cat": "sing",
+    "title": "入りと語尾を拍に合わせる",
+    "read": "リズムの確認",
+    "sign": "拍",
+    "kind": "歌い方の基礎",
+    "meaning": "歌い始めだけでなく、音を切る位置までがリズムです。",
+    "practice": "声を出さずに拍を数え、歌詞を読む練習をしてからメロディーを付けます。",
+    "pitfall": "音がない間も拍は続きます。息継ぎのあとに急いで戻らないよう確認します。",
+    "keys": "走る もたる 休符",
+    "source": "score"
+  },
+  {
+    "id": "sing-words",
+    "cat": "sing",
+    "title": "言葉を伝える",
+    "read": "子音・母音・語尾",
+    "sign": "言葉",
+    "kind": "歌い方の基礎",
+    "meaning": "何を伝えたいかを決めると、強調する言葉や語尾の扱いを選びやすくなります。",
+    "practice": "一節を朗読し、いちばん大事な言葉を1つ選んで星を付けます。歌った録音でも聞き取れるか確かめます。",
+    "pitfall": "すべての子音を強くしたり、すべての言葉を同じ強さにしたりする必要はありません。",
+    "keys": "発音 滑舌 表現",
+    "source": "voice"
+  },
+  {
+    "id": "sing-key",
+    "cat": "sing",
+    "title": "歌いやすいキーを選ぶ",
+    "read": "高音と低音の両方を確認",
+    "sign": "key",
+    "kind": "歌い方の基礎",
+    "meaning": "曲のいちばん高い音だけでなく、低い音や長く続く高さも確認します。",
+    "practice": "キーを変えたらサビとAメロの両方を短く試し、歌いやすい設定を曲に記録します。",
+    "pitfall": "原曲と同じキーで歌えることだけを、上手さの基準にしないようにします。",
+    "keys": "音域 カラオケ 移調",
+    "source": "voice"
+  },
+  {
+    "id": "sing-record",
+    "cat": "sing",
+    "title": "録音して一つずつ直す",
+    "read": "練習の進め方",
+    "sign": "録音",
+    "kind": "歌い方の基礎",
+    "meaning": "一度に全部を直そうとせず、改善するポイントを絞ります。",
+    "practice": "短い一節を録音し、「入りの音」「語尾の長さ」など1項目だけ選んでメモ。もう一度比べます。",
+    "pitfall": "毎回評価する条件を変えると違いが分かりにくくなります。",
+    "keys": "振り返り メモ 練習",
+    "source": "app"
+  },
+  {
+    "id": "sing-live",
+    "cat": "sing",
+    "title": "ライブ前に通して確認する",
+    "read": "本番への準備",
+    "sign": "本番",
+    "kind": "歌い方の基礎",
+    "meaning": "歌詞だけでなく、伴奏の出だし・間奏・最後の切り方も含めて確認します。",
+    "practice": "本番と同じ端末・向き・明るさで、プロンプターや保存動画を最初から最後まで試します。",
+    "pitfall": "フレーズの表示時間は音源と自動同期しません。演奏の間やテンポ変更にも合わせて調整します。",
+    "keys": "リハーサル プロンプター 動画",
+    "source": "app"
+  },
+  {
+    "id": "care-rest",
+    "cat": "care",
+    "title": "疲れた声を休める",
+    "read": "声の休息",
+    "sign": "休息",
+    "kind": "喉のケア",
+    "meaning": "声がかすれたり、出すのに力が必要だったりする日は、歌う量を減らして休みます。",
+    "practice": "発声を休み、歌詞の意味やブレス位置を考える練習に切り替えます。",
+    "pitfall": "小さなささやき声なら必ず負担が少ない、とは限りません。",
+    "keys": "声枯れ かすれ 疲労",
+    "source": "care"
+  },
+  {
+    "id": "care-water",
+    "cat": "care",
+    "title": "水分と休憩を取る",
+    "read": "普段の声の使い方",
+    "sign": "水分",
+    "kind": "喉のケア",
+    "meaning": "水分を取り、声を使い続ける時間の間に休憩を入れます。",
+    "practice": "練習の前に飲み物を用意し、話し声も含めた一日の声の使い方を振り返ります。",
+    "pitfall": "水を飲めば、痛みがあるまま歌ってよいということではありません。",
+    "keys": "乾燥 休憩",
+    "source": "care"
+  },
+  {
+    "id": "care-volume",
+    "cat": "care",
+    "title": "騒音に負けようとしない",
+    "read": "マイクと環境",
+    "sign": "音量",
+    "kind": "喉のケア",
+    "meaning": "周囲がうるさいと、必要以上に声を張りやすくなります。",
+    "practice": "伴奏やモニターの音量を調整し、声を無理に張らずに自分の音が聞こえる環境を作ります。",
+    "pitfall": "強く歌う記号fがあっても、喉の痛みを我慢する必要はありません。",
+    "keys": "マイク モニター 大声",
+    "source": "care"
+  },
+  {
+    "id": "care-consult",
+    "cat": "care",
+    "title": "かすれや痛みが続くとき",
+    "read": "相談する目安",
+    "sign": "相談",
+    "kind": "喉のケア",
+    "meaning": "声の変化が続く、話すだけでもつらい、といった場合は耳鼻咽喉科などに相談します。",
+    "practice": "いつから、どんなときに変化があるかを記録し、受診時に伝えます。",
+    "pitfall": "このページだけで声帯の状態や病気は判断できません。",
+    "keys": "痛い 声帯 耳鼻科",
+    "source": "hoarse"
+  }
+];
+var SYMBOLS={"f":"<span class=\"it\">f<\/span>","mf":"<span class=\"it\">mf<\/span>","p":"<span class=\"it\">p<\/span>","cresc":"<svg class=\"w\" viewBox=\"0 0 24 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M22 3 2 8l20 5\"/><\/svg>","dim":"<svg class=\"w\" viewBox=\"0 0 24 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3l20 5-20 5\"/><\/svg>","accent":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 3l10 5-10 5\"/><\/svg>","stac":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"8\" cy=\"8\" r=\"2.3\" fill=\"currentColor\" stroke=\"none\"/><\/svg>","scoop":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 13C7 13 10 9 14 3M10.4 3H14v3.6\"/><\/svg>","fall":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 3C7 3 10 7 14 13M10.4 13H14V9.4\"/><\/svg>","up":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 14V3M4 7l4-4 4 4\"/><\/svg>","down":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2v11M4 9l4 4 4-4\"/><\/svg>","ten":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.5 8h11\" stroke-width=\"2.4\"/><\/svg>","vib":"<svg class=\"w\" viewBox=\"0 0 24 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 8q2.75-6 5.5 0t5.5 0 5.5 0\"/><\/svg>","slur":"<svg class=\"w\" viewBox=\"0 0 24 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 12Q12 1 21 12\"/><\/svg>","fermata":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2 12.5a6 6.5 0 0 1 12 0\"/><circle cx=\"8\" cy=\"9.6\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"/><\/svg>","fal":"<span class=\"tx\">裏<\/span>","mix":"<span class=\"tx\">ミ<\/span>","chest":"<span class=\"tx\">地<\/span>","whisp":"<span class=\"tx\">息<\/span>","breath":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 4l5 8 5-8\"/><\/svg>","cut":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M6.5 2.5l-3 11M12 2.5l-3 11\"/><\/svg>","star":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 1.6l1.9 4.1 4.4.5-3.3 3 .9 4.4L8 11.3l-3.9 2.3.9-4.4-3.3-3 4.4-.5z\" fill=\"currentColor\"/><\/svg>","bang":"<svg viewBox=\"0 0 16 16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2.5v7\" stroke-width=\"2.4\"/><circle cx=\"8\" cy=\"13\" r=\"1.4\" fill=\"currentColor\" stroke=\"none\"/><\/svg>"};
+var CATEGORIES=[['all','すべて'],['symbols','記号・用語'],['theory','楽典の基礎'],['sing','歌い方'],['care','喉のケア']];
+var SOURCES={dynamics:['ヤマハ：強弱記号','https://sheetmusic.jp.yamaha.com/blogs/how-to/read-sheet-music-09'],changes:['ヤマハ：強弱の変化','https://sheetmusic.jp.yamaha.com/blogs/how-to/read-sheet-music-10'],articulation:['ヤマハ：タイ・スラーなど','https://sheetmusic.jp.yamaha.com/blogs/how-to/read-sheet-music-05'],score:['ヤマハ：楽譜の基礎','https://jp.yamaha.com/services/music-pal/study/score/index.html'],rest:['ヤマハ：音符・休符・タイ','https://jp.yamaha.com/services/music-pal/study/score/rest/'],pitch:['ヤマハ：音程','https://jp.yamaha.com/services/music-pal/study/score/pitch/'],scale:['ヤマハ：音階と調','https://jp.yamaha.com/services/music-pal/study/score/scale/'],voice:['Berklee：歌い方の基礎（英語）','https://online.berklee.edu/takenote/singing-lessons-to-develop-your-sound-and-style/'],care:['NIDCD：声のケア（英語）','https://www.nidcd.nih.gov/health/taking-care-your-voice'],hoarse:['NIDCD：声のかすれ（英語）','https://www.nidcd.nih.gov/health/hoarseness']};
+var cat='all',query='',read=new Set();
+var $=function(s){return document.querySelector(s)},esc=function(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})};
+try{var saved=JSON.parse(localStorage.getItem('lyripen.learn.v1')||'[]');if(Array.isArray(saved))read=new Set(saved.filter(function(id){return ENTRIES.some(function(e){return e.id===id})}))}catch(e){}
+function fold(s){return String(s).normalize('NFKC').toLocaleLowerCase().replace(/[ァ-ヶ]/g,function(c){return String.fromCharCode(c.charCodeAt(0)-96)})}
+function matching(){var words=fold(query).trim().split(/\s+/).filter(Boolean);return ENTRIES.filter(function(e){return (cat==='all'||e.cat===cat)&&words.every(function(w){return fold([e.title,e.read,e.kind,e.meaning,e.practice,e.pitfall,e.keys,e.sign].join(' ')).indexOf(w)>=0})})}
+function signHTML(e){if(SYMBOLS[e.sign])return SYMBOLS[e.sign];if(e.sign==='staff')return '<svg viewBox="0 0 54 54" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.3"><path d="M3 15h48M3 21h48M3 27h48M3 33h48M3 39h48"/><path d="M35 32V7"/></g><ellipse cx="30" cy="33" rx="5" ry="3.5" fill="currentColor"/></svg>';if(e.sign==='notes'||e.sign==='dot')return noteSVG(e.sign==='dot'?'dot':'quarter');return '<span class="sign-text">'+esc(e.sign)+'</span>'}
+function noteSVG(type){var base=type==='whole'?'<ellipse cx="25" cy="33" rx="10" ry="6" fill="none" stroke="currentColor" stroke-width="3"/>':'<ellipse cx="23" cy="39" rx="8" ry="5" transform="rotate(-20 23 39)" fill="'+(type==='half'?'none':'currentColor')+'" stroke="currentColor" stroke-width="2"/><path d="M30 38V7" fill="none" stroke="currentColor" stroke-width="2"/>';if(type==='eighth')base+='<path d="M30 7c0 12 13 10 6 26" fill="none" stroke="currentColor" stroke-width="3"/>';if(type==='dot')base+='<circle cx="41" cy="39" r="3" fill="currentColor"/>';return '<svg viewBox="0 0 54 54" aria-hidden="true">'+base+'</svg>'}
+function noteDiagram(){return '<div class="note-diagram" aria-label="4分音符を1拍とすると、全音符4拍、2分音符2拍、4分音符1拍、8分音符半拍">'+[['whole','全音符','4拍'],['half','2分音符','2拍'],['quarter','4分音符','1拍'],['eighth','8分音符','半拍']].map(function(n){return '<div class="note-item">'+noteSVG(n[0])+'<b>'+n[1]+'</b>'+n[2]+'</div>'}).join('')+'</div>'}
+function card(e){var src=SOURCES[e.source];return '<details class="card" id="'+e.id+'"><summary><span class="sign" aria-hidden="true">'+signHTML(e)+'</span><span class="title"><strong>'+esc(e.title)+'</strong><small>'+esc(e.read)+'</small><span class="kind">'+esc(e.kind)+'</span></span></summary><div class="body"><h3>意味・基本</h3><p>'+esc(e.meaning)+'</p>'+(e.id==='theory-notes'?noteDiagram():'')+'<div class="practice"><h3>歌うとき・練習で</h3><p>'+esc(e.practice)+'</p></div><div class="pitfall"><b>ここに注意</b><p>'+esc(e.pitfall)+'</p></div><div class="card-footer"><button class="read" type="button" data-read="'+e.id+'" aria-pressed="'+read.has(e.id)+'">'+(read.has(e.id)?'✓ 読んだ':'読んだと記録')+'</button>'+(src?'<a class="reference" href="'+src[1]+'" target="_blank" rel="noopener noreferrer">参考資料 ↗</a>':'')+'</div></div></details>'}
+function updateRead(){var el=$('#readCount');if(el)el.textContent='読んだ '+read.size+' / '+ENTRIES.length}
+function render(){var list=matching();$('#filters').innerHTML=CATEGORIES.map(function(c){return '<button type="button" data-cat="'+c[0]+'" aria-pressed="'+(cat===c[0])+'">'+c[1]+'</button>'}).join('');$('#resultCount').textContent=list.length+'件';updateRead();var current='';$('#results').innerHTML=list.length?list.map(function(e){var h='';if(cat==='all'&&e.cat!==current){current=e.cat;h='<h2 class="category-heading">'+CATEGORIES.filter(function(c){return c[0]===current})[0][1]+'</h2>'}return h+card(e)}).join(''):'<div class="empty">見つかりませんでした。別の言葉で調べてみてください。<br><button class="read" type="button" data-reset>検索条件をリセット</button></div>'}
+function openHash(){var id;try{id=decodeURIComponent(location.hash.slice(1))}catch(e){return}var aliases={down:'up',cut:'memo-signs',star:'memo-signs',bang:'memo-signs',long:'memo-signs',wave:'memo-signs'};id=aliases[id]||id;if(id==='symbols'){cat='symbols';query='';$('#search').value='';render();$('#results').scrollIntoView({block:'start'});return}if(!ENTRIES.some(function(e){return e.id===id}))return;cat='all';query='';$('#search').value='';render();var el=document.getElementById(id);if(el){el.open=true;el.scrollIntoView({block:'start'})}}
+function reset(){cat='all';query='';$('#search').value='';render();$('#search').focus()}
+document.addEventListener('click',function(e){var b=e.target.closest('[data-cat]');if(b){cat=b.dataset.cat;render();var active=$('#filters [aria-pressed="true"]');if(active)active.focus({preventScroll:true});return}var r=e.target.closest('[data-read]');if(r){var id=r.dataset.read;if(!ENTRIES.some(function(x){return x.id===id}))return;if(read.has(id))read.delete(id);else read.add(id);r.setAttribute('aria-pressed',String(read.has(id)));r.textContent=read.has(id)?'✓ 読んだ':'読んだと記録';updateRead();try{localStorage.setItem('lyripen.learn.v1',JSON.stringify(Array.from(read)));$('#saveMessage').textContent=''}catch(err){$('#saveMessage').textContent='この環境では「読んだ」の記録を保存できません。本文はそのまま読めます。'}return}if(e.target.closest('[data-reset]'))reset();var jump=e.target.closest('[data-jump]');if(jump&&location.hash===jump.hash){e.preventDefault();openHash()}});
+$('#search').addEventListener('input',function(e){if(e.isComposing)return;query=e.target.value;render()});$('#search').addEventListener('compositionend',function(e){query=e.target.value;render()});$('#clearSearch').addEventListener('click',reset);window.addEventListener('hashchange',openHash);
+var params=new URLSearchParams(location.search),song=params.get('song'),mode=params.get('mode');if(song&&/^[A-Za-z0-9_-]{1,40}$/.test(song)){var back=$('#backLink');back.href='./?song='+encodeURIComponent(song)+'&mode='+(['sing','mark','edit'].indexOf(mode)>=0?mode:'sing');back.textContent='‹ 曲に戻る'}
+$('#sourceList').innerHTML=Object.keys(SOURCES).map(function(k){return '<li><a href="'+SOURCES[k][1]+'" target="_blank" rel="noopener noreferrer">'+esc(SOURCES[k][0])+'</a></li>'}).join('');render();if(location.hash)openHash();
+if('serviceWorker' in navigator&&/^https?:$/.test(location.protocol))window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})});
+</script></body></html>
