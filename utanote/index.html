@@ -362,6 +362,16 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 .sing-dock .sing-dock-toggle{min-height:44px;font-size:12px}.sing-dock.is-collapsed{left:auto;right:max(8px,env(safe-area-inset-right));bottom:max(4px,env(safe-area-inset-bottom));width:auto;max-width:calc(100% - 16px);max-height:none;background:transparent;border:0;box-shadow:none;overflow:visible;padding:0}
 .sing-dock.is-collapsed .in{display:flex;align-items:center;gap:8px}.sing-dock.is-collapsed .pill{background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 8px #0002}
 </style>
+<style>
+.sing-dock.is-collapsed .in{padding:5px;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:28px;box-shadow:0 4px 18px #0003}
+.sing-dock.is-collapsed .pill{border:0;box-shadow:none;background:transparent;border-radius:22px;padding:0 13px;min-height:44px;font-size:12px}
+.sing-dock.is-collapsed .pill[data-act="play"][aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+#liveCompact{border-radius:28px;padding:5px;gap:3px;box-shadow:0 4px 18px #0005}
+#liveCompact button{border:0;border-radius:22px;background:transparent;padding:6px 10px}
+#liveCompactToggle{background:#b9d3ff!important;color:#10141c!important;font-weight:650}
+#liveScreen .live-top [data-act="live-collapse"]{font-size:13px;padding:7px 10px}
+@media(max-width:380px){#liveScreen .live-top{gap:4px}#liveScreen .live-top button{padding:6px;font-size:12px}#liveScreen .live-top #liveState{font-size:11px}}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -739,7 +749,7 @@ function listView(){
 function singDock(){
   var collapsed=!!S.singDockCollapsed;
   var toggle='<button class="pill sing-dock-toggle" data-act="sing-dock-collapse" aria-expanded="'+!collapsed+'">'+(collapsed?'操作を開く ▴':'たたむ ▾')+'</button>';
-  if(collapsed)return '<div class="dock sing-dock is-collapsed"><div class="in">'+(S.play?'<button class="pill" data-act="play" aria-label="自動スクロールを停止">'+IC.pause+'停止</button>':'')+toggle+'</div></div>';
+  if(collapsed)return '<div class="dock sing-dock is-collapsed"><div class="in" role="group" aria-label="自動スクロールのミニメニュー"><button class="pill" data-act="play" aria-pressed="'+S.play+'" aria-label="自動スクロールを'+(S.play?'一時停止':'開始・再開')+'">'+(S.play?IC.pause+'一時停止':IC.play+'再生')+'</button>'+toggle+'</div></div>';
   var m=["","無","小","大"][S.show.memo];
   return '<div class="dock sing-dock"><div class="in"><div class="sing-dock-heading"><span>歌うときの操作</span>'+toggle+'</div><div class="drow"><button class="pill" data-act="live-setup">ライブ用プロンプター</button></div><div class="drow">'+
    '<button class="pill" data-act="play" aria-pressed="'+S.play+'">'+(S.play?IC.pause+"停止":IC.play+"自動スクロール")+'</button>'+
@@ -919,7 +929,7 @@ function liveReadSetup(){
 function liveOpen(p){
  Live.expanded=false;Live.nativeFull=false;Live.prefs=p;Live.items=livePhrases(cur());Live.timeline=liveTimeline(Live.items,p);p.duration=Live.timeline.total;Live.phraseIndex=-1;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
  document.body.classList.add('live-open');
- document.body.insertAdjacentHTML('beforeend','<div id="liveScreen" role="dialog" aria-modal="true" aria-label="ライブ用プロンプター"><header class="live-top"><span class="live-title">'+esc(cur().title||'無題')+'</span><span id="liveState" role="status">待機中</span><button type="button" data-act="live-full">全画面</button><button type="button" data-act="live-close">終了</button></header><div id="liveViewport" tabindex="0" aria-label="現在のフレーズと次のフレーズ"><div id="liveContent" class="'+(p.memo?'m3':'m1')+'" style="--fs:'+p.fs+'px;'+(p.mirror?'transform:scaleX(-1)':'')+'"></div></div><div id="liveCountdown" hidden></div><footer class="live-bottom"><div class="live-clock"><span>経過 <b id="liveElapsed">0:00</b></span><span>残り <b id="liveRemaining">'+liveTime(p.duration)+'</b></span></div><input id="liveSeek" type="range" min="0" max="'+p.duration+'" step="0.1" value="0" aria-label="曲の再生位置（秒）"><div class="live-controls"><button type="button" data-act="live-reset">先頭</button><button type="button" data-act="live-back">前のフレーズ</button><button type="button" data-act="live-toggle" id="liveToggle">開始</button><button type="button" data-act="live-forward">次のフレーズ</button></div></footer><div id="liveCompact" hidden><button type="button" data-act="live-back" aria-label="前のフレーズ">前へ</button><button type="button" data-act="live-toggle" id="liveCompactToggle">開始</button><button type="button" data-act="live-forward" aria-label="次のフレーズ">次へ</button><button type="button" data-act="live-expand-exit" id="liveExpandExit">操作を戻す</button></div><aside id="liveFullHelp" hidden aria-label="全画面表示の案内"></aside></div>');
+ document.body.insertAdjacentHTML('beforeend','<div id="liveScreen" role="dialog" aria-modal="true" aria-label="ライブ用プロンプター"><header class="live-top"><span class="live-title">'+esc(cur().title||'無題')+'</span><span id="liveState" role="status">待機中</span><button type="button" data-act="live-full">全画面</button><button type="button" data-act="live-collapse" aria-label="再生を続けたまま操作欄をたたむ">たたむ</button><button type="button" data-act="live-close">終了</button></header><div id="liveViewport" tabindex="0" aria-label="現在のフレーズと次のフレーズ"><div id="liveContent" class="'+(p.memo?'m3':'m1')+'" style="--fs:'+p.fs+'px;'+(p.mirror?'transform:scaleX(-1)':'')+'"></div></div><div id="liveCountdown" hidden></div><footer class="live-bottom"><div class="live-clock"><span>経過 <b id="liveElapsed">0:00</b></span><span>残り <b id="liveRemaining">'+liveTime(p.duration)+'</b></span></div><input id="liveSeek" type="range" min="0" max="'+p.duration+'" step="0.1" value="0" aria-label="曲の再生位置（秒）"><div class="live-controls"><button type="button" data-act="live-reset">先頭</button><button type="button" data-act="live-back">前のフレーズ</button><button type="button" data-act="live-toggle" id="liveToggle">開始</button><button type="button" data-act="live-forward">次のフレーズ</button></div></footer><div id="liveCompact" hidden><button type="button" data-act="live-back" aria-label="前のフレーズ">前へ</button><button type="button" data-act="live-toggle" id="liveCompactToggle">開始</button><button type="button" data-act="live-forward" aria-label="次のフレーズ">次へ</button><button type="button" data-act="live-expand-exit" id="liveExpandExit" aria-label="操作欄を開く" aria-expanded="false">操作を開く</button></div><aside id="liveFullHelp" hidden aria-label="全画面表示の案内"></aside></div>');
  liveFullscreenLabel();
  $('#app').inert=true;$('#layer').inert=true;$('#liveToggle').focus();setWake(true);livePaint();
  var viewport=$('#liveViewport');viewport.addEventListener('wheel',liveManual,{passive:true});viewport.addEventListener('pointerdown',liveManual,{passive:true});viewport.addEventListener('keydown',function(e){if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].indexOf(e.key)>=0)liveManual()});
@@ -944,16 +954,16 @@ function liveTick(now){
 function liveSeek(t){Live.manual=false;livePause();Live.remainingCount=0;Live.elapsed=Math.max(0,Math.min(Live.prefs.duration,t));livePaint();$('#liveToggle').textContent=Live.elapsed>=Live.prefs.duration?'もう一度':'再開'}
 function liveFullscreenElement(){return document.fullscreenElement||document.webkitFullscreenElement||null}
 function liveFullscreenSupported(root){return !!((root.requestFullscreen&&document.fullscreenEnabled!==false)||(root.webkitRequestFullscreen&&document.webkitFullscreenEnabled!==false))}
-function liveFullscreenLabel(){var b=$('[data-act="live-full"]'),root=$('#liveScreen');if(!b||!root)return;b.textContent=liveFullscreenSupported(root)?'全画面':'表示を広げる';b.setAttribute('aria-label',liveFullscreenSupported(root)?'全画面表示にする':'操作欄を隠して表示を広げる')}
+function liveFullscreenLabel(){var b=$('[data-act="live-full"]'),root=$('#liveScreen');if(!b||!root)return;var active=liveFullscreenElement()===root;b.textContent=active?'全画面解除':liveFullscreenSupported(root)?'全画面':'表示を広げる';b.setAttribute('aria-label',active?'全画面表示を解除する':liveFullscreenSupported(root)?'全画面表示にする':'操作欄を隠して表示を広げる')}
 function liveSetExpanded(on){
- var root=$('#liveScreen');if(!root)return;Live.expanded=on;root.classList.toggle('is-expanded',on);
+ var root=$('#liveScreen');if(!root)return;liveFullscreenLabel();Live.expanded=on;root.classList.toggle('is-expanded',on);
  var bar=$('#liveCompact');bar.hidden=!on;
  root.querySelector('.live-top').inert=on;root.querySelector('.live-bottom').inert=on;
  var target=on?$('#liveExpandExit'):$('[data-act="live-full"]');if(target)target.focus({preventScroll:true});
 }
 function liveFullscreenHelp(){
  if(typeof isStandalone==='function'&&isStandalone())return;
- livePause('表示方法の案内');var box=$('#liveFullHelp');box.hidden=false;
+ var box=$('#liveFullHelp');box.hidden=false;
  box.innerHTML='<p>歌詞の表示を広げました。ブラウザのアドレス欄はこのボタンでは消せません。</p><p>iPhone：Safariの共有 →「ホーム画面に追加」→「Webアプリとして開く」があればオン → 追加したリリペンから開いてください。</p><button type="button" data-act="live-full-help-close">閉じる</button>';
 }
 function liveExitFullscreen(){
@@ -968,14 +978,14 @@ function liveEnterFullscreen(){
  var request=root.requestFullscreen||root.webkitRequestFullscreen;
  try{Promise.resolve(request.call(root)).then(function(){if(Live.open&&liveFullscreenElement()===root)Live.nativeFull=true},function(){if(Live.open&&$('#liveScreen')===root)liveFullscreenHelp()})}catch(e){liveFullscreenHelp()}
 }
-function liveFullscreenChanged(){if(!Live.open)return;var root=$('#liveScreen');if(liveFullscreenElement()===root){Live.nativeFull=true;liveSetExpanded(true)}else if(Live.nativeFull){Live.nativeFull=false;liveSetExpanded(false)}}
+function liveFullscreenChanged(){if(!Live.open)return;var root=$('#liveScreen');if(liveFullscreenElement()===root){Live.nativeFull=true;liveSetExpanded(true)}else if(Live.nativeFull){Live.nativeFull=false;liveSetExpanded(false)}liveFullscreenLabel()}
 document.addEventListener('fullscreenchange',liveFullscreenChanged);document.addEventListener('webkitfullscreenchange',liveFullscreenChanged);
 
 function liveClose(){if(!Live.open)return;livePause();Live.open=false;var root=$('#liveScreen');liveExitFullscreen();root.remove();document.body.classList.remove('live-open');$('#app').inert=false;$('#layer').inert=false;setWake(Live.wasWake);window.scrollTo(0,Live.scrollY);var b=$('[data-act="live-setup"]');if(b)b.focus({preventScroll:true})}
 function liveAction(a){
  if(a==='live-even'){liveEvenApply();return true}if(a==='live-setup'){liveSetup();return true}if(a==='live-cancel'){var setup=$('#liveSetup');if(setup)setup.remove();var b=$('[data-act="live-setup"]');if(b)b.focus();return true}
  if(!Live.open)return false;
- if(a==='live-close')liveClose();else if(a==='live-toggle')liveToggle();else if(a==='live-reset'){liveSeek(0);Live.remainingCount=Live.prefs.count;$('#liveToggle').textContent='開始';$('#liveState').textContent='待機中';livePaint()}else if(a==='live-back')liveStep(-1);else if(a==='live-forward')liveStep(1);else if(a==='live-full')liveEnterFullscreen();else if(a==='live-expand-exit')liveExitFullscreen();else if(a==='live-full-help-close'){$('#liveFullHelp').hidden=true;$('#liveExpandExit').focus()}else return false;return true;
+ if(a==='live-close')liveClose();else if(a==='live-toggle')liveToggle();else if(a==='live-reset'){liveSeek(0);Live.remainingCount=Live.prefs.count;$('#liveToggle').textContent='開始';$('#liveState').textContent='待機中';livePaint()}else if(a==='live-back')liveStep(-1);else if(a==='live-forward')liveStep(1);else if(a==='live-collapse')liveSetExpanded(true);else if(a==='live-full'){if(liveFullscreenElement()===$('#liveScreen'))liveExitFullscreen();else liveEnterFullscreen()}else if(a==='live-expand-exit')liveSetExpanded(false);else if(a==='live-full-help-close'){$('#liveFullHelp').hidden=true;$('#liveExpandExit').focus()}else return false;return true;
 }
 document.addEventListener('submit',function(e){if(e.target.id==='liveForm'){e.preventDefault();liveReadSetup()}});
 document.addEventListener('input',function(e){if(e.target.id==='liveSeek'&&Live.open)liveSeek(+e.target.value);else if(e.target.dataset&&e.target.dataset.liveSeconds!==undefined)liveTimingSummary()});
