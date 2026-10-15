@@ -330,6 +330,15 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 @media print{.row-note,.quick-undo{display:none!important}}
 </style>
 
+<style>
+#liveContent{padding:4vh 4vw 6vh;min-height:100%;display:flex;flex-direction:column;justify-content:center;gap:14px}
+.live-phrase-heading{display:flex;justify-content:space-between;gap:16px;font-size:16px;color:#b9d3ff;font-variant-numeric:tabular-nums}
+#liveContent .live-current .ln{margin:0;font-size:var(--fs);line-height:1.85}
+#liveContent .live-current .memo{margin-top:14px}.live-section-memo{color:#ffe3a0;margin:0;font-size:calc(var(--fs)*.45)}
+.live-next{border-top:1px solid #43516b;padding-top:14px;margin-top:12px;color:#b4bfce}.live-next>span{font-size:13px}.live-next p{font-size:calc(var(--fs)*.6);line-height:1.6;margin:4px 0;overflow-wrap:anywhere}
+@media(max-width:480px){.live-controls button{padding:7px 5px!important;font-size:12px!important}.live-controls #liveToggle{min-width:74px}}
+@media(max-height:500px){#liveContent{padding-top:2vh;padding-bottom:3vh;gap:8px}.live-next{padding-top:8px;margin-top:4px}}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -834,10 +843,22 @@ function ensureVisible(){
 /* ---------- ライブ用プロンプター ---------- */
 var Live={open:false,running:false,elapsed:0,remainingCount:0,last:0,raf:0,prefs:null,scrollY:0,wasWake:false};
 function livePrefs(p){p=p||{};return {duration:Number.isFinite(+p.duration)?Math.max(10,Math.min(7200,Math.round(+p.duration))):240,count:Number.isFinite(+p.count)?Math.max(0,Math.min(30,Math.round(+p.count))):3,fs:Number.isFinite(+p.fs)?Math.max(24,Math.min(96,Math.round(+p.fs))):40,memo:p.memo!==false,mirror:p.mirror===true}}
+function livePhrases(song){var out=[];song.secs.forEach(function(sec){sec.lines.forEach(function(line){if(line.t.trim())out.push({line:line,section:secName(sec),memo:sec.memo||''})})});return out}
+function livePhraseIndex(elapsed,duration,length){return length?Math.max(0,Math.min(length-1,Math.floor(Math.max(0,elapsed)/duration*length+1e-9))):0}
+function livePhrasePaint(){
+ var index=livePhraseIndex(Live.elapsed,Live.prefs.duration,Live.items.length);if(index===Live.phraseIndex)return;Live.phraseIndex=index;
+ var item=Live.items[index],next=Live.items[index+1],content=$('#liveContent');
+ if(!item){content.innerHTML='<p class="empty">歌詞がありません。歌詞編集で入力してください。</p>';return}
+ var sel=S.sel;S.sel=null;var current=lineHTML(item.line,false);S.sel=sel;
+ content.innerHTML='<div class="live-phrase-heading"><span>'+esc(item.section)+'</span><span>'+(index+1)+' / '+Live.items.length+'</span></div>'+(Live.prefs.memo&&item.memo?'<p class="live-section-memo">'+esc(item.memo)+'</p>':'')+'<div class="live-current">'+current+'</div><div class="live-next"><span>次</span><p>'+esc(next?next.line.t:'最後のフレーズ')+'</p></div>';
+ $('#liveViewport').scrollTop=0;
+}
+function liveStep(delta){if(!Live.items.length)return;var index=livePhraseIndex(Live.elapsed,Live.prefs.duration,Live.items.length);liveSeek(Math.max(0,Math.min(Live.items.length-1,index+delta))*Live.prefs.duration/Live.items.length)}
+
 function liveTime(n){n=Math.max(0,Math.ceil(n));return Math.floor(n/60)+':'+String(n%60).padStart(2,'0')}
 function liveSetup(){
- if(!cur())return;commitEdits();S.play=false;render();var p=livePrefs(cur().live),old=$('#liveSetup');if(old)old.remove();
- $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" id="liveSetup"><form class="modal" id="liveForm" role="dialog" aria-modal="true" aria-labelledby="liveSetupTitle"><h3 id="liveSetupTitle">ライブ用プロンプター</h3><p class="sub">曲の長さに合わせて、歌詞全体を一定の速さで送ります。音源との自動同期はしません。リハーサルで位置を確認してください。</p><div class="live-settings"><fieldset><legend>曲の長さ（10秒〜120分）</legend><label>分 <input id="liveMin" type="number" inputmode="numeric" min="0" max="120" required value="'+Math.floor(p.duration/60)+'"></label><label>秒 <input id="liveSec" type="number" inputmode="numeric" min="0" max="59" required value="'+p.duration%60+'"></label></fieldset><label>開始前のカウントダウン（秒）<input id="liveCount" type="number" inputmode="numeric" min="0" max="30" required value="'+p.count+'"></label><label>文字サイズ<select id="liveSize">'+[24,32,40,48,56,64,80,96].map(function(n){return '<option value="'+n+'"'+(p.fs===n?' selected':'')+'>'+n+'px</option>'}).join('')+'</select></label><label><input id="liveMemo" type="checkbox"'+(p.memo?' checked':'')+'> メモも表示</label><label><input id="liveMirror" type="checkbox"'+(p.mirror?' checked':'')+'> 左右反転（反射板を使う場合）</label></div><p id="liveError" role="alert"></p><p class="sub">プレビューを開いたあと「開始」で動きます。画面から離れると一時停止します。Space：停止・再開 ／ ← →：10秒移動 ／ Esc：終了</p><div class="live-actions"><button class="btn pri" type="submit">プレビューを開く</button><button class="btn" type="button" data-act="live-cancel">閉じる</button></div></form></div>');
+ if(!cur())return;commitEdits();if(!livePhrases(cur()).length){toast('歌詞編集で歌詞を入力してください');return}S.play=false;render();var p=livePrefs(cur().live),old=$('#liveSetup');if(old)old.remove();
+ $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" id="liveSetup"><form class="modal" id="liveForm" role="dialog" aria-modal="true" aria-labelledby="liveSetupTitle"><h3 id="liveSetupTitle">ライブ用プロンプター</h3><p class="sub">歌詞の1行を1フレーズとして、大きく表示します。曲の長さをフレーズ数で均等に分け、順番に切り替えます。次のフレーズも下に表示します。音源との自動同期はしません。</p><div class="live-settings"><fieldset><legend>曲の長さ（10秒〜120分）</legend><label>分 <input id="liveMin" type="number" inputmode="numeric" min="0" max="120" required value="'+Math.floor(p.duration/60)+'"></label><label>秒 <input id="liveSec" type="number" inputmode="numeric" min="0" max="59" required value="'+p.duration%60+'"></label></fieldset><label>開始前のカウントダウン（秒）<input id="liveCount" type="number" inputmode="numeric" min="0" max="30" required value="'+p.count+'"></label><label>文字サイズ<select id="liveSize">'+[24,32,40,48,56,64,80,96].map(function(n){return '<option value="'+n+'"'+(p.fs===n?' selected':'')+'>'+n+'px</option>'}).join('')+'</select></label><label><input id="liveMemo" type="checkbox"'+(p.memo?' checked':'')+'> メモも表示</label><label><input id="liveMirror" type="checkbox"'+(p.mirror?' checked':'')+'> 左右反転（反射板を使う場合）</label></div><p id="liveError" role="alert"></p><p class="sub">プレビューを開いたあと「開始」で動きます。画面から離れると一時停止します。Space：停止・再開 ／ ← →：前・次のフレーズ ／ Esc：終了</p><div class="live-actions"><button class="btn pri" type="submit">プレビューを開く</button><button class="btn" type="button" data-act="live-cancel">閉じる</button></div></form></div>');
  $('#liveMin').focus();
 }
 function liveReadSetup(){
@@ -846,19 +867,17 @@ function liveReadSetup(){
  var p=livePrefs({duration:duration,count:count,fs:Number($('#liveSize').value),memo:$('#liveMemo').checked,mirror:$('#liveMirror').checked});cur().live=p;queueSave(cur());flushAllSaves();$('#liveSetup').remove();liveOpen(p);
 }
 function liveOpen(p){
- Live.prefs=p;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
- var sel=S.sel;S.sel=null;var lyrics=songHead(cur())+lyricsHTML(cur(),false);S.sel=sel;
+ Live.prefs=p;Live.items=livePhrases(cur());Live.phraseIndex=-1;Live.open=true;Live.running=false;Live.elapsed=0;Live.remainingCount=p.count;Live.scrollY=window.scrollY;Live.manual=false;Live.wasWake=S.view==='song'&&S.mode==='sing';
  document.body.classList.add('live-open');
- document.body.insertAdjacentHTML('beforeend','<div id="liveScreen" role="dialog" aria-modal="true" aria-label="ライブ用プロンプター"><header class="live-top"><span class="live-title">'+esc(cur().title||'無題')+'</span><span id="liveState" role="status">待機中</span><button type="button" data-act="live-full">全画面</button><button type="button" data-act="live-close">終了</button></header><div id="liveViewport" tabindex="0" aria-label="歌詞。スクロールすると一時停止します"><div id="liveContent" class="'+(p.memo?'m3':'m1')+'" style="--fs:'+p.fs+'px;'+(p.mirror?'transform:scaleX(-1)':'')+'">'+lyrics+'</div></div><div id="liveCountdown" hidden></div><footer class="live-bottom"><div class="live-clock"><span>経過 <b id="liveElapsed">0:00</b></span><span>残り <b id="liveRemaining">'+liveTime(p.duration)+'</b></span></div><input id="liveSeek" type="range" min="0" max="'+p.duration+'" step="0.1" value="0" aria-label="曲の再生位置（秒）"><div class="live-controls"><button type="button" data-act="live-reset">先頭</button><button type="button" data-act="live-back">−10秒</button><button type="button" data-act="live-toggle" id="liveToggle">開始</button><button type="button" data-act="live-forward">＋10秒</button></div></footer></div>');
+ document.body.insertAdjacentHTML('beforeend','<div id="liveScreen" role="dialog" aria-modal="true" aria-label="ライブ用プロンプター"><header class="live-top"><span class="live-title">'+esc(cur().title||'無題')+'</span><span id="liveState" role="status">待機中</span><button type="button" data-act="live-full">全画面</button><button type="button" data-act="live-close">終了</button></header><div id="liveViewport" tabindex="0" aria-label="現在のフレーズと次のフレーズ"><div id="liveContent" class="'+(p.memo?'m3':'m1')+'" style="--fs:'+p.fs+'px;'+(p.mirror?'transform:scaleX(-1)':'')+'"></div></div><div id="liveCountdown" hidden></div><footer class="live-bottom"><div class="live-clock"><span>経過 <b id="liveElapsed">0:00</b></span><span>残り <b id="liveRemaining">'+liveTime(p.duration)+'</b></span></div><input id="liveSeek" type="range" min="0" max="'+p.duration+'" step="0.1" value="0" aria-label="曲の再生位置（秒）"><div class="live-controls"><button type="button" data-act="live-reset">先頭</button><button type="button" data-act="live-back">前のフレーズ</button><button type="button" data-act="live-toggle" id="liveToggle">開始</button><button type="button" data-act="live-forward">次のフレーズ</button></div></footer></div>');
  $('#app').inert=true;$('#layer').inert=true;$('#liveToggle').focus();setWake(true);livePaint();
  var viewport=$('#liveViewport');viewport.addEventListener('wheel',liveManual,{passive:true});viewport.addEventListener('pointerdown',liveManual,{passive:true});viewport.addEventListener('keydown',function(e){if(['ArrowUp','ArrowDown','PageUp','PageDown','Home','End'].indexOf(e.key)>=0)liveManual()});
- viewport.addEventListener('scroll',function(){if(!Live.running&&Live.manual){var max=viewport.scrollHeight-viewport.clientHeight;if(max>0){Live.elapsed=viewport.scrollTop/max*Live.prefs.duration;Live.remainingCount=0;livePaint(false)}}},{passive:true});
 }
 function liveManual(){Live.manual=true;if(Live.running)livePause('一時停止')}
 function livePaint(move){
  if(!Live.open)return;var p=Live.prefs,v=$('#liveViewport');$('#liveElapsed').textContent=liveTime(Math.floor(Live.elapsed));$('#liveRemaining').textContent=liveTime(p.duration-Live.elapsed);$('#liveSeek').value=Live.elapsed;
  var count=$('#liveCountdown');count.hidden=!(Live.running&&Live.remainingCount>0);count.textContent=Math.ceil(Live.remainingCount);
- if(move!==false)v.scrollTop=Math.max(0,v.scrollHeight-v.clientHeight)*Live.elapsed/p.duration;
+ livePhrasePaint();
 }
 function livePause(label){if(!Live.open)return;Live.running=false;cancelAnimationFrame(Live.raf);Live.raf=0;$('#liveToggle').textContent=Live.elapsed>=Live.prefs.duration?'もう一度':'再開';$('#liveState').textContent=label||'一時停止';livePaint(false)}
 function liveToggle(){
@@ -876,14 +895,14 @@ function liveClose(){if(!Live.open)return;livePause();Live.open=false;var root=$
 function liveAction(a){
  if(a==='live-setup'){liveSetup();return true}if(a==='live-cancel'){var setup=$('#liveSetup');if(setup)setup.remove();var b=$('[data-act="live-setup"]');if(b)b.focus();return true}
  if(!Live.open)return false;
- if(a==='live-close')liveClose();else if(a==='live-toggle')liveToggle();else if(a==='live-reset'){liveSeek(0);Live.remainingCount=Live.prefs.count;$('#liveToggle').textContent='開始';$('#liveState').textContent='待機中'}else if(a==='live-back')liveSeek(Live.elapsed-10);else if(a==='live-forward')liveSeek(Live.elapsed+10);else if(a==='live-full'){var root=$('#liveScreen');if(document.fullscreenElement){document.exitFullscreen().catch(function(){})}else if(root.requestFullscreen){root.requestFullscreen().catch(function(){toast('この端末では全画面にできません。横向き表示も使えます')})}else toast('この端末ではホーム画面に追加して開くと広く表示できます')}else return false;return true;
+ if(a==='live-close')liveClose();else if(a==='live-toggle')liveToggle();else if(a==='live-reset'){liveSeek(0);Live.remainingCount=Live.prefs.count;$('#liveToggle').textContent='開始';$('#liveState').textContent='待機中'}else if(a==='live-back')liveStep(-1);else if(a==='live-forward')liveStep(1);else if(a==='live-full'){var root=$('#liveScreen');if(document.fullscreenElement){document.exitFullscreen().catch(function(){})}else if(root.requestFullscreen){root.requestFullscreen().catch(function(){toast('この端末では全画面にできません。横向き表示も使えます')})}else toast('この端末ではホーム画面に追加して開くと広く表示できます')}else return false;return true;
 }
 document.addEventListener('submit',function(e){if(e.target.id==='liveForm'){e.preventDefault();liveReadSetup()}});
 document.addEventListener('input',function(e){if(e.target.id==='liveSeek'&&Live.open)liveSeek(+e.target.value)});
 document.addEventListener('keydown',function(e){
  if(Live.open&&e.key==='Tab'){var nodes=Array.prototype.slice.call($('#liveScreen').querySelectorAll('button,input,[tabindex="0"]')),i=nodes.indexOf(document.activeElement);if(e.shiftKey&&i<=0){e.preventDefault();nodes[nodes.length-1].focus()}else if(!e.shiftKey&&(i<0||i===nodes.length-1)){e.preventDefault();nodes[0].focus()}return}
  if(!Live.open||e.target.matches('input,textarea,select')||e.altKey||e.ctrlKey||e.metaKey)return;
- if(e.key===' '&&(e.target.tagName!=='BUTTON')){e.preventDefault();liveToggle()}else if(e.key==='ArrowLeft'){e.preventDefault();liveSeek(Live.elapsed-10)}else if(e.key==='ArrowRight'){e.preventDefault();liveSeek(Live.elapsed+10)}else if(e.key==='Escape'){e.preventDefault();liveClose()}
+ if(e.key===' '&&(e.target.tagName!=='BUTTON')){e.preventDefault();liveToggle()}else if(e.key==='ArrowLeft'){e.preventDefault();liveStep(-1)}else if(e.key==='ArrowRight'){e.preventDefault();liveStep(1)}else if(e.key==='Escape'){e.preventDefault();liveClose()}
 });
 document.addEventListener('visibilitychange',function(){if(Live.open){if(document.hidden)livePause('画面から離れたため一時停止');else setWake(true)}});
 window.addEventListener('resize',function(){if(Live.open)livePaint()});
