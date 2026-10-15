@@ -636,7 +636,7 @@ function coverArt(i){
 }
 function listView(){
  var h='<header class="masthead"><div class="wordmark">'+brandMark()+'うたノート</div><button class="help-link" data-act="help">使い方</button></header>'+
- '<div class="home-hero"><div class="eyebrow">MY SONGBOOK</div><h1>歌詞に、<br><span>歌い方をメモ。</span></h1><p>記号・色・メモで、練習のポイントをひとまとめに。</p></div>';
+ '<div class="home-hero"><div class="eyebrow">MY SONGBOOK</div><h1>歌の練習メモ</h1><p>歌詞にメモや記号を書き込めます。</p></div>';
  if(!S.ready)return h+'<div class="empty">読み込み中…</div>';
  h+='<div class="library-head"><h2>マイソング<small>'+S.songs.length+'曲</small></h2><button class="new-track" data-act="new"><span aria-hidden="true">＋</span> 曲を追加</button></div>'+
  '<div class="search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="songSearch" type="search" aria-label="曲名・アーティストで検索" placeholder="曲名・アーティストで探す" value="'+esc(S.query)+'"></div>';
