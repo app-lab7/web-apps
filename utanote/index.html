@@ -356,6 +356,12 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 .live-count-setting{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center;margin-top:20px;font-size:14px}#liveForm .live-count-setting input{width:70px;min-height:44px;padding:8px}.live-count-setting p{grid-column:1/-1;margin:0;font-size:12px}.live-setup-note{margin-top:18px;font-size:12px;line-height:1.7}#liveForm .live-actions{position:sticky;bottom:-22px;margin-top:14px;padding:12px 0 calc(12px + env(safe-area-inset-bottom));background:var(--surface);display:flex;gap:8px}#liveForm .live-actions .pri{flex:1}
 @media(max-width:360px){.live-timing-row{grid-template-columns:minmax(0,1fr) 96px;gap:8px}#liveForm .live-seconds-label input{width:70px}}
 </style>
+<style>
+.sing-dock{max-height:42dvh;overflow-y:auto;overscroll-behavior:contain;padding-top:4px}
+.sing-dock-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;position:sticky;top:0;background:var(--surface);z-index:1}.sing-dock-heading>span{font-size:12px;color:var(--muted)}
+.sing-dock .sing-dock-toggle{min-height:44px;font-size:12px}.sing-dock.is-collapsed{left:auto;right:max(8px,env(safe-area-inset-right));bottom:max(4px,env(safe-area-inset-bottom));width:auto;max-width:calc(100% - 16px);max-height:none;background:transparent;border:0;box-shadow:none;overflow:visible;padding:0}
+.sing-dock.is-collapsed .in{display:flex;align-items:center;gap:8px}.sing-dock.is-collapsed .pill{background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 8px #0002}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -495,7 +501,7 @@ document.addEventListener("visibilitychange",function(){if(document.hidden){comm
 var S={ready:false,songs:[],view:"list",id:null,mode:"sing",sel:null,tab:"sym",
   show:{sym:true,memo:2,hl:true},fs:24,play:false,speed:3,menu:null,confirm:null,phrases:PHRASES.slice(),pedit:false};
 var historyPast=[],historyFuture=[],historyRestoring=false,saveState="保存済み";
-S.query="";S.allSymbols=false;
+S.query="";S.allSymbols=false;S.singDockCollapsed=true;
 function stateJSON(){return JSON.stringify(S.songs)}
 function recordHistory(){
   if(historyRestoring||!S.ready)return;
@@ -516,8 +522,9 @@ function restoreHistory(redo){
   if(S.view==='song'&&!cur())S.view='list';render();toast(redo?'やり直しました':'元に戻しました');
 }
 function setSaveState(msg){saveState=msg;document.querySelectorAll('[data-save-state]').forEach(function(el){el.textContent=msg})}
-function savePrefs(){try{Store.lsSet('prefs',JSON.stringify({fs:S.fs,speed:S.speed,show:S.show}))}catch(e){toast('表示設定を保存できませんでした')}}
+function savePrefs(){try{Store.lsSet('prefs',JSON.stringify({fs:S.fs,speed:S.speed,show:S.show,singDockCollapsed:S.singDockCollapsed}))}catch(e){toast('表示設定を保存できませんでした')}}
 function loadPrefs(){try{var p=JSON.parse(Store.lsGet('prefs')||'null');if(!p)return;
+  if(typeof p.singDockCollapsed==='boolean')S.singDockCollapsed=p.singDockCollapsed;
   if(Number.isFinite(p.fs))S.fs=Math.max(16,Math.min(40,p.fs));if(Number.isFinite(p.speed))S.speed=Math.max(1,Math.min(10,p.speed));
   if(p.show){S.show.sym=p.show.sym!==false;S.show.hl=p.show.hl!==false;if([1,2,3].indexOf(p.show.memo)>=0)S.show.memo=p.show.memo}
 }catch(e){}}
@@ -730,8 +737,11 @@ function listView(){
  return h+'</div><footer class="library-footer"><p>この端末に自動保存<br>バックアップは「使い方」から</p><div class="tools">'+undoButtons()+'</div></footer>';
 }
 function singDock(){
+  var collapsed=!!S.singDockCollapsed;
+  var toggle='<button class="pill sing-dock-toggle" data-act="sing-dock-collapse" aria-expanded="'+!collapsed+'">'+(collapsed?'操作を開く ▴':'たたむ ▾')+'</button>';
+  if(collapsed)return '<div class="dock sing-dock is-collapsed"><div class="in">'+(S.play?'<button class="pill" data-act="play" aria-label="自動スクロールを停止">'+IC.pause+'停止</button>':'')+toggle+'</div></div>';
   var m=["","無","小","大"][S.show.memo];
-  return '<div class="dock"><div class="in"><div class="drow"><button class="pill" data-act="live-setup">ライブ用プロンプター</button></div><div class="drow">'+
+  return '<div class="dock sing-dock"><div class="in"><div class="sing-dock-heading"><span>歌うときの操作</span>'+toggle+'</div><div class="drow"><button class="pill" data-act="live-setup">ライブ用プロンプター</button></div><div class="drow">'+
    '<button class="pill" data-act="play" aria-pressed="'+S.play+'">'+(S.play?IC.pause+"停止":IC.play+"自動スクロール")+'</button>'+
    '<div class="kv"><button class="pill" data-act="spd" data-v="-1" aria-label="遅く">−</button><span>速さ '+S.speed+'</span><button class="pill" data-act="spd" data-v="1" aria-label="速く">＋</button></div></div>'+
    '<div class="drow"><button class="pill" data-act="fs" data-v="-2" aria-label="文字を小さく">A−</button><button class="pill" data-act="fs" data-v="2" aria-label="文字を大きく">A＋</button>'+
@@ -1027,6 +1037,7 @@ function act(a,el){
   case "print":printSong();break;
   case "reading":commitEdits();S.reading=!S.reading;S.toolsOpen=false;S.play=false;render();break;
   case "tools":commitEdits();S.toolsOpen=!S.toolsOpen;render();break;
+  case "sing-dock-collapse":var singPosition=capturePosition();S.singDockCollapsed=!S.singDockCollapsed;savePrefs();render();restorePosition(singPosition);var singToggle=$('[data-act="sing-dock-collapse"]');if(singToggle)singToggle.focus({preventScroll:true});break;
   case "dock-collapse":S.dockCollapsed=!S.dockCollapsed;render();break;
   case "selection-clear":S.sel=null;render();break;
   case "undo":restoreHistory(false);break;
