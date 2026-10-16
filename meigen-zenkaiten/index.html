@@ -311,6 +311,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 
 
 
+
 window.__gifenc=(function(){var exports={};var module={exports:exports};
 var __defProp = Object.defineProperty;
 var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
@@ -1151,6 +1152,7 @@ return exports;})();
 
 
 
+
 </script>
 
 <script>
@@ -1846,11 +1848,9 @@ function drawBgReels(c,W,H,pos,tgs,al,hot=0){
 }
 function drawCornerReel(c,W,H,pos,al){
   if(al<.004) return;
-  const bw=Math.min(W*.34,H*.5), bh=bw*.8, x=W-bw-W*.04, y=H*.09;
+  const bw=Math.min(W*.34,H*.5), bh=bw*.8, x=W-bw-W*.04, y=H-bh-H*.09;
   c.save();
-  c.globalAlpha=al; c.fillStyle='rgba(8,10,22,.82)'; c.fillRect(x,y,bw,bh);
-  c.strokeStyle='rgba(217,184,106,.7)'; c.lineWidth=1.2; c.strokeRect(x+.5,y+.5,bw-1,bh-1);
-  c.beginPath(); c.rect(x+1,y+1,bw-2,bh-2); c.clip();
+  c.beginPath(); c.rect(x,y,bw,bh); c.clip();
   c.translate(x,y);
   c.globalAlpha=1; drawBgReels(c,bw,bh,[pos,pos,pos],[null,null,null],Math.min(1,al*1.1),0);
   c.restore();
