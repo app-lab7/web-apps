@@ -300,6 +300,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 
 
 
+
 window.__gifenc=(function(){var exports={};var module={exports:exports};
 var __defProp = Object.defineProperty;
 var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
@@ -1133,6 +1134,7 @@ return exports;})();
 
 
 
+
 </script>
 
 <script>
@@ -1163,7 +1165,7 @@ try{
   const o=JSON.parse(localStorage.getItem(KEY)||'null');
   if(o&&typeof o==='object'){
     store.tate=!!o.tate; store.gifV=!!o.gifV; store.gifHQ=!!o.gifHQ;
-    if(Array.isArray(o.segOpts)) store.segOpts=o.segOpts.slice(0,40).map(x=>x&&typeof x==='object'?{cam:String(x.cam||'auto'),fx:String(x.fx||'ring'),rt:String(x.rt||'normal')}:{});
+    if(Array.isArray(o.segOpts)) store.segOpts=o.segOpts.slice(0,40).map(x=>x&&typeof x==='object'?{cam:String(x.cam||'auto'),fx:String(x.fx||'ring'),rt:String(x.rt||'normal'),hd:String(x.hd||'normal')}:{});
     if(o.focus&&typeof o.focus==='object'){ const fx=Number(o.focus.x), fy=Number(o.focus.y); if(isFinite(fx)&&isFinite(fy)) store.focus={x:Math.max(0,Math.min(1,fx)),y:Math.max(0,Math.min(1,fy))}; }
     if(o.ui&&typeof o.ui==='object'){ const cl=(v,a,b,d)=>{v=Number(v);return isFinite(v)?Math.max(a,Math.min(b,v)):d;}; store.ui={sz:cl(o.ui.sz,50,150,100),x:cl(o.ui.x,-30,30,0),y:cl(o.ui.y,-30,30,0)}; }
     store.history=Array.isArray(o.history)?o.history.filter(x=>typeof x==='string').slice(0,20):[];
@@ -1403,7 +1405,7 @@ async function play(text,opts){
   const k0=1;
   resetStage(); camT=camTarget(k0,O(k0).cam); camZ=1; camX=.5; camY=.5; camA=.5;
   { let pr=1750+1700+900;
-    for(let i=0;i<segs.length;i++){ const n=[...segs[i]].length; if(i===k0) pr+=2400; pr+=n*W(i)+1000+1600+Math.min(3600,n*120)+1400; }
+    for(let i=0;i<segs.length;i++){ const n=[...segs[i]].length; if(i===k0) pr+=2400; pr+=n*W(i)+(1000+1600+Math.min(3600,n*120))*HOLD[O(i).hd]+1400; }
     reelT0=performance.now(); reelTc=pr/1000; reelTs=reelTc+1.5; reelCalc(); }
   setPhase('omen'); omenStart=performance.now(); sfx.omen();
   buildDots(segs.length);
@@ -1422,7 +1424,7 @@ async function play(text,opts){
       if(o.fx!=='quiet'){ sfx.seg(i,i===segs.length-1); if(phase!=='dark') addRing(); }
       if(o.fx==='don'){ addRing(.25); sfx.slam(); shakeNow(); }
       if(o.fx==='flash'){ flashNow(); }
-      await wait(n*W(i)+1000+1600+Math.min(3600,n*120));
+      await wait(n*W(i)+(1000+1600+Math.min(3600,n*120))*HOLD[o.hd]);
       hideSegment();
       await wait(1400);
     }
@@ -1549,7 +1551,7 @@ function buildArr(){
     const tt=document.createElement('div'); tt.className='arr-t'; const ix=document.createElement('i'); ix.textContent=(i+1)+'節'; tt.append(ix,sg); row.append(tt);
     const box=document.createElement('div'); box.className='arr-sel';
     const cur=optAt(store.segOpts,i);
-    [['cam','画像の動き',CAML],['fx','効果',FXL],['rt','文字の出方',RTL]].forEach(([k,lb,list])=>{
+    [['cam','画像の動き',CAML],['fx','効果',FXL],['rt','文字の出方',RTL],['hd','表示の長さ',HDL]].forEach(([k,lb,list])=>{
       const lab=document.createElement('label'); lab.append(lb);
       const sel=document.createElement('select');
       list.forEach(([v,n])=>{ const op=document.createElement('option'); op.value=v; op.textContent=n; if(cur[k]===v) op.selected=true; sel.append(op); });
@@ -1654,7 +1656,9 @@ const CAML=[['auto','おまかせ'],['close','ぐっと寄る'],['mid','少し�
 const FXL=[['ring','光の輪'],['quiet','静か'],['don','ドン（揺れ）'],['flash','フラッシュ']];
 const RTL=[['normal','ふつう'],['slow','ゆっくり'],['fast','速く']];
 const RATE={normal:.15,slow:.3,fast:.07};
-const optAt=(opts,i)=>{ const o=(opts&&opts[i])||{}; return {cam:(o.cam in CAMP||o.cam==='auto')?o.cam:'auto',fx:FXL.some(x=>x[0]===o.fx)?o.fx:'ring',rt:o.rt in RATE?o.rt:'normal'}; };
+const HDL=[['normal','ふつう'],['short','短く'],['long','長く']];
+const HOLD={normal:1,short:.5,long:1.8};
+const optAt=(opts,i)=>{ const o=(opts&&opts[i])||{}; return {cam:(o.cam in CAMP||o.cam==='auto')?o.cam:'auto',fx:FXL.some(x=>x[0]===o.fx)?o.fx:'ring',rt:o.rt in RATE?o.rt:'normal',hd:o.hd in HOLD?o.hd:'normal'}; };
 const camTarget=(i,id)=>{ const f=store.focus, q=CAMP[id]; if(q) return [q[0],cl01(f.x+q[1]),cl01(f.y+q[2]),.5]; const o=CAMO[((i%4)+4)%4]; return [o[0],cl01(f.x+o[1]),cl01(f.y+o[2]),.5]; };
 const hitCam=()=>[1.15,store.focus.x,store.focus.y,.17];
 function drawOmen(c,W,H,u){
@@ -1944,7 +1948,7 @@ function gTimeline(segs,opts){
   let t=T.om+1.7;
   segs.forEach((sg,si)=>{
     const o=optAt(opts,si), rate=RATE[o.rt];
-    const n=[...sg].length, reveal=n*rate+.8, hold=1.4+Math.min(3,n*.1);
+    const n=[...sg].length, reveal=n*rate+.8, hold=(1.4+Math.min(3,n*.1))*HOLD[o.hd];
     T.segs.push({s:sg,start:t,end:t+reveal+hold,rate,fx:o.fx,cam:o.cam});
     t+=reveal+hold+.8+.5;
   });
