@@ -257,6 +257,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       <label>左右の位置 <b id="xV">0</b><input type="range" id="uiX" min="-30" max="30" step="1" value="0"></label>
       <button type="button" class="tbtn" id="uiReset">位置と大きさを戻す</button>
       <button type="button" class="tbtn" id="gifOri" hidden aria-pressed="false">GIFの向き：横長</button>
+      <button type="button" class="tbtn" id="gifQ" hidden aria-pressed="false">GIFの画質：標準</button>
     </div>
     <div class="qnote" id="qnote"></div>
     <div class="gifbox" id="gifBox" hidden>
@@ -279,6 +280,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 </div>
 
 <script>
+
 
 window.__gifenc=(function(){var exports={};var module={exports:exports};
 var __defProp = Object.defineProperty;
@@ -1109,6 +1111,7 @@ var src_default = GIFEncoder;
 
 return exports;})();
 
+
 </script>
 
 <script>
@@ -1134,11 +1137,11 @@ try{ reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catc
 
 /* ---------- 保存 (この端末のみ) ---------- */
 const KEY='gekiatsu-comment-v1', BGKEY='gekiatsu-comment-bg-v1';
-const store={tate:false,gifV:false,history:[],ui:{sz:100,x:0,y:0},focus:{x:.5,y:.3}};
+const store={tate:false,gifV:false,gifHQ:false,history:[],ui:{sz:100,x:0,y:0},focus:{x:.5,y:.3}};
 try{
   const o=JSON.parse(localStorage.getItem(KEY)||'null');
   if(o&&typeof o==='object'){
-    store.tate=!!o.tate; store.gifV=!!o.gifV;
+    store.tate=!!o.tate; store.gifV=!!o.gifV; store.gifHQ=!!o.gifHQ;
     if(o.focus&&typeof o.focus==='object'){ const fx=Number(o.focus.x), fy=Number(o.focus.y); if(isFinite(fx)&&isFinite(fy)) store.focus={x:Math.max(0,Math.min(1,fx)),y:Math.max(0,Math.min(1,fy))}; }
     if(o.ui&&typeof o.ui==='object'){ const cl=(v,a,b,d)=>{v=Number(v);return isFinite(v)?Math.max(a,Math.min(b,v)):d;}; store.ui={sz:cl(o.ui.sz,50,150,100),x:cl(o.ui.x,-30,30,0),y:cl(o.ui.y,-30,30,0)}; }
     store.history=Array.isArray(o.history)?o.history.filter(x=>typeof x==='string').slice(0,20):[];
@@ -1852,7 +1855,7 @@ requestAnimationFrame(frame);
 
 /* ---------- GIF書き出し (XのDMなどに送る用) ---------- */
 const {GIFEncoder,quantize,applyPalette}=window.__gifenc||{};
-let GW=480, GH=300; const FPS=10;
+let GW=480, GH=300, GK=1; const FPS=10;
 const GFONT='"Shippori Mincho","Hiragino Mincho ProN","Yu Mincho",serif';
 const gsm=x=>{x=x<0?0:x>1?1:x;return x*x*(3-2*x);};
 const glerp=(a,b,k)=>a+(b-a)*k;
@@ -2051,7 +2054,7 @@ function gPrepare(c,T,segs,text,tate){
 function gDraw(c,t,T,P){
   const W=GW,H=GH,cx=W/2,cy=H*.36,R=Math.hypot(W,H)*.6;
   const th=gTheme(T,t);
-  c.setTransform(1,0,0,1,0,0);
+  c.setTransform(GK,0,0,GK,0,0);
   c.globalCompositeOperation='source-over'; c.globalAlpha=1; c.shadowBlur=0; c.shadowColor='transparent'; c.textAlign='left';
   c.save();
   { const sh=t-T.hitAt; if(sh>=0&&sh<.6){ const k=1-sh/.6; c.translate(Math.sin(sh*95)*GW*.012*k,Math.cos(sh*80)*GW*.006*k); } }
@@ -2222,8 +2225,9 @@ async function makeGif(raw){
   gifNote.textContent='GIFを作成中です。そのままお待ちください。';
   try{
     if(store.gifV){ GW=360; GH=480; } else { GW=480; GH=300; }
+    GK=store.gifHQ?1.5:1; const PW=Math.round(GW*GK), PH=Math.round(GH*GK);
     gifPrev.style.width=GW+'px'; gifPrev.style.aspectRatio=GW+'/'+GH;
-    const gc=document.createElement('canvas'); gc.width=GW; gc.height=GH;
+    const gc=document.createElement('canvas'); gc.width=PW; gc.height=PH;
     const c=gc.getContext('2d',{willReadFrequently:true});
     try{
       await document.fonts.load('500 16px "Shippori Mincho"',text+'0123456789');
@@ -2232,20 +2236,20 @@ async function makeGif(raw){
     const segs=splitSegments(text), T=gTimeline(segs), P=gPrepare(c,T,segs,text,store.tate);
     const N=Math.ceil(T.total*FPS)+1;
 
-    const S=12, sample=new Uint8ClampedArray(S*GW*GH*4);
+    const S=12, sample=new Uint8ClampedArray(S*PW*PH*4);
     for(let s=0;s<S;s++){
       gDraw(c,T.total*(s+.5)/S,T,P);
-      sample.set(c.getImageData(0,0,GW,GH).data,s*GW*GH*4);
+      sample.set(c.getImageData(0,0,PW,PH).data,s*PW*PH*4);
     }
     const palette=quantize(sample,256);
 
     const gif=GIFEncoder();
     for(let f=0;f<N;f++){
       gDraw(c,Math.min(T.total,f/FPS),T,P);
-      const idx=applyPalette(c.getImageData(0,0,GW,GH).data,palette);
+      const idx=applyPalette(c.getImageData(0,0,PW,PH).data,palette);
       const o={delay:f===N-1?2500:1000/FPS,repeat:0};
       if(f===0) o.palette=palette;
-      gif.writeFrame(idx,GW,GH,o);
+      gif.writeFrame(idx,PW,PH,o);
       if(f%5===4){ setBar(f/N); await new Promise(r=>setTimeout(r,0)); }
     }
     gif.finish();
@@ -2286,6 +2290,9 @@ gifBtn.addEventListener('click',()=>{
     gifBtn.hidden=false; const go=$('gifOri'); go.hidden=false;
     const sync=()=>{ go.textContent='GIFの向き：'+(store.gifV?'縦長':'横長'); go.setAttribute('aria-pressed',String(store.gifV)); };
     sync(); go.addEventListener('click',()=>{ store.gifV=!store.gifV; save(); sync(); });
+    const gq=$('gifQ'); gq.hidden=false;
+    const syncQ=()=>{ gq.textContent='GIFの画質：'+(store.gifHQ?'高画質（重い）':'標準'); gq.setAttribute('aria-pressed',String(store.gifHQ)); };
+    syncQ(); gq.addEventListener('click',()=>{ store.gifHQ=!store.gifHQ; save(); syncQ(); });
     renderHistory();
   }
 })();
