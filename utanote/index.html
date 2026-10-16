@@ -391,8 +391,9 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 .choice-icon svg{width:32px;height:32px}
 .choice-copy{display:block;flex:1;min-width:0}
 .choice-copy b{display:block;font-size:22px;font-weight:750;line-height:1.4;letter-spacing:0}
+.home-choice.primary .choice-copy b{font-size:clamp(18px,5vw,22px)}
 .choice-copy small{display:block;font-size:13px;line-height:1.6;margin-top:5px;color:var(--muted)}
-.primary .choice-copy small,.choice-count{color:#fff}
+.choice-count{color:var(--muted)}.primary .choice-copy small,.primary .choice-count{color:#fff}
 .choice-count{display:block;font-size:12px;line-height:1.5;margin-top:7px}
 .choice-arrow{font-size:30px;line-height:1;flex:none}
 .home-choice:focus-visible,.home-help:focus-visible,.home-back:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
@@ -541,7 +542,7 @@ document.addEventListener("visibilitychange",function(){if(document.hidden){comm
 var S={ready:false,songs:[],view:"home",id:null,mode:"sing",sel:null,tab:"sym",
   show:{sym:true,memo:2,hl:true},fs:24,play:false,speed:3,menu:null,confirm:null,phrases:PHRASES.slice(),pedit:false};
 var historyPast=[],historyFuture=[],historyRestoring=false,saveState="保存済み";
-S.query="";S.allSymbols=false;S.singDockCollapsed=true;
+S.query="";S.libraryPurpose='normal';S.allSymbols=false;S.singDockCollapsed=true;
 function stateJSON(){return JSON.stringify(S.songs)}
 function recordHistory(){
   if(historyRestoring||!S.ready)return;
@@ -767,7 +768,8 @@ function homeView(){
  var ready=S.ready?'':' disabled',count=S.ready?S.songs.length+'曲保存されています':'読み込み中…';
  return '<header class="masthead home-masthead"><div class="wordmark">'+brandMark()+'リリペン</div><button class="home-help" data-act="help">使い方・データ保存</button></header>'+ 
  '<main class="home-menu"><h1>何をしますか？</h1><nav class="home-choices" aria-label="最初のメニュー">'+
- '<button class="home-choice primary" data-act="library"'+ready+'><span class="choice-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 5h18v23H7zM11 11h10M11 16h10M11 21h6"/></svg></span><span class="choice-copy"><b>曲を開く</b><small>歌う・メモする・ライブで使う</small><span class="choice-count">'+count+'</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>'+
+ '<button class="home-choice primary" data-act="live-library"'+ready+'><span class="choice-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="26" height="19" rx="2"/><path d="M16 23v5M10 28h12M9 10h14M9 16h9"/></svg></span><span class="choice-copy"><b>ライブ用プロンプター</b><small>曲を選んで、歌詞を大きく流す</small></span><span class="choice-arrow" aria-hidden="true">›</span></button>'+
+ '<button class="home-choice" data-act="library"'+ready+'><span class="choice-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 5h18v23H7zM11 11h10M11 16h10M11 21h6"/></svg></span><span class="choice-copy"><b>曲を開く</b><small>歌う・メモする</small><span class="choice-count">'+count+'</span></span><span class="choice-arrow" aria-hidden="true">›</span></button>'+
  '<button class="home-choice" data-act="new"'+ready+'><span class="choice-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 6v20M6 16h20"/></svg></span><span class="choice-copy"><b>曲を追加する</b><small>曲名と歌詞を入力する</small></span><span class="choice-arrow" aria-hidden="true">›</span></button>'+
  '<a class="home-choice" href="learn.html"><span class="choice-icon" aria-hidden="true"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 9c-4-3-8-3-12-2v19c4-1 8-1 12 2 4-3 8-3 12-2V7c-4-1-8-1-12 2Zm0 0v19"/></svg></span><span class="choice-copy"><b>歌の知識を学ぶ</b><small>音楽記号・楽典・歌い方</small></span><span class="choice-arrow" aria-hidden="true">›</span></a></nav>'+
  '<p class="home-hint">初めての方は「曲を開く」から<br>サンプル曲を試せます。</p><p class="home-save">曲とメモは、この端末に自動保存されます。</p></main>';
@@ -775,7 +777,7 @@ function homeView(){
 function listView(){
  var h='<header class="masthead"><button class="home-back" data-act="home">‹ 最初の画面</button><button class="help-link" data-act="help">使い方・データ保存</button></header>';
  if(!S.ready)return h+'<div class="empty">読み込み中…</div>';
- h+='<div class="library-head"><h1>曲を選ぶ<small>'+S.songs.length+'曲</small></h1><button class="new-track" data-act="new"><span aria-hidden="true">＋</span> 曲を追加</button></div>'+
+ h+='<div class="library-head"><h1>'+(S.libraryPurpose==='live'?'ライブで使う曲を選ぶ':'曲を選ぶ')+'<small>'+S.songs.length+'曲</small></h1><button class="new-track" data-act="new"><span aria-hidden="true">＋</span> 曲を追加</button></div>'+
  '<div class="search-field"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 5 5"/></svg><input id="songSearch" type="search" aria-label="曲名・アーティストで検索" placeholder="曲名・アーティストで探す" value="'+esc(S.query)+'"></div>';
  if(Store.lsGet('helpseen')!=='1')h+='<div class="welcome-note"><span>はじめて？ まずはサンプル曲から。</span><button data-act="help">使い方を見る</button><button class="ib" data-act="hidehelp" aria-label="案内を閉じる">×</button></div>';
  h+='<div class="cards">';
@@ -1181,8 +1183,9 @@ function act(a,el){
   if(videoAction(a)||liveAction(a))return;
   var s=cur(),v=el.dataset.v,sid=el.dataset.sid,l,sec,i;
   switch(a){
-  case "home":S.query="";go("home");break;
-  case "library":if(!S.ready)return;S.query="";go("list");break;
+  case "home":S.libraryPurpose="normal";S.query="";go("home");break;
+  case "library":if(!S.ready)return;S.libraryPurpose="normal";S.query="";go("list");break;
+  case "live-library":if(!S.ready)return;S.libraryPurpose="live";S.query="";go("list");break;
   case "line-note":S.sel={line:el.dataset.id,a:0,b:0,lineOnly:true};S.tab='memo';S.dockCollapsed=false;render();focusMemo();break;
   case "bk-download":downloadBackup();break;
   case "bk-file":document.querySelector('#backupFile').click();break;
@@ -1197,7 +1200,7 @@ function act(a,el){
   case "redo":restoreHistory(true);break;
   case "guide-close":Store.lsSet('markguide','1');render();break;
   case "symbols-toggle":S.allSymbols=!S.allSymbols;render();break;
-  case "open":S.reading=false;S.toolsOpen=false;S.mode=(S.songs.filter(function(x){return x.id===el.dataset.id})[0].secs.some(function(x){return x.lines.some(function(l){return l.t})}))?"sing":"edit";S.tab="sym";go("song",el.dataset.id);setWake(S.mode==="sing");break;
+  case "open":S.reading=false;S.toolsOpen=false;S.mode=(S.songs.filter(function(x){return x.id===el.dataset.id})[0].secs.some(function(x){return x.lines.some(function(l){return l.t})}))?"sing":"edit";S.tab="sym";go("song",el.dataset.id);setWake(S.mode==="sing");if(S.libraryPurpose==="live"){if(S.mode==="sing")liveSetup();else toast("まず歌詞を入力してください。入力後、歌う画面からプロンプターを開けます。")}break;
   case "new":if(!S.ready)return;S.reading=false;S.toolsOpen=false;s=newSong();S.songs.push(s);recordHistory();S.mode="edit";flushSave(s);go("song",s.id);setWake(false);break;
   case "back":commitEdits();flushAllSaves();setWake(false);go("list");break;
   case "mode":setMode(v);break;
