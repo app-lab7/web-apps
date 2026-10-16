@@ -154,6 +154,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 .opt-n{font-size:11.5px;color:var(--dim);line-height:1.6}
 .opt[hidden]{display:none}
 .hint{font-size:12px;color:var(--dim);margin-top:-4px}
+.stopb{border-color:#c0564f!important;color:#ff9b93!important}
 .skip,.gifbtn{flex:0 0 auto;align-self:stretch;font:700 13px/1 var(--font-b);padding:0 14px;color:var(--ink);background:transparent;border:1px solid var(--dim);border-radius:4px;cursor:pointer}
 .gifbtn{color:var(--gold-b);border-color:var(--gold)}
 .gifbtn:disabled{opacity:.4;cursor:not-allowed}
@@ -264,6 +265,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       <button type="submit" class="go" id="go" disabled>回す</button>
       <button type="button" class="omk" id="omk">おまかせ</button>
       <button type="button" class="skip" id="skip" hidden>演出スキップ</button>
+      <button type="button" class="skip stopb" id="stopBtn" hidden>■ 演出を終了</button>
       <button type="button" class="gifbtn" id="gifBtn" hidden>GIFにする</button>
       <input type="text" id="author" maxlength="24" placeholder="言った人（省略可）　例：夏目漱石" aria-label="言った人（省略可）">
     </form>
@@ -1195,7 +1197,7 @@ try{
 function save(){ try{localStorage.setItem(KEY,JSON.stringify(store));}catch(e){} }
 
 /* ---------- 音 (やわらかなピアノとパッド) ---------- */
-let soundOn=true, ctx=null, master=null;
+let soundOn=true, ctx=null, master=null, bus=null;
 const VOL=.5;
 function syncSound(){ soundBtn.setAttribute('aria-pressed',String(soundOn)); soundBtn.textContent=soundOn?'音 ON':'音 OFF'; }
 soundBtn.addEventListener('click',()=>{ soundOn=!soundOn; ensureAudio(); syncSound(); });
@@ -1221,6 +1223,7 @@ function ensureAudio(){
     const comp=ctx.createDynamicsCompressor();
     master=ctx.createGain(); master.gain.value=VOL;
     master.connect(comp); comp.connect(ctx.destination);
+    bus=ctx.createGain(); bus.connect(master);
   }catch(e){ ctx=null; }
 }
 function tone(freq,dur,o={}){
@@ -1232,7 +1235,7 @@ function tone(freq,dur,o={}){
   gn.gain.setValueAtTime(.0001,t);
   gn.gain.exponentialRampToValueAtTime(vol,t+attack);
   gn.gain.exponentialRampToValueAtTime(.0001,t+dur);
-  osc.connect(gn); gn.connect(master); osc.start(t); osc.stop(t+dur+.05);
+  osc.connect(gn); gn.connect(bus||master); osc.start(t); osc.stop(t+dur+.05);
 }
 function piano(f,at,vol){
   tone(f,2.8,{type:'triangle',vol,at,attack:.008});
@@ -1259,6 +1262,12 @@ const sfx={
   slam(){ tone(70,.9,{vol:.22,to:28,attack:.003}); tone(1800,.08,{type:'square',vol:.05,to:200,attack:.002}); tone(420,.5,{type:'sawtooth',vol:.04,to:120,at:.02}); },
   hit(lead=0){ [523.25,659.25,783.99,1046.5,1318.5,1568].forEach((f,i)=>piano(f,lead+.2+i*.45,.07)); pad([261.6,329.6,392,523.25],9,.055,lead); },
   sparkle(){ piano([1046.5,1174.7,1318.5,1568,1760][Math.floor(Math.random()*5)],0,.03); },
+  killAll(){
+    if(!ctx||!bus) return; const old=bus;
+    try{ old.gain.cancelScheduledValues(ctx.currentTime); old.gain.setTargetAtTime(0,ctx.currentTime,.02); }catch(e){}
+    setTimeout(()=>{ try{ old.disconnect(); }catch(e){} },400);
+    bus=ctx.createGain(); bus.connect(master);
+  },
   duck(){
     if(!ctx) return; const t=ctx.currentTime;
     master.gain.cancelScheduledValues(t);
@@ -1388,11 +1397,19 @@ setInterval(idleSet,1400);
 /* ---------- 待ち時間 / スキップ ---------- */
 let skip=false, playing=false;
 const pending=new Set();
+let aborted=false; const ABORT={abort:true};
 function wait(ms){
-  return new Promise(res=>{
+  return new Promise((res,rej)=>{
+    if(aborted) return rej(ABORT);
     if(skip) return res();
-    const e={res}; e.t=setTimeout(()=>{ pending.delete(e); res(); },ms); pending.add(e);
+    const e={res,rej}; e.t=setTimeout(()=>{ pending.delete(e); res(); },ms); pending.add(e);
   });
+}
+function doStop(){
+  if(!playing) return;
+  aborted=true; queue.length=0; renderStats(); sfx.killAll();
+  for(const e of pending){ clearTimeout(e.t); e.rej(ABORT); }
+  pending.clear();
 }
 function doSkip(){
   if(!playing||skip) return;
@@ -1401,6 +1418,7 @@ function doSkip(){
   pending.clear();
 }
 skipBtn.addEventListener('click',doSkip);
+$('stopBtn').addEventListener('click',doStop);
 
 /* ---------- 進行 ---------- */
 let phase='idle';
@@ -1499,12 +1517,18 @@ async function runQueue(){
   playing=true;
   while(queue.length){
     const q=queue.shift(); renderStats();
-    await play(q.text,q.opts);
-    if(queue.length) await wait(600);
+    try{
+      await play(q.text,q.opts);
+      if(queue.length) await wait(600);
+    }catch(e){
+      if(e!==ABORT) console.error(e);
+      resetStage(); hitComment.textContent=''; hitInfo=null; setImgTarget(0); fullOn=false; skip=false;
+    }
+    if(aborted) break;
   }
-  playing=false; skipBtn.hidden=true; setPhase('idle'); idleSet(); renderStats();
+  aborted=false; playing=false; skipBtn.hidden=true; $('stopBtn').hidden=true; setPhase('idle'); idleSet(); renderStats();
 }
-function enqueue(text,opts){ queue.push({text,opts}); renderStats(); if(!playing) runQueue(); }
+function enqueue(text,opts){ queue.push({text,opts}); renderStats(); if(!playing){ $('stopBtn').hidden=false; runQueue(); } }
 
 /* ---------- 履歴 ---------- */
 let downloads=null;
