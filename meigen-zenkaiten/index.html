@@ -284,6 +284,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       <div class="gifbar"><div id="gifBar"></div></div>
       <img id="gifPrev" alt="作成したGIFのプレビュー" hidden>
       <button type="button" class="go gifsave" id="gifSave" hidden>このGIFを保存</button>
+      <button type="button" class="tbtn" id="gifDl" hidden>ファイルとしてダウンロード</button>
     </div>
   </section>
 
@@ -299,6 +300,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 </div>
 
 <script>
+
 
 
 
@@ -1155,6 +1157,7 @@ return exports;})();
 
 
 
+
 </script>
 
 <script>
@@ -1168,7 +1171,7 @@ const hitComment=$('hitComment');
 const form=$('form'), input=$('comment'), goBtn=$('go'), skipBtn=$('skip');
 const soundBtn=$('btnSound'), tateBtn=$('btnTate');
 const qnote=$('qnote'), histEl=$('history');
-const gifBtn=$('gifBtn'), gifBox=$('gifBox'), gifNote=$('gifNote'), gifBar=$('gifBar'), gifPrev=$('gifPrev'), gifSave=$('gifSave');
+const gifBtn=$('gifBtn'), gifBox=$('gifBox'), gifNote=$('gifNote'), gifBar=$('gifBar'), gifPrev=$('gifPrev'), gifSave=$('gifSave'), gifDl=$('gifDl');
 const bgPick=$('bgPick'), bgClear=$('bgClear'), bgFile=$('bgFile'), bgNote=$('bgNote'), bgThumbs=$('bgThumbs');
 const reelEls=[...stage.querySelectorAll('.reel')];
 const dgs=reelEls.map(r=>r.querySelector('.dg'));
@@ -2323,7 +2326,7 @@ async function makeGif(raw,opts){
   const text=norm(raw);
   if(gifBusy||!GIFEncoder) return;
   gifBusy=true; gifBtn.disabled=true;
-  gifBox.hidden=false; gifSave.hidden=true; gifPrev.hidden=true; gifBar.parentElement.hidden=false; setBar(0);
+  gifBox.hidden=false; gifSave.hidden=true; gifDl.hidden=true; gifPrev.hidden=true; gifBar.parentElement.hidden=false; setBar(0);
   gifNote.textContent='GIFを作成中です。そのままお待ちください。';
   try{
     if(store.gifV){ GW=360; GH=480; } else { GW=480; GH=300; }
@@ -2363,16 +2366,35 @@ async function makeGif(raw,opts){
     setBar(1);
     const mb=bytes.length/1048576;
     gifNote.textContent=`GIFができました（${mb.toFixed(1)}MB・約${Math.round(T.total)}秒）。`+(mb>15?'15MBを超えています。XのDMには大きすぎるかもしれません。':'下のボタンで保存して、XのDMに添付してください。');
-    gifSave.hidden=!downloads;
-    if(!downloads) gifNote.textContent=`GIFができました（${mb.toFixed(1)}MB・約${Math.round(T.total)}秒）。下の画像を長押し（パソコンは右クリック）して保存してください。`+(mb>15?'15MBを超えています。XのDMには大きすぎるかもしれません。':'');
+    gifSave.hidden=false;
+    if(downloads){ gifSave.textContent='このGIFを保存'; }
+    else{
+      const f=new File([gifBlob],'meigen-zenkaiten.gif',{type:'image/gif'});
+      const canShare=!!(navigator.canShare&&navigator.canShare({files:[f]}));
+      gifSave.textContent=canShare?'GIFを保存・共有する':'GIFをダウンロード';
+      gifDl.hidden=!canShare;
+      gifNote.textContent=`GIFができました（${mb.toFixed(1)}MB・約${Math.round(T.total)}秒）。`+(canShare?'下のボタンから共有画面を開き、「画像を保存」を選ぶとアニメのまま保存できます。画像の長押しは静止画になることがあります。':'下のボタンでダウンロードしてください。')+(mb>15?'15MBを超えています。XのDMには大きすぎるかもしれません。':'');
+    }
   }catch(e){
     gifNote.textContent='GIFを作れませんでした。もう一度お試しください。';
   }finally{
     gifBusy=false; gifBtn.disabled=false;
   }
 }
+async function saveFallback(forceDl){
+  if(!gifBlob) return;
+  const file=new File([gifBlob],'meigen-zenkaiten.gif',{type:'image/gif'});
+  if(!forceDl&&navigator.canShare&&navigator.canShare({files:[file]})){
+    try{ await navigator.share({files:[file],title:'名言全回転大当りメーカー'}); gifNote.textContent='共有画面で「画像を保存」を選ぶと、アニメのまま保存できます。'; return; }
+    catch(e){ if(e&&e.name==='AbortError') return; }
+  }
+  const a=document.createElement('a'); a.href=gifUrl; a.download='meigen-zenkaiten.gif'; document.body.append(a); a.click(); a.remove();
+  gifNote.textContent='ダウンロードしました。「ファイル」アプリなどに保存されます。';
+}
+gifDl.addEventListener('click',()=>saveFallback(true));
 gifSave.addEventListener('click',async()=>{
-  if(!gifBlob||!downloads) return;
+  if(!downloads){ saveFallback(false); return; }
+  if(!gifBlob) return;
   try{
     await downloads.save({filename:'meigen-zenkaiten.gif',data:gifBlob});
     gifNote.textContent='保存しました。XのDMに添付して送れます。';
