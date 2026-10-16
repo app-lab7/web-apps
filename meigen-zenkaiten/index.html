@@ -1420,7 +1420,6 @@ function startSpin(i,ms){
   clearInterval(timers[i]); reelEls[i].classList.add('spin'); let n=0;
   timers[i]=setInterval(()=>{
     setGlyph(i,String(1+Math.floor(Math.random()*9)));
-    if(i===0&&(n++%3===0)) sfx.tick();
   },ms);
 }
 function haltSpin(i){ clearInterval(timers[i]); reelEls[i].classList.remove('spin'); }
