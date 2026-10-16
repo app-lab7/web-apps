@@ -277,7 +277,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       </div>
     </details>
     <details class="arr" id="setImg">
-      <summary>背景の写真・文字の大きさと位置</summary>
+      <summary>🖼 背景の写真を入れる</summary>
       <div class="arr-body">
     <div class="bgrow">
       <button type="button" class="tbtn" id="bgPick">背景画像を選ぶ</button>
@@ -286,16 +286,21 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       <div class="thumbs" id="bgThumbs"></div>
       <span class="bgnote" id="bgNote">写真を背景にできます（5枚まで）。複数入れると、一節ごとに画像を切り替えられます。画像はこの端末の中だけで使われます。</span>
     </div>
+      </div>
+    </details>
+    <details class="arr" id="setTxt">
+      <summary>🔤 文字の大きさ・位置を変える</summary>
+      <div class="arr-body">
     <div class="uirow" id="uirow">
       <label>文字の大きさ <b id="szV">100%</b><input type="range" id="uiSz" min="50" max="150" step="5" value="100"></label>
       <label>上下の位置 <b id="yV">0</b><input type="range" id="uiY" min="-30" max="30" step="1" value="0"></label>
       <label>左右の位置 <b id="xV">0</b><input type="range" id="uiX" min="-30" max="30" step="1" value="0"></label>
-      <button type="button" class="tbtn" id="uiReset">位置と大きさを戻す</button>
+      <button type="button" class="tbtn" id="uiReset">もとの大きさ・位置に戻す</button>
     </div>
       </div>
     </details>
     <details class="arr" id="setSave">
-      <summary>保存の設定（形式・向き・きれいさ）</summary>
+      <summary>💾 保存の設定（形式・向き・きれいさ）</summary>
       <div class="arr-body" id="saveSet"></div>
     </details>
     <div class="qnote" id="qnote"></div>
