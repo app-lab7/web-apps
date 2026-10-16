@@ -167,9 +167,9 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 .h-again:hover,.h-gif:hover{border-color:var(--gold)}
 
 @keyframes cap-in{from{opacity:0;filter:blur(8px);letter-spacing:.7em}to{opacity:1;filter:blur(0)}}
-@keyframes ch-in{from{opacity:0;filter:blur(7px);transform:translateY(.3em)}to{opacity:1;filter:blur(0);transform:none}}
-@keyframes ch-in-v{from{opacity:0;filter:blur(7px);transform:translateX(.3em)}to{opacity:1;filter:blur(0);transform:none}}
-@keyframes fade-up{from{opacity:0;transform:translateY(1.4cqw)}to{opacity:1;transform:none}}
+@keyframes ch-in{from{opacity:0;filter:blur(7px)}to{opacity:1;filter:blur(0)}}
+@keyframes ch-in-v{from{opacity:0;filter:blur(7px)}to{opacity:1;filter:blur(0)}}
+@keyframes fade-up{from{opacity:0}to{opacity:1}}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
 @keyframes breathe{from{opacity:.5}to{opacity:1}}
 @keyframes thunk{0%{transform:scale(1.18)}100%{transform:scale(1)}}
@@ -280,6 +280,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 </div>
 
 <script>
+
 
 
 window.__gifenc=(function(){var exports={};var module={exports:exports};
@@ -1110,6 +1111,7 @@ var src_default = GIFEncoder;
 
 
 return exports;})();
+
 
 
 </script>
@@ -2148,13 +2150,13 @@ function gDraw(c,t,T,P){
       const xr=cx+(cols-1)*colGap/2, y0=H*.47-(per-1)*cell/2;
       cs.forEach((ch,j)=>{
         const k=gsm((t-sg.start-j*.15)/1.1);
-        gVChar(c,ch,xr-Math.floor(j/per)*colGap,y0+(j%per)*cell,fs,k*fo,(1-k)*fs*.3);
+        gVChar(c,ch,xr-Math.floor(j/per)*colGap,y0+(j%per)*cell,fs,k*fo,0);
       });
     }else{
       const base=n<=6?8:n<=10?6.4:n<=14?5.4:4.6, fs=Math.min(.095*W,W*.9/(n*1.14))*store.ui.sz/100, sp=fs*.08;
       c.font=`500 ${fs}px ${GFONT}`;
       const w=gTextW(c,sg.s,fs,sp);
-      gDrawChars(c,sg.s,cx-w/2,H*(GH>GW?.33:.25),sp,j=>{ const k=gsm((t-sg.start-j*.15)/1.1); return {a:k*fo,dy:(1-k)*fs*.3}; });
+      gDrawChars(c,sg.s,cx-w/2,H*(GH>GW?.33:.25),sp,j=>{ const k=gsm((t-sg.start-j*.15)/1.1); return {a:k*fo,dy:0}; });
     }
     c.shadowBlur=0; c.shadowColor='transparent';
     rdA=fo; rdIdx=i;
@@ -2178,7 +2180,7 @@ function gDraw(c,t,T,P){
       }
       c.font=`500 ${L.cfs}px ${GFONT}`; c.fillStyle='#f7dc8e';
       if(bgImg){ c.shadowColor='rgba(0,0,0,.75)'; c.shadowBlur=8; }
-      for(const o of L.chars){ const a=gsm((ht-3-o.i*.8)/1.2); gVChar(c,o.ch,o.x,o.y,L.cfs,a,(1-a)*4); }
+      for(const o of L.chars){ const a=gsm((ht-3-o.i*.8)/1.2); gVChar(c,o.ch,o.x,o.y,L.cfs,a,0); }
       c.shadowBlur=0; c.shadowColor='transparent';
     }else{
       c.save(); slamT(c,Math.max(0,ht-2.2),cx,L.titleY);
@@ -2200,7 +2202,7 @@ function gDraw(c,t,T,P){
       for(const ln of L.lines){
         for(const it of ln.items){
           const a=gsm((ht-3-it.i*.8)/1.2); if(a<.01) continue;
-          gDrawChars(c,it.s,it.x,ln.y+(1-a)*4,L.csp,()=>({a,dy:0}));
+          gDrawChars(c,it.s,it.x,ln.y,L.csp,()=>({a,dy:0}));
         }
       }
       c.shadowBlur=0; c.shadowColor='transparent';
