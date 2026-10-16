@@ -315,6 +315,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 
 
 
+
 window.__gifenc=(function(){var exports={};var module={exports:exports};
 var __defProp = Object.defineProperty;
 var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
@@ -1143,6 +1144,7 @@ var src_default = GIFEncoder;
 
 
 return exports;})();
+
 
 
 
@@ -2341,19 +2343,13 @@ async function makeGif(raw,opts){
     const segs=splitSegments(text), T=gTimeline(segs,opts), P=gPrepare(c,T,segs,text,store.tate);
     const N=Math.ceil(T.total*FPS)+1;
 
-    const S=12, sample=new Uint8ClampedArray(S*PW*PH*4);
-    for(let s=0;s<S;s++){
-      gDraw(c,T.total*(s+.5)/S,T,P);
-      sample.set(c.getImageData(0,0,PW,PH).data,s*PW*PH*4);
-    }
-    const palette=quantize(sample,256);
-
     const gif=GIFEncoder();
     for(let f=0;f<N;f++){
       gDraw(c,Math.min(T.total,f/FPS),T,P);
-      const idx=applyPalette(c.getImageData(0,0,PW,PH).data,palette);
-      const o={delay:f===N-1?2500:1000/FPS,repeat:0};
-      if(f===0) o.palette=palette;
+      const px=c.getImageData(0,0,PW,PH).data;
+      const palette=quantize(px,256);
+      const idx=applyPalette(px,palette);
+      const o={delay:f===N-1?2500:1000/FPS,repeat:0,palette};
       gif.writeFrame(idx,PW,PH,o);
       if(f%5===4){ setBar(f/N); await new Promise(r=>setTimeout(r,0)); }
     }
