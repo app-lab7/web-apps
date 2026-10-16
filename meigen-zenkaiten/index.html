@@ -83,7 +83,7 @@ h1{margin:0;font:700 clamp(18px,4.6vw,24px)/1.3 var(--font-s);letter-spacing:.12
 /* 大当たり */
 .hit{position:absolute;inset:0;display:block;opacity:0;pointer-events:none;text-align:center}
 .stage[data-phase="hit"] .hit{opacity:1}
-.hit-title{position:absolute;left:0;right:0;top:7%;z-index:1;font:800 9cqw/1.15 var(--font-s);letter-spacing:.28em;padding-left:.28em;background:linear-gradient(90deg,#ff5f6d,#ffc371,#f7e463,#7ee08a,#5ec8ff,#a78bfa,#ff7ad9,#ff5f6d);background-size:200% 100%;animation-name:none;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 .35em rgba(217,184,106,.45)) drop-shadow(0 .03em .25em rgba(0,0,0,.6))}
+.hit-title{position:absolute;left:0;right:0;top:7%;z-index:1;font:800 5.2cqw/1.4 var(--font-s);letter-spacing:.07em;padding-left:.07em;background:linear-gradient(90deg,#ff5f6d,#ffc371,#f7e463,#7ee08a,#5ec8ff,#a78bfa,#ff7ad9,#ff5f6d);background-size:200% 100%;animation-name:none;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 .35em rgba(217,184,106,.45)) drop-shadow(0 .03em .25em rgba(0,0,0,.6))}
 .orn{position:absolute;left:50%;top:calc(7% + 13cqw);margin-left:-15cqw;z-index:1;display:block;width:30cqw;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 .hit-comment{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);width:max-content;z-index:0;opacity:.92;max-width:96cqw;font:600 6cqw/1.7 var(--font-s);letter-spacing:.06em;color:#f7dc8e;text-wrap:balance;filter:drop-shadow(.026em 0 0 #4a2800) drop-shadow(-.026em 0 0 #4a2800) drop-shadow(0 .026em 0 #4a2800) drop-shadow(0 -.026em 0 #4a2800) drop-shadow(-.035em 0 0 rgba(255,70,190,.42)) drop-shadow(.035em 0 0 rgba(60,210,255,.42)) drop-shadow(0 0 .38em rgba(255,190,60,.55))}
 .sg{display:block;white-space:nowrap;margin:0;opacity:0}
@@ -252,7 +252,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       </div>
 
       <div class="hit" id="hit">
-        <div class="hit-title">大当たり</div>
+        <div class="hit-title">𝐂𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬</div>
         <i class="orn"></i>
         <p class="hit-comment" id="hitComment"></p>
       </div>
@@ -2429,13 +2429,13 @@ function gDraw(c,t,T,P){
     const ht=t-T.hitAt, L=P.lay, tfa=gsm((ht-2.2)/.22), oa=gsm((ht-2.7)/1.0);
     c.textBaseline='middle';
     c.save(); slamT(c,Math.max(0,ht-2.2),cx,L.titleY);
-    const fs=L.tfs, sp=fs*glerp(.7,.28,gsm(ht/2.2));
+    const fs=L.tfs*.58, sp=fs*glerp(.25,.07,gsm(ht/2.2));
     c.font=`800 ${fs}px ${GFONT}`;
-    const w=gTextW(c,'大当たり',fs,sp);
+    const w=gTextW(c,'𝐂𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬',fs,sp);
     const g2=c.createLinearGradient(0,L.titleY-fs/2,0,L.titleY+fs/2);
     const g3=c.createLinearGradient(cx-w/2,0,cx+w/2,0); for(let q=0;q<=6;q++) g3.addColorStop(q/6,'hsl('+(((q*55+t*70)%360+360)%360)+',95%,68%)');
     c.shadowColor='rgba(0,0,0,.6)'; c.shadowBlur=12; c.fillStyle=g3;
-    gDrawChars(c,'大当たり',cx-w/2,L.titleY,sp,()=>({a:tfa,dy:0}));
+    gDrawChars(c,'𝐂𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬',cx-w/2,L.titleY,sp,()=>({a:tfa,dy:0}));
     c.shadowBlur=0; c.shadowColor='transparent'; c.restore();
     if(oa>.01){
       const og=c.createLinearGradient(cx-W*.15,0,cx+W*.15,0);
@@ -2470,7 +2470,7 @@ async function makeGif(raw,opts){
     try{
       await document.fonts.load('500 16px "Shippori Mincho"',text+'0123456789');
       await document.fonts.load('600 16px "Shippori Mincho"',text+'0123456789');
-            await document.fonts.load('800 24px "Shippori Mincho"','大当たり');
+            await document.fonts.load('800 24px "Shippori Mincho"','𝐂𝐨𝐧𝐠𝐫𝐚𝐭𝐮𝐥𝐚𝐭𝐢𝐨𝐧𝐬');
     }catch(e){}
     const segs=splitSegments(text), T=gTimeline(segs,opts), P=gPrepare(c,T,segs,text,store.tate);
     const N=Math.ceil(T.total*FPS)+1;
