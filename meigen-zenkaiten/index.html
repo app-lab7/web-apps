@@ -73,7 +73,7 @@ h1{margin:0;font:700 clamp(18px,4.6vw,24px)/1.3 var(--font-s);letter-spacing:.12
 /* 一節ずつ読む */
 .reader{opacity:0;transition:opacity 1.1s ease;pointer-events:none}
 .reader.on{opacity:1}
-.rd-line{white-space:nowrap;max-width:none;font-family:var(--font-s);font-weight:600;font-size:6cqw;line-height:1.55;letter-spacing:.08em;color:#f7dc8e;filter:drop-shadow(0 0 .35em rgba(255,196,70,.55)) drop-shadow(0 .04em .1em rgba(50,25,0,.7));text-wrap:balance;overflow-wrap:anywhere}
+.rd-line{white-space:nowrap;max-width:none;font-family:var(--font-s);font-weight:600;font-size:6cqw;line-height:1.55;letter-spacing:.08em;color:#f7dc8e;filter:drop-shadow(.026em 0 0 #4a2800) drop-shadow(-.026em 0 0 #4a2800) drop-shadow(0 .026em 0 #4a2800) drop-shadow(0 -.026em 0 #4a2800) drop-shadow(-.035em 0 0 rgba(255,70,190,.42)) drop-shadow(.035em 0 0 rgba(60,210,255,.42)) drop-shadow(0 0 .38em rgba(255,190,60,.55));text-wrap:balance;overflow-wrap:anywhere}
 .ch{display:inline-block;opacity:0;animation:ch-in 1.3s cubic-bezier(.2,.7,.2,1) forwards;animation-delay:calc(var(--i)*var(--r,.15s))}
 .dots{display:none;gap:1.2cqw;align-items:center;min-height:6px}
 .dot{width:max(5px,.9cqw);aspect-ratio:1;border-radius:50%;background:#3a3f66;transition:background .8s}
@@ -85,10 +85,10 @@ h1{margin:0;font:700 clamp(18px,4.6vw,24px)/1.3 var(--font-s);letter-spacing:.12
 .stage[data-phase="hit"] .hit{opacity:1}
 .hit-title{position:absolute;left:0;right:0;top:7%;z-index:1;font:800 9cqw/1.15 var(--font-s);letter-spacing:.28em;padding-left:.28em;background:linear-gradient(90deg,#ff5f6d,#ffc371,#f7e463,#7ee08a,#5ec8ff,#a78bfa,#ff7ad9,#ff5f6d);background-size:200% 100%;animation-name:none;-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 .35em rgba(217,184,106,.45)) drop-shadow(0 .03em .25em rgba(0,0,0,.6))}
 .orn{position:absolute;left:50%;top:calc(7% + 13cqw);margin-left:-15cqw;z-index:1;display:block;width:30cqw;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
-.hit-comment{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);width:max-content;z-index:0;opacity:.92;max-width:96cqw;font:600 6cqw/1.7 var(--font-s);letter-spacing:.06em;color:#f7dc8e;text-wrap:balance;filter:drop-shadow(0 0 .35em rgba(255,196,70,.5)) drop-shadow(0 .04em .1em rgba(50,25,0,.7))}
+.hit-comment{position:absolute;left:50%;top:58%;transform:translate(-50%,-50%);width:max-content;z-index:0;opacity:.92;max-width:96cqw;font:600 6cqw/1.7 var(--font-s);letter-spacing:.06em;color:#f7dc8e;text-wrap:balance;filter:drop-shadow(.026em 0 0 #4a2800) drop-shadow(-.026em 0 0 #4a2800) drop-shadow(0 .026em 0 #4a2800) drop-shadow(0 -.026em 0 #4a2800) drop-shadow(-.035em 0 0 rgba(255,70,190,.42)) drop-shadow(.035em 0 0 rgba(60,210,255,.42)) drop-shadow(0 0 .38em rgba(255,190,60,.55))}
 .sg{display:block;white-space:nowrap;margin:0;opacity:0}
 /* 金文字：金属らしい帯のグラデーション */
-.ch,.sg{--o:.3em;color:transparent;-webkit-text-fill-color:transparent;-webkit-background-clip:text;background-clip:text;background-image:linear-gradient(180deg,#fff6c9 calc(var(--o) + 0em),#f8d775 calc(var(--o) + .3em),#eab84c calc(var(--o) + .6em),#d99f34 calc(var(--o) + 1em))}
+.ch,.sg{--o:.3em;color:transparent;-webkit-text-fill-color:transparent;-webkit-background-clip:text;background-clip:text;background-image:linear-gradient(180deg,#fff7b8 calc(var(--o) + 0em),#ffd94c calc(var(--o) + .22em),#f2a61c calc(var(--o) + .5em),#bb6d0b calc(var(--o) + .63em),#ffdc56 calc(var(--o) + .84em),#fff3a8 calc(var(--o) + 1em))}
 .stage.tate .ch{--o:0em}
 .stage.tate .sg{--o:0em;background-size:100% 1.1em;background-repeat:repeat-y}
 .stage[data-phase="omen"] .shaker{animation:tremble .09s linear infinite}
@@ -121,6 +121,10 @@ h1{margin:0;font:700 clamp(18px,4.6vw,24px)/1.3 var(--font-s);letter-spacing:.12
 .stage.tate[data-phase="read"] .reels{opacity:0}
 .stage.tate .hit-comment{writing-mode:vertical-rl;max-width:none;max-height:none;line-height:1.9;letter-spacing:.1em;text-wrap:initial}
 .stage.tate .sg{display:block;white-space:nowrap;margin:0}
+/* 実機風：右端の小さな縦字幕（映像が出る節） */
+.stage.sub[data-phase="read"] .reader{left:auto;right:5.5cqw;width:auto;top:13%;height:66%;place-content:start end;padding:0}
+.stage.sub[data-phase="read"] .rd-line{writing-mode:vertical-rl;line-height:1.7;letter-spacing:.1em;text-wrap:initial;max-width:none;white-space:nowrap}
+.stage.sub[data-phase="read"] .ch{animation-name:ch-in-v}
 #fx2{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 
 
@@ -295,8 +299,9 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       </div>
     </details>
     <details class="arr" id="setTxt">
-      <summary>🔤 文字の大きさ・位置を変える</summary>
+      <summary>🔤 文字の見せ方・大きさ・位置</summary>
       <div class="arr-body">
+    <div id="txtMode" style="display:grid;gap:12px"></div>
     <div class="uirow" id="uirow">
       <label>文字の大きさ <b id="szV">100%</b><input type="range" id="uiSz" min="50" max="150" step="5" value="100"></label>
       <label>上下の位置 <b id="yV">0</b><input type="range" id="uiY" min="-30" max="30" step="1" value="0"></label>
@@ -1194,7 +1199,7 @@ try{ reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catc
 
 /* ---------- 保存 (この端末のみ) ---------- */
 const KEY='gekiatsu-comment-v1', BGKEY='gekiatsu-comment-bg-v1', BGSKEY='gekiatsu-comment-bgs-v2';
-const store={tate:true,gifV:false,gifHQ:false,fmt:'gif',dither:false,foci:[],segOpts:[],history:[],ui:{sz:100,x:0,y:0},focus:{x:.5,y:.3},bgm:{on:true,vol:60,start:0,sfx:'hit'}};
+const store={tate:true,gifV:false,gifHQ:false,fmt:'gif',dither:false,foci:[],segOpts:[],history:[],ui:{sz:100,x:0,y:0},focus:{x:.5,y:.3},bgm:{on:true,vol:60,start:0,sfx:'hit'},sub:true,spk:true};
 try{
   const o=JSON.parse(localStorage.getItem(KEY)||'null');
   if(o&&typeof o==='object'){
@@ -1203,6 +1208,7 @@ try{
     if(o.focus&&typeof o.focus==='object'){ const fx=Number(o.focus.x), fy=Number(o.focus.y); if(isFinite(fx)&&isFinite(fy)) store.focus={x:Math.max(0,Math.min(1,fx)),y:Math.max(0,Math.min(1,fy))}; }
     if(Array.isArray(o.foci)) store.foci=o.foci.slice(0,5).map(f=>{ const fx=Number(f&&f.x), fy=Number(f&&f.y); return {x:isFinite(fx)?Math.max(0,Math.min(1,fx)):.5,y:isFinite(fy)?Math.max(0,Math.min(1,fy)):.3}; }); else store.foci=[store.focus];
     if(o.ui&&typeof o.ui==='object'){ const cl=(v,a,b,d)=>{v=Number(v);return isFinite(v)?Math.max(a,Math.min(b,v)):d;}; store.ui={sz:cl(o.ui.sz,50,150,100),x:cl(o.ui.x,-30,30,0),y:cl(o.ui.y,-30,30,0)}; }
+    store.sub=o.sub!==false; store.spk=o.spk!==false;
     if(o.bgm&&typeof o.bgm==='object'){ const n=(v,a,b,d)=>{v=Number(v);return isFinite(v)?Math.max(a,Math.min(b,v)):d;}; store.bgm={on:o.bgm.on!==false,vol:n(o.bgm.vol,0,100,60),start:n(o.bgm.start,0,600,0),sfx:(o.bgm.sfx==='all'||o.bgm.sfx==='off')?o.bgm.sfx:'hit'}; }
     store.history=Array.isArray(o.history)?o.history.filter(x=>typeof x==='string').slice(0,20):[];
   }
@@ -1215,7 +1221,7 @@ const VOL=.5;
 function syncSound(){ soundBtn.setAttribute('aria-pressed',String(soundOn)); soundBtn.textContent=soundOn?'音 ON':'音 OFF'; }
 soundBtn.addEventListener('click',()=>{ soundOn=!soundOn; ensureAudio(); syncSound(); if(!soundOn){ bgmStop(bgm.h,.2); bgm.h=null; bgmStop(bgm.pv,.2); bgm.pv=null; syncPv(); } });
 syncSound();
-function syncTate(){ tateBtn.setAttribute('aria-pressed',String(store.tate)); stage.classList.toggle('tate',store.tate); }
+function syncTate(){ tateBtn.setAttribute('aria-pressed',String(store.tate)); stage.classList.toggle('tate',store.tate); stage.classList.toggle('sub',!!store.sub); }
 tateBtn.addEventListener('click',()=>{ store.tate=!store.tate; save(); syncTate(); });
 syncTate();
 const uiSz=$('uiSz'), uiX=$('uiX'), uiY=$('uiY');
@@ -1396,7 +1402,11 @@ function showSegment(s,i,o){
   cs.forEach((c,j)=>{
     const sp=document.createElement('span'); sp.className='ch'; sp.style.setProperty('--i',j); sp.textContent=c; rdLine.append(sp);
   });
-  if(store.tate){
+  if(store.sub&&phase==='read'){
+    const hq=stage.clientHeight/stage.clientWidth*100;
+    rdLine.style.fontSize=Math.min(mob()?4.8:3.6,hq*.64/(cs.length*1.16))*store.ui.sz/100+'cqw';
+    rdLine.style.maxHeight='';
+  }else if(store.tate){
     const mh=mob()?92:42;
     rdLine.style.fontSize=Math.min(mob()?12:8.5,mh/(cs.length*1.16))*store.ui.sz/100+'cqw';
     rdLine.style.maxHeight=mh+'cqw';
@@ -1409,6 +1419,7 @@ function showSegment(s,i,o){
 }
 let curSeg=null;
 function refit(){ if(curSeg&&reader.classList.contains('on')){ const cs=[...curSeg.s]; const f=rdLine.style; const sc=store.ui.sz/100;
+  if(store.sub&&phase==='read'){ const hq=stage.clientHeight/stage.clientWidth*100; f.fontSize=Math.min(mob()?4.8:3.6,hq*.64/(cs.length*1.16))*sc+'cqw'; } else
   f.fontSize=(store.tate?Math.min(mob()?12:8.5,(mob()?92:42)/(cs.length*1.16)):Math.min(mob()?11:9.5,90/(cs.length*1.14)))*sc+'cqw'; }
   if(phase==='hit') hitFit(); }
 function hideSegment(){ reader.classList.remove('on'); }
@@ -1681,6 +1692,32 @@ function drawCover(c,img,w,h,zoom,fx=.5,fy=.5,ay=.5){
   c.drawImage(img,sx,sy,sw,sh,0,0,w,h);
 }
 const rbHue=h=>'hsl('+(((h%360)+360)%360)+',95%,68%)';
+function star4(c,x,y,s,fill){
+  c.fillStyle=fill; c.beginPath(); c.moveTo(x,y-s);
+  c.quadraticCurveTo(x+s*.14,y-s*.14,x+s,y); c.quadraticCurveTo(x+s*.14,y+s*.14,x,y+s);
+  c.quadraticCurveTo(x-s*.14,y+s*.14,x-s,y); c.quadraticCurveTo(x-s*.14,y-s*.14,x,y-s); c.fill();
+  c.beginPath(); c.arc(x,y,s*.26,0,6.283); c.fill();
+}
+function sparkleBands(c,W,H,t,a){
+  if(a<.01||!store.spk) return;
+  const bh=H*.17, N=46, cols=96, cw=W/cols+1.5;
+  c.save(); c.globalCompositeOperation='lighter';
+  for(let side=0;side<2;side++){
+    const y0=side?H-bh:0;
+    for(let i=0;i<cols;i++){
+      const hue=(i*360/cols+t*45)%360;
+      const g=c.createLinearGradient(0,side?H:0,0,side?H-bh:bh);
+      g.addColorStop(0,`hsla(${hue},95%,60%,${.36*a})`); g.addColorStop(.5,`hsla(${hue},95%,60%,${.11*a})`); g.addColorStop(1,`hsla(${hue},95%,60%,0)`);
+      c.fillStyle=g; c.fillRect(i*W/cols,y0,cw,bh);
+    }
+    for(let i=0;i<N;i++){
+      const h1=Math.abs(Math.sin(i*127.1+side*311.7)*43758.5453)%1, h2=Math.abs(Math.sin(i*269.5+side*183.3)*43758.5453)%1, h3=Math.abs(Math.sin(i*419.2+side*77.1)*43758.5453)%1;
+      const yy=h2*bh*.92, tw=Math.pow(.5+.5*Math.sin(t*(2.2+h3*3.5)+i*5.3),2.2);
+      star4(c,h1*W,side?H-yy:yy,W*(.007+.017*h3)*(.45+tw),`hsla(${(h1*360+t*60)%360},100%,86%,${a*(.3+.7*tw)})`);
+    }
+  }
+  c.restore();
+}
 function rainbowFrame(c,W,H,t,a,th){
   if(a<.01) return;
   const w=Math.max(3,W*(.009+.01*th));
@@ -2059,6 +2096,7 @@ function frame(now){
   }
   rbFr+=(((phase==='read'||phase==='climax'||phase==='hit')?1:0)-rbFr)*Math.min(1,dt*1.5);
   rainbowFrame(g,W,H,t,rbFr*.9,phase==='hit'?1:0);
+  sparkleBands(g,W,H,t,rbFr);
   g2.clearRect(0,0,W,H);
   if(phase==='hit') draw777(g2,W,H,(now-hitStart)/1000,t);
   if(phase==='hit'){ const fa=Math.max(0,1-(now-hitStart)/650); if(fa>0){ g.fillStyle='rgba(255,250,235,'+fa*.9+')'; g.fillRect(0,0,W,H); } }
@@ -2089,13 +2127,25 @@ function goldGrad(c,y,fs){
   [[0,'#fff6c9'],[.3,'#f8d775'],[.6,'#eab84c'],[1,'#d99f34']].forEach(([o,col])=>g.addColorStop(o,col));
   return g;
 }
+function goldPass(c,put,fs,y){
+  const f0=c.fillStyle, sb=c.shadowBlur, sc=c.shadowColor;
+  c.shadowBlur=0; c.shadowColor='transparent';
+  c.fillStyle='rgba(255,70,190,.45)'; put('fillText',-fs*.035);
+  c.fillStyle='rgba(60,210,255,.45)'; put('fillText',fs*.035);
+  c.lineJoin='round'; c.lineWidth=fs*.075; c.strokeStyle='#4a2800'; put('strokeText',0);
+  c.shadowColor=sc; c.shadowBlur=sb;
+  c.fillStyle=goldGrad(c,y,fs); put('fillText',0);
+  c.fillStyle=f0;
+}
 function gVChar(c,ch,x,y,fs,a,dxo){
   if(a<=.004||ch===' ') return;
-  if(c.__gold) c.fillStyle=goldGrad(c,y,fs);
   c.textAlign='center'; c.globalAlpha=a;
-  if(GVDOT.includes(ch)) c.fillText(ch,x+fs*.52+dxo,y-fs*.58);
-  else if(GVROT.includes(ch)){ c.save(); c.translate(x+dxo,y); c.rotate(Math.PI/2); c.fillText(ch,0,0); c.restore(); }
-  else c.fillText(ch,x+dxo,y);
+  const put=(m,dx)=>{
+    if(GVDOT.includes(ch)) c[m](ch,x+fs*.52+dxo+dx,y-fs*.58);
+    else if(GVROT.includes(ch)){ c.save(); c.translate(x+dxo+dx,y); c.rotate(Math.PI/2); c[m](ch,0,0); c.restore(); }
+    else c[m](ch,x+dxo+dx,y);
+  };
+  if(c.__gold) goldPass(c,put,fs,y); else put('fillText',0);
   c.globalAlpha=1; c.textAlign='left';
 }
 
@@ -2158,7 +2208,7 @@ function gDrawChars(c,txt,x,y,sp,fn){
   let i=0;
   for(const ch of txt){
     const w=c.measureText(ch).width, o=fn(i);
-    if(o.a>.004){ c.globalAlpha=o.a; if(c.__gold) c.fillStyle=goldGrad(c,y+o.dy,c.__gfs); c.fillText(ch,x,y+o.dy); }
+    if(o.a>.004){ c.globalAlpha=o.a; if(c.__gold){ const xx=x, yy=y+o.dy; goldPass(c,(m,dx)=>c[m](ch,xx+dx,yy),c.__gfs,yy); } else c.fillText(ch,x,y+o.dy); }
     x+=w+sp; i++;
   }
   c.globalAlpha=1;
@@ -2352,7 +2402,11 @@ function gDraw(c,t,T,P){
     const cs=[...sg.s], n=cs.length;
     c.textBaseline='middle';
     gGlow(c,'rgba(255,196,70,.55)'); c.fillStyle='#f7dc8e'; c.__gold=true;
-    if(P.tate){
+    if(store.sub&&i>=1){
+      const fs=Math.min(W*(GH>GW?.056:.04),H*.64/(n*1.12))*store.ui.sz/100, cell=fs*1.12, sx=W*(GH>GW?.885:.915), y0=H*.2;
+      c.font=`600 ${fs}px ${GFONT}`;
+      cs.forEach((ch,j)=>{ const k=gsm((t-sg.start-j*sg.rate)/1.1); gVChar(c,ch,sx,y0+j*cell,fs,k*fo,0); });
+    }else if(P.tate){
       const fs=Math.min(.085*W,H*.85/(n*1.16))*store.ui.sz/100, cell=fs*1.12, colGap=fs*1.7;
       const cap=Math.max(1,Math.floor(H*.83/cell)), cols=Math.ceil(n/cap), per=Math.ceil(n/cols);
       c.font=`600 ${fs}px ${GFONT}`;
@@ -2391,6 +2445,7 @@ function gDraw(c,t,T,P){
   }
   c.restore();
   rainbowFrame(c,GW,GH,t,.9*gsm((t-T.imgAt)/1.5),gsm((t-T.hitAt)/1.5));
+  sparkleBands(c,GW,GH,t,gsm((t-T.imgAt)/1.5));
   for(const s0 of [T.hitAt,...(T.flashes||[])]){ const fa=1-(t-s0)/.65; if(t>=s0&&fa>0){ c.fillStyle='rgba(255,250,235,'+fa*.9+')'; c.fillRect(0,0,GW,GH); } }
   if(t<T.om) drawOmen(c,GW,GH,t);
   drawOff(c,GW,GH,t-T.om);
@@ -2613,6 +2668,23 @@ gifBtn.addEventListener('click',()=>{
   const sync=()=>{ rows.forEach(f=>f()); nameEl.textContent=bgm.name+(bgm.custom?'':'（標準）'); rst.disabled=!bgm.custom; rst.style.opacity=bgm.custom?1:.45; };
   sync();
   bgmEnsure().catch(()=>{});
+})();
+(()=>{
+  const box=$('txtMode'); if(!box) return;
+  const rows=[];
+  const seg=(title,opts,get,set,note)=>{
+    const r=document.createElement('div'); r.className='opt';
+    const h=document.createElement('div'); h.className='opt-t'; h.textContent=title; r.appendChild(h);
+    const g=document.createElement('div'); g.className='opt-b'; g.setAttribute('role','radiogroup'); g.setAttribute('aria-label',title);
+    const bs=opts.map(([val,lab])=>{ const b=document.createElement('button'); b.type='button'; b.className='opt-o'; b.setAttribute('role','radio'); b.textContent=lab; b.addEventListener('click',()=>{ set(val); save(); sync(); }); g.appendChild(b); return [val,b]; });
+    r.appendChild(g);
+    if(note){ const n=document.createElement('div'); n.className='opt-n'; n.textContent=note; r.appendChild(n); }
+    box.appendChild(r); rows.push(()=>{ const cur=get(); bs.forEach(([val,b])=>{ b.setAttribute('aria-checked',String(val===cur)); b.classList.toggle('on',val===cur); }); });
+  };
+  const sync=()=>{ rows.forEach(f=>f()); stage.classList.toggle('sub',!!store.sub); };
+  seg('映像が出る節の言葉',[['sub','右端に小さな縦字幕'],['big','中央に大きく']],()=>store.sub?'sub':'big',v=>{ store.sub=v==='sub'; },'2節目から映像が出ます。「縦字幕」だと、実機のように映像をじゃましません。');
+  seg('上下のキラキラ帯',[['y','あり'],['n','なし']],()=>store.spk?'y':'n',v=>{ store.spk=v==='y'; },'映像が出てから大当たりまで、画面の上下に虹色の星がきらめきます。光が苦手な方は「なし」にしてください。');
+  sync();
 })();
 new ResizeObserver(applyUi).observe(stage);
 applyUi();
