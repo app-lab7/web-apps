@@ -251,14 +251,6 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       <button type="button" class="gifbtn" id="gifBtn" hidden>GIFにする</button>
       <input type="text" id="author" maxlength="24" placeholder="言った人（省略可）　例：夏目漱石" aria-label="言った人（省略可）">
     </form>
-    <div class="chips" id="chips">
-      <span class="chips-k">例</span>
-      <button type="button" class="chip" data-t="我思う、故に我あり。" data-a="デカルト">我思う、故に我あり。 ―デカルト</button>
-      <button type="button" class="chip" data-t="人間は、考える葦である。" data-a="パスカル">人間は、考える葦である。 ―パスカル</button>
-      <button type="button" class="chip" data-t="少年よ、大志を抱け。" data-a="クラーク">少年よ、大志を抱け。 ―クラーク</button>
-      <button type="button" class="chip" data-t="天は人の上に人を造らず、人の下に人を造らず。" data-a="福沢諭吉">天は人の上に人を造らず、人の下に人を造らず。 ―福沢諭吉</button>
-      <button type="button" class="chip" data-t="雨ニモマケズ、風ニモマケズ。" data-a="宮沢賢治">雨ニモマケズ、風ニモマケズ。 ―宮沢賢治</button>
-    </div>
     <details class="arr" id="arr">
       <summary>一節ごとの演出を調整する</summary>
       <div class="arr-body">
@@ -303,6 +295,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 </div>
 
 <script>
+
 
 
 
@@ -1139,6 +1132,7 @@ return exports;})();
 
 
 
+
 </script>
 
 <script>
@@ -1544,10 +1538,6 @@ input.addEventListener('keydown',e=>{
   e.preventDefault(); submit(input.value);
 });
 form.addEventListener('submit',e=>{ e.preventDefault(); submit(input.value); });
-$('chips').addEventListener('click',e=>{
-  const c=e.target.closest('.chip'); if(c){ input.value=c.dataset.t; author.value=c.dataset.a||''; syncBtn(); buildArr(); try{ input.focus(); }catch(e){} }
-});
-
 /* ---------- 一節ごとの演出 ---------- */
 const arrList=$('arrList'), arrBox=$('arr');
 function composeNow(){ const t=norm(input.value); if(!t) return ''; const a=norm(author.value).replace(/\n/g,' '); return a?t+'\n―'+a:t; }
