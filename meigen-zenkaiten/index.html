@@ -1243,8 +1243,14 @@ function ensureAudio(){
     master=ctx.createGain(); master.gain.value=VOL;
     master.connect(comp); comp.connect(ctx.destination);
     bus=ctx.createGain(); bus.connect(master);
+    ctx.onstatechange=()=>{ if(ctx&&ctx.state!=='running'&&ctx.state!=='closed'&&!document.hidden) try{ ctx.resume(); }catch(e){} };
   }catch(e){ ctx=null; }
 }
+function wakeAudio(){ try{ if(ctx&&ctx.state!=='running'&&ctx.state!=='closed') ctx.resume(); }catch(e){} }
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) wakeAudio(); });
+window.addEventListener('pageshow',wakeAudio); window.addEventListener('focus',wakeAudio);
+['pointerdown','touchstart','keydown'].forEach(ev=>document.addEventListener(ev,wakeAudio,{passive:true,capture:true}));
+setInterval(()=>{ if(ctx&&soundOn&&!document.hidden) wakeAudio(); },1500);
 function tone(freq,dur,o={}){
   if(!ctx||!soundOn) return;
   if(store.bgm.on&&bgm.buf){ const m=store.bgm.sfx; if(m==='off') return; if(m==='hit'&&o.mus) return; }
