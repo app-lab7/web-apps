@@ -146,6 +146,13 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 .go:active:not(:disabled){transform:translateY(1px)}
 .go:disabled{opacity:.35;cursor:not-allowed}
 .omk{flex:0 0 auto;align-self:stretch;min-height:48px;font:700 14px/1 var(--font-b);padding:0 16px;color:var(--gold-b);background:var(--panel);border:1px solid var(--gold);border-radius:4px;cursor:pointer}
+.opt{display:grid;gap:6px}
+.opt-t{font:700 13px/1.3 var(--font-b);color:var(--ink)}
+.opt-b{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.opt-o{font:700 13px/1.4 var(--font-b);padding:10px 8px;color:var(--dim);background:var(--panel);border:1px solid var(--line);border-radius:4px;cursor:pointer}
+.opt-o.on{color:#1b1507;background:linear-gradient(#f1dba0,#cfa955);border-color:var(--gold)}
+.opt-n{font-size:11.5px;color:var(--dim);line-height:1.6}
+.opt[hidden]{display:none}
 .hint{font-size:12px;color:var(--dim);margin-top:-4px}
 .skip,.gifbtn{flex:0 0 auto;align-self:stretch;font:700 13px/1 var(--font-b);padding:0 14px;color:var(--ink);background:transparent;border:1px solid var(--dim);border-radius:4px;cursor:pointer}
 .gifbtn{color:var(--gold-b);border-color:var(--gold)}
@@ -288,13 +295,8 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       </div>
     </details>
     <details class="arr" id="setSave">
-      <summary>保存の設定（向き・画質・形式）</summary>
-      <div class="arr-body"><div class="uirow">
-      <button type="button" class="tbtn" id="gifOri" hidden aria-pressed="false">GIFの向き：横長</button>
-      <button type="button" class="tbtn" id="gifQ" hidden aria-pressed="false">画質：標準</button>
-      <button type="button" class="tbtn" id="gifFmt" hidden aria-pressed="false">出力形式：GIF</button>
-      <button type="button" class="tbtn" id="gifDith" hidden aria-pressed="false">ディザ：なし</button>
-      </div></div>
+      <summary>保存の設定（形式・向き・きれいさ）</summary>
+      <div class="arr-body" id="saveSet"></div>
     </details>
     <div class="qnote" id="qnote"></div>
     <div class="gifbox" id="gifBox" hidden>
@@ -2429,23 +2431,28 @@ gifBtn.addEventListener('click',()=>{
 (async()=>{
   try{ if(window.claude&&claude.use) downloads=await claude.use('downloads'); }catch(e){ downloads=null; }
   if(GIFEncoder){
-    gifBtn.hidden=false; const go=$('gifOri'); go.hidden=false;
-    const sync=()=>{ go.textContent='向き：'+(store.gifV?'縦長（スマホ向き）':'横長'); go.setAttribute('aria-pressed',String(store.gifV)); };
-    sync(); go.addEventListener('click',()=>{ store.gifV=!store.gifV; save(); sync(); });
-    const gq=$('gifQ'); gq.hidden=false;
-    const syncQ=()=>{ gq.textContent='画質：'+(store.gifHQ?'高画質（時間がかかる）':'ふつう'); gq.setAttribute('aria-pressed',String(store.gifHQ)); };
-    syncQ(); gq.addEventListener('click',()=>{ store.gifHQ=!store.gifHQ; save(); syncQ(); });
-    const gf=$('gifFmt'), gd=$('gifDith');
-    const syncF=()=>{
-      const v=store.fmt==='video'&&!!VID.mime;
-      gf.textContent='保存形式：'+(v?'動画（軽くてきれい・おすすめ）':'GIF（どこでも再生）'); gf.setAttribute('aria-pressed',String(v));
-      gd.hidden=v; gd.textContent='色のなめらかさ：'+(store.dither?'なめらか（重い）':'ふつう'); gd.setAttribute('aria-pressed',String(store.dither));
+    gifBtn.hidden=false;
+    const box=$('saveSet'), rows={};
+    const seg=(key,title,opts,get,set,note)=>{
+      const r=document.createElement('div'); r.className='opt';
+      const h=document.createElement('div'); h.className='opt-t'; h.textContent=title; r.appendChild(h);
+      const g=document.createElement('div'); g.className='opt-b'; g.setAttribute('role','radiogroup'); g.setAttribute('aria-label',title);
+      const bs=opts.map(([val,lab])=>{ const b=document.createElement('button'); b.type='button'; b.className='opt-o'; b.setAttribute('role','radio'); b.textContent=lab; b.addEventListener('click',()=>{ set(val); save(); sync(); }); g.appendChild(b); return [val,b]; });
+      r.appendChild(g);
+      if(note){ const n=document.createElement('div'); n.className='opt-n'; n.textContent=note; r.appendChild(n); }
+      box.appendChild(r); rows[key]=r; r._sync=()=>{ const cur=get(); bs.forEach(([val,b])=>{ b.setAttribute('aria-checked',String(val===cur)); b.classList.toggle('on',val===cur); }); };
+    };
+    const vOK=!!VID.mime;
+    if(vOK) seg('fmt','保存の形式',[['video','動画（おすすめ）'],['gif','GIF']],()=>store.fmt==='video'?'video':'gif',v=>{store.fmt=v;},'動画：ファイルが軽くて色もきれい。GIF：どのアプリでも動く定番の形式。');
+    seg('ori','画面の向き',[['h','横長'],['v','縦長（スマホ）']],()=>store.gifV?'v':'h',v=>{store.gifV=v==='v';});
+    seg('q','きれいさ',[['n','ふつう'],['hq','高画質（遅め）']],()=>store.gifHQ?'hq':'n',v=>{store.gifHQ=v==='hq';});
+    seg('dith','色のなめらかさ（GIFのみ）',[['n','ふつう'],['y','なめらか（遅め）']],()=>store.dither?'y':'n',v=>{store.dither=v==='y';});
+    const sync=()=>{
+      const v=store.fmt==='video'&&vOK;
+      Object.values(rows).forEach(r=>r._sync()); rows.dith.hidden=v;
       gifBtn.textContent=v?'動画にする':'GIFにする';
     };
-    gf.hidden=!VID.mime; gd.hidden=false;
-    syncF();
-    gf.addEventListener('click',()=>{ store.fmt=store.fmt==='video'?'gif':'video'; save(); syncF(); });
-    gd.addEventListener('click',()=>{ store.dither=!store.dither; save(); syncF(); });
+    sync();
     renderHistory();
   }
 })();
