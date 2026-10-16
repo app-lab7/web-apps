@@ -145,6 +145,8 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 .go{flex:0 0 auto;align-self:stretch;min-height:48px;font:700 17px/1 var(--font-s);letter-spacing:.3em;padding:0 26px 0 calc(26px + .3em);color:#1b1507;background:linear-gradient(#f1dba0,#cfa955);border:0;border-radius:4px;cursor:pointer}
 .go:active:not(:disabled){transform:translateY(1px)}
 .go:disabled{opacity:.35;cursor:not-allowed}
+.omk{flex:0 0 auto;align-self:stretch;min-height:48px;font:700 14px/1 var(--font-b);padding:0 16px;color:var(--gold-b);background:var(--panel);border:1px solid var(--gold);border-radius:4px;cursor:pointer}
+.hint{font-size:12px;color:var(--dim);margin-top:-4px}
 .skip,.gifbtn{flex:0 0 auto;align-self:stretch;font:700 13px/1 var(--font-b);padding:0 14px;color:var(--ink);background:transparent;border:1px solid var(--dim);border-radius:4px;cursor:pointer}
 .gifbtn{color:var(--gold-b);border-color:var(--gold)}
 .gifbtn:disabled{opacity:.4;cursor:not-allowed}
@@ -251,12 +253,14 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
   <section class="console">
     <form class="row" id="form" autocomplete="off">
       <label for="comment" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)">名言</label>
-      <textarea id="comment" rows="2" maxlength="120" placeholder="名言・好きな言葉を入力（120文字まで。「。」「、」で区切って一節ずつ表示します）"></textarea>
+      <textarea id="comment" rows="2" maxlength="120" placeholder="好きな言葉を入力　例：継続は力なり。"></textarea>
       <button type="submit" class="go" id="go" disabled>回す</button>
+      <button type="button" class="omk" id="omk">おまかせ</button>
       <button type="button" class="skip" id="skip" hidden>演出スキップ</button>
       <button type="button" class="gifbtn" id="gifBtn" hidden>GIFにする</button>
       <input type="text" id="author" maxlength="24" placeholder="言った人（省略可）　例：夏目漱石" aria-label="言った人（省略可）">
     </form>
+    <div class="hint">「。」「、」で区切ると、一節ずつ大当たりします（120文字まで）</div>
     <details class="arr" id="arr">
       <summary>一節ごとの演出を調整する</summary>
       <div class="arr-body">
@@ -265,6 +269,9 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
         <button type="button" class="tbtn" id="arrReset">すべておまかせに戻す</button>
       </div>
     </details>
+    <details class="arr" id="setImg">
+      <summary>背景の写真・文字の大きさと位置</summary>
+      <div class="arr-body">
     <div class="bgrow">
       <button type="button" class="tbtn" id="bgPick">背景画像を選ぶ</button>
       <button type="button" class="tbtn" id="bgClear" hidden>画像をすべて外す</button>
@@ -277,11 +284,18 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
       <label>上下の位置 <b id="yV">0</b><input type="range" id="uiY" min="-30" max="30" step="1" value="0"></label>
       <label>左右の位置 <b id="xV">0</b><input type="range" id="uiX" min="-30" max="30" step="1" value="0"></label>
       <button type="button" class="tbtn" id="uiReset">位置と大きさを戻す</button>
+    </div>
+      </div>
+    </details>
+    <details class="arr" id="setSave">
+      <summary>保存の設定（向き・画質・形式）</summary>
+      <div class="arr-body"><div class="uirow">
       <button type="button" class="tbtn" id="gifOri" hidden aria-pressed="false">GIFの向き：横長</button>
       <button type="button" class="tbtn" id="gifQ" hidden aria-pressed="false">画質：標準</button>
       <button type="button" class="tbtn" id="gifFmt" hidden aria-pressed="false">出力形式：GIF</button>
       <button type="button" class="tbtn" id="gifDith" hidden aria-pressed="false">ディザ：なし</button>
-    </div>
+      </div></div>
+    </details>
     <div class="qnote" id="qnote"></div>
     <div class="gifbox" id="gifBox" hidden>
       <div class="gifnote" id="gifNote"></div>
@@ -306,22 +320,6 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 </div>
 
 <script>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 window.__gifenc=(function(){var exports={};var module={exports:exports};
 var __defProp = Object.defineProperty;
 var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
@@ -1150,22 +1148,6 @@ var src_default = GIFEncoder;
 
 
 return exports;})();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 </script>
 
 <script>
@@ -1584,6 +1566,9 @@ input.addEventListener('keydown',e=>{
   e.preventDefault(); submit(input.value);
 });
 form.addEventListener('submit',e=>{ e.preventDefault(); submit(input.value); });
+const SAMPLES=['七転び八起き。','継続は力なり。','笑う門には福来る。','為せば成る。為さねば成らぬ何事も。','明日やろうは馬鹿野郎。','案ずるより産むがやすし。','塵も積もれば山となる。','雨降って地固まる。','猿も木から落ちる。','急がば回れ。','石の上にも三年。','好きこそ物の上手なれ。','今日が人生で一番若い日。','当たるまで回せば当たる。'];
+let lastSm=-1;
+$('omk').addEventListener('click',()=>{ let i; do{ i=Math.floor(Math.random()*SAMPLES.length); }while(i===lastSm); lastSm=i; author.value=''; input.value=SAMPLES[i]; syncBtn(); buildArr(); store.segOpts=[]; submit(input.value); });
 /* ---------- 一節ごとの演出 ---------- */
 const arrList=$('arrList'), arrBox=$('arr');
 function composeNow(){ const t=norm(input.value); if(!t) return ''; const a=norm(author.value).replace(/\n/g,' '); return a?t+'\n―'+a:t; }
@@ -2445,16 +2430,16 @@ gifBtn.addEventListener('click',()=>{
   try{ if(window.claude&&claude.use) downloads=await claude.use('downloads'); }catch(e){ downloads=null; }
   if(GIFEncoder){
     gifBtn.hidden=false; const go=$('gifOri'); go.hidden=false;
-    const sync=()=>{ go.textContent='GIFの向き：'+(store.gifV?'縦長':'横長'); go.setAttribute('aria-pressed',String(store.gifV)); };
+    const sync=()=>{ go.textContent='向き：'+(store.gifV?'縦長（スマホ向き）':'横長'); go.setAttribute('aria-pressed',String(store.gifV)); };
     sync(); go.addEventListener('click',()=>{ store.gifV=!store.gifV; save(); sync(); });
     const gq=$('gifQ'); gq.hidden=false;
-    const syncQ=()=>{ gq.textContent='画質：'+(store.gifHQ?'高画質（重い）':'標準'); gq.setAttribute('aria-pressed',String(store.gifHQ)); };
+    const syncQ=()=>{ gq.textContent='画質：'+(store.gifHQ?'高画質（時間がかかる）':'ふつう'); gq.setAttribute('aria-pressed',String(store.gifHQ)); };
     syncQ(); gq.addEventListener('click',()=>{ store.gifHQ=!store.gifHQ; save(); syncQ(); });
     const gf=$('gifFmt'), gd=$('gifDith');
     const syncF=()=>{
       const v=store.fmt==='video'&&!!VID.mime;
-      gf.textContent='出力形式：'+(v?'動画（'+VID.ext.toUpperCase()+'）':'GIF'); gf.setAttribute('aria-pressed',String(v));
-      gd.hidden=v; gd.textContent='ディザ：'+(store.dither?'あり（重い）':'なし'); gd.setAttribute('aria-pressed',String(store.dither));
+      gf.textContent='保存形式：'+(v?'動画（軽くてきれい・おすすめ）':'GIF（どこでも再生）'); gf.setAttribute('aria-pressed',String(v));
+      gd.hidden=v; gd.textContent='色のなめらかさ：'+(store.dither?'なめらか（重い）':'ふつう'); gd.setAttribute('aria-pressed',String(store.dither));
       gifBtn.textContent=v?'動画にする':'GIFにする';
     };
     gf.hidden=!VID.mime; gd.hidden=false;
