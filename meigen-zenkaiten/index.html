@@ -1628,14 +1628,14 @@ function syncBtn(){ goBtn.disabled=!input.value.trim(); }
 let lastRun=null;
 function submit(raw,fromList,who){
   let t=norm(raw); if(!t) return;
-  if(who===undefined){ who=norm(author.value).replace(/\n/g,' '); if(!fromList) author.value=''; }
+  if(who===undefined){ who=norm(author.value).replace(/\n/g,' '); }
   if(who) t=t+'\n―'+who;
   ensureAudio();
   const so=fromList?null:store.segOpts.map(x=>Object.assign({},x));
   addHistory(t); enqueue(t,so);
-  if(!fromList){ lastRun={t,opts:so}; store.segOpts=[]; save(); }
+  if(!fromList){ lastRun={t,opts:so}; save(); }
   if(!fromList){
-    input.value=''; syncBtn(); buildArr();
+    syncBtn();
     let touch=false; try{ touch=window.matchMedia('(pointer: coarse)').matches; }catch(e){}
     if(touch) input.blur(); else input.focus();
   }
