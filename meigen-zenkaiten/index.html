@@ -312,6 +312,7 @@ textarea::placeholder,#author::placeholder{color:#6d7494}
 
 
 
+
 window.__gifenc=(function(){var exports={};var module={exports:exports};
 var __defProp = Object.defineProperty;
 var __markAsModule = (target) => __defProp(target, "__esModule", {value: true});
@@ -1153,6 +1154,7 @@ return exports;})();
 
 
 
+
 </script>
 
 <script>
@@ -1520,18 +1522,25 @@ function renderHistory(){
     if(GIFEncoder){
       const gb=document.createElement('button'); gb.type='button'; gb.className='h-gif'; gb.dataset.i=String(i); gb.textContent='GIF'; bx.append(gb);
     }
-    const b=document.createElement('button'); b.type='button'; b.className='h-again'; b.dataset.i=String(i); b.textContent='もう一度'; bx.append(b);
+    const b=document.createElement('button'); b.type='button'; b.className='h-again'; b.dataset.i=String(i); b.textContent='入力欄へ'; bx.append(b);
     li.append(s,bx); histEl.append(li);
   });
 }
 function addHistory(t){
   store.history=[t,...store.history.filter(x=>x!==t)].slice(0,20); save(); renderHistory();
 }
+function fillInput(t){
+  const m=String(t).match(/^([\s\S]*)\n―([^\n]*)$/);
+  input.value=m?m[1]:t; author.value=m?m[2]:'';
+  syncBtn(); buildArr(); store.segOpts=[]; save();
+  try{ input.focus(); input.setSelectionRange(input.value.length,input.value.length); }catch(e){}
+  try{ input.scrollIntoView({block:'center',behavior:'smooth'}); }catch(e){}
+}
 histEl.addEventListener('click',e=>{
   const gb=e.target.closest('.h-gif');
   if(gb){ const gt=store.history[+gb.dataset.i]; if(gt) makeGif(gt,null); return; }
   const b=e.target.closest('.h-again'); if(!b) return;
-  const t=store.history[+b.dataset.i]; if(t) submit(t,true,'');
+  const t=store.history[+b.dataset.i]; if(t) fillInput(t);
 });
 
 /* ---------- 入力 ---------- */
