@@ -2035,7 +2035,7 @@ function frame(now){
   /* 背景でうっすら回る全回転リール */
   { const rp=reelPos(now); bgPos[0]=rp; bgPos[1]=rp; bgPos[2]=rp; }
   const blT=phase==='climax'?.55:(phase==='read'&&fullOn)?.2:0;
-  cornA+=(((phase==='read'&&!fullOn)?.92:0)-cornA)*Math.min(1,dt*(fullOn?3:1.5));
+  cornA+=(((phase==='read')?.92:0)-cornA)*Math.min(1,dt*1.5);
   bgAl+=(blT-bgAl)*Math.min(1,dt*1.2); if(phase==='hit') bgAl=0;
   hotA+=((phase==='hit'?1:0)-hotA)*Math.min(1,dt*1.6);
   drawBgReels(g,W,H,bgPos,[null,null,null],bgAl,hotA);
@@ -2349,7 +2349,7 @@ function gDraw(c,t,T,P){
 
   { const hot=gsm((t-T.hitAt)/1.2), bs=gBgState(t,T), ls=Math.max(T.imgAt,T.segs[T.segs.length-1].start), off=(t>=T.hitAt?0:1);
     drawBgReels(c,GW,GH,bs.pos,bs.tgs,(.2*gsm((t-ls)/1.2)+.35*gsm((t-T.climAt)/1.2))*off,0);
-    drawCornerReel(c,GW,GH,bs.pos[0],.92*gsm((t-T.imgAt)/1.5)*(1-gsm((t-ls)/.5))*off); }
+    drawCornerReel(c,GW,GH,bs.pos[0],.92*gsm((t-T.imgAt)/1.5)*(1-gsm((t-T.climAt+.3)/.9))*off); }
   c.globalCompositeOperation='lighter';
   const cnt=Math.floor(MOTES*th.d);
   for(let i=0;i<cnt;i++){
