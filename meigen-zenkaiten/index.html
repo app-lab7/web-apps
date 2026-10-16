@@ -1801,7 +1801,7 @@ const HOLD={normal:1,short:.5,long:1.8};
 const optAt=(opts,i)=>{ const o=(opts&&opts[i])||{}; return {cam:(o.cam in CAMP||o.cam==='auto')?o.cam:'auto',fx:FXL.some(x=>x[0]===o.fx)?o.fx:'ring',rt:o.rt in RATE?o.rt:'normal',hd:o.hd in HOLD?o.hd:'normal',im:(Number.isInteger(Number(o.im))&&Number(o.im)>=0&&Number(o.im)<=5)?Number(o.im):0}; };
 const MAXI=5;
 const focusOf=i=>(store.foci&&store.foci[i])||{x:.5,y:.3};
-function resolveImgs(n,opts){ const out=[]; let cur=0; for(let i=0;i<n;i++){ const o=optAt(opts,i); if(o.im>0&&o.im<=imgs.length) cur=o.im-1; out.push(Math.min(cur,Math.max(0,imgs.length-1))); } return out; }
+function resolveImgs(n,opts){ const out=[]; let cur=0; const manual=Array.from({length:n},(_,i)=>optAt(opts,i)).some(o=>o.im>0); if(!manual&&imgs.length>1){ for(let i=0;i<n;i++) out.push(Math.max(0,i-1)%imgs.length); return out; } for(let i=0;i<n;i++){ const o=optAt(opts,i); if(o.im>0&&o.im<=imgs.length) cur=o.im-1; out.push(Math.min(cur,Math.max(0,imgs.length-1))); } return out; }
 const camTarget=(i,id,fi)=>{ const f=focusOf(fi||0), q=CAMP[id]; if(q) return [q[0],cl01(f.x+q[1]),cl01(f.y+q[2]),.5]; const o=CAMO[((i%4)+4)%4]; return [o[0],cl01(f.x+o[1]),cl01(f.y+o[2]),.5]; };
 const hitCam=fi=>{ const f=focusOf(fi||0); return [1.15,f.x,f.y,.17]; };
 function drawOmen(c,W,H,u){
@@ -1882,7 +1882,7 @@ bgFile.addEventListener('change',async()=>{
     }catch(e){ failed=true; }
   }
   save(); saveImgs(); renderThumbs();
-  bgNote.textContent=failed?'読み込めない画像がありました。別の画像でお試しください。':added?(imgs.length>=2?'画像を追加しました。「一節ごとの演出」で、節ごとに使う画像を選べます。':'背景に設定しました。画像の顔や見せたい場所をタップで指定できます（大当たりで数字と重ならないようにします）。'):bgNote.textContent;
+  bgNote.textContent=failed?'読み込めない画像がありました。別の画像でお試しください。':added?(imgs.length>=2?'画像を追加しました。節ごとに順番に使います（「一節ごとの演出」で変更も可能）。':'背景に設定しました。画像の顔や見せたい場所をタップで指定できます（大当たりで数字と重ならないようにします）。'):bgNote.textContent;
 });
 (async()=>{
   try{
