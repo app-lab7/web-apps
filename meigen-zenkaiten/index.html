@@ -1495,8 +1495,8 @@ let hitInfo=null;
 function hitFit(){
   if(!hitInfo||!hitInfo.tf) return;
   let f=hitInfo.tf.f*(store.ui.sz/100); hitComment.style.maxHeight='';
-  const lim=stage.clientHeight*.40, limW=stage.clientWidth*.94;
-  for(let k=0;k<30;k++){ hitComment.style.fontSize=f+'cqw'; const r=hitComment.getBoundingClientRect(); if((r.height<=lim&&r.width<=limW)||f<1) break; f*=.92; }
+  const lim=stage.clientHeight*.38, limW=stage.clientWidth*.92;
+  for(let k=0;k<30;k++){ hitComment.style.fontSize=f+'cqw'; const hh=hitComment.offsetHeight, ww=Math.max(hitComment.offsetWidth,hitComment.scrollWidth); if((hh<=lim&&ww<=limW)||f<1) break; f*=.92; }
 }
 function shakeNow(){ const sh=$('shaker'); sh.classList.remove('slam'); void sh.offsetWidth; sh.classList.add('slam'); setTimeout(()=>sh.classList.remove('slam'),700); }
 function flashNow(){ const f=$('flash'); f.classList.remove('on'); void f.offsetWidth; f.classList.add('on'); }
@@ -1561,7 +1561,7 @@ async function play(text,opts){
     const sp=document.createElement('span'); sp.className='sg'; sp.style.setProperty('--i',i); sp.textContent=s; hitComment.append(sp);
   });
   hitInfo={hs,mx:Math.max(...shown.map(x=>[...x].length)),tot:total,tf};
-  hitFit();
+  hitFit(); try{ document.fonts.ready.then(()=>{ if(phase==='hit') hitFit(); }); }catch(e){} setTimeout(()=>{ if(phase==='hit') hitFit(); },400); setTimeout(()=>{ if(phase==='hit') hitFit(); },1500);
   setPhase('hit'); addRing(); addRing(.6); hitStart=performance.now(); sfx.slam(); sfx.hit();
   shakeNow();
   const hold=Math.max(11000,(4+segs.length*.9)*1000+4500);
