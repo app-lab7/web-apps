@@ -46,6 +46,8 @@ h1{margin:0;font:700 clamp(18px,4.6vw,24px)/1.3 var(--font-s);letter-spacing:.12
 /* ステージ */
 .stage{position:relative;aspect-ratio:16/10;container-type:inline-size;overflow:hidden;border-radius:6px;border:1px solid #3a3f66;background:#070a14;isolation:isolate;box-shadow:0 0 0 4px #0b0f1e,0 0 0 5px rgba(217,184,106,.25)}
 @media (max-width:640px){.stage{aspect-ratio:3/4}}
+@media (min-width:641px) and (orientation:portrait){.stage{aspect-ratio:3/4;width:min(100%,calc((100vh - 220px)*.75),620px);margin-inline:auto}}
+.stage.pt{aspect-ratio:3/4;width:min(100%,calc((100vh - 220px)*.75),620px);min-width:min(100%,300px);margin-inline:auto}
 .shaker{position:absolute;inset:0;--rw:clamp(44px,9cqw,92px)}
 #fx{position:absolute;inset:0;width:100%;height:100%;display:block}
 .vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 50%,rgba(0,0,0,.5));pointer-events:none}
@@ -1199,11 +1201,11 @@ try{ reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches; }catc
 
 /* ---------- 保存 (この端末のみ) ---------- */
 const KEY='gekiatsu-comment-v1', BGKEY='gekiatsu-comment-bg-v1', BGSKEY='gekiatsu-comment-bgs-v2';
-const store={tate:true,gifV:false,gifHQ:false,fmt:'gif',dither:false,foci:[],segOpts:[],history:[],ui:{sz:100,x:0,y:0},focus:{x:.5,y:.3},bgm:{on:true,vol:60,start:0,sfx:'hit'},sub:true,spk:true};
+const store={tate:true,gifV:(()=>{ try{ return window.matchMedia('(pointer: coarse)').matches; }catch(e){ return false; } })(),gifHQ:false,fmt:'gif',dither:false,foci:[],segOpts:[],history:[],ui:{sz:100,x:0,y:0},focus:{x:.5,y:.3},bgm:{on:true,vol:60,start:0,sfx:'hit'},sub:true,spk:true};
 try{
   const o=JSON.parse(localStorage.getItem(KEY)||'null');
   if(o&&typeof o==='object'){
-    store.tate=o.tate===undefined?true:!!o.tate; store.gifV=!!o.gifV; store.gifHQ=!!o.gifHQ; store.fmt=o.fmt==='video'?'video':'gif'; store.dither=!!o.dither;
+    store.tate=o.tate===undefined?true:!!o.tate; store.gifV=o.gifV===undefined?(()=>{ try{ return window.matchMedia('(pointer: coarse)').matches; }catch(e){ return false; } })():!!o.gifV; store.gifHQ=!!o.gifHQ; store.fmt=o.fmt==='video'?'video':'gif'; store.dither=!!o.dither;
     if(Array.isArray(o.segOpts)) store.segOpts=o.segOpts.slice(0,40).map(x=>x&&typeof x==='object'?{cam:String(x.cam||'auto'),fx:String(x.fx||'ring'),rt:String(x.rt||'normal'),hd:String(x.hd||'normal'),im:Number(x.im)||0}:{});
     if(o.focus&&typeof o.focus==='object'){ const fx=Number(o.focus.x), fy=Number(o.focus.y); if(isFinite(fx)&&isFinite(fy)) store.focus={x:Math.max(0,Math.min(1,fx)),y:Math.max(0,Math.min(1,fy))}; }
     if(Array.isArray(o.foci)) store.foci=o.foci.slice(0,5).map(f=>{ const fx=Number(f&&f.x), fy=Number(f&&f.y); return {x:isFinite(fx)?Math.max(0,Math.min(1,fx)):.5,y:isFinite(fy)?Math.max(0,Math.min(1,fy)):.3}; }); else store.foci=[store.focus];
@@ -1221,7 +1223,7 @@ const VOL=.5;
 function syncSound(){ soundBtn.setAttribute('aria-pressed',String(soundOn)); soundBtn.textContent=soundOn?'音 ON':'音 OFF'; }
 soundBtn.addEventListener('click',()=>{ soundOn=!soundOn; ensureAudio(); syncSound(); if(!soundOn){ bgmStop(bgm.h,.2); bgm.h=null; bgmStop(bgm.pv,.2); bgm.pv=null; syncPv(); } });
 syncSound();
-function syncTate(){ tateBtn.setAttribute('aria-pressed',String(store.tate)); stage.classList.toggle('tate',store.tate); stage.classList.toggle('sub',!!store.sub); }
+function syncTate(){ tateBtn.setAttribute('aria-pressed',String(store.tate)); stage.classList.toggle('tate',store.tate); stage.classList.toggle('sub',!!store.sub); stage.classList.toggle('pt',!!store.gifV); try{ window.dispatchEvent(new Event('resize')); }catch(e){} }
 tateBtn.addEventListener('click',()=>{ store.tate=!store.tate; save(); syncTate(); });
 syncTate();
 const uiSz=$('uiSz'), uiX=$('uiX'), uiY=$('uiY');
@@ -2615,7 +2617,7 @@ gifBtn.addEventListener('click',()=>{
     };
     const vOK=!!VID.mime;
     if(vOK) seg('fmt','保存の形式',[['video','動画（おすすめ）'],['gif','GIF']],()=>store.fmt==='video'?'video':'gif',v=>{store.fmt=v;},'動画：ファイルが軽くて色もきれい。GIF：どのアプリでも動く定番の形式。');
-    seg('ori','画面の向き',[['h','横長'],['v','縦長（スマホ）']],()=>store.gifV?'v':'h',v=>{store.gifV=v==='v';});
+    seg('ori','画面の向き',[['h','横長'],['v','縦長（スマホ・iPad）']],()=>store.gifV?'v':'h',v=>{store.gifV=v==='v'; syncTate();});
     seg('q','きれいさ',[['n','ふつう'],['hq','高画質（遅め）']],()=>store.gifHQ?'hq':'n',v=>{store.gifHQ=v==='hq';});
     seg('dith','色のなめらかさ（GIFのみ）',[['n','ふつう'],['y','なめらか（遅め）']],()=>store.dither?'y':'n',v=>{store.dither=v==='y';});
     const sync=()=>{
