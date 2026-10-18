@@ -673,7 +673,7 @@ function restorePosition(pos){
 /* ---------- 共有URL（曲を1本のURLにして、別の端末・ほかの人へ渡す） ----------
    短いURL：曲を圧縮→端末内で暗号化(AES-GCM)→外部の無料保存サービスに預け、URLには「ID＋鍵」だけを入れる（#s=ID.鍵、約110文字）。鍵はURLの # 以降にあり、サービスにも送られない。
    長いURL：曲を圧縮してURLの #import= 以降にそのまま入れる（通信なし、1曲で約350文字〜）。短いURLを作れなかったときの代わりにも使う。 */
-var SEND_MAX_LINK=30000,SHARE_API='https://jsonblob.com/api/jsonBlob';
+var SEND_MAX_LINK=30000,SHARE_API='https://dpaste.com/api/v2/';
 function sendBase(){return location.origin+location.pathname}
 function b64u(bytes){var bin='';for(var i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
 function unb64u(str){var b=String(str).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';var bin=atob(b),out=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
@@ -698,15 +698,15 @@ async function shareOpen(box,rawKey){
  var key=await crypto.subtle.importKey('raw',rawKey,{name:'AES-GCM'},false,['decrypt']);
  return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:box.slice(0,12)},key,box.slice(12)))}
 async function shareFetch(url,opt){var ac=new AbortController(),t=setTimeout(function(){ac.abort()},15000);try{opt=opt||{};opt.signal=ac.signal;return await fetch(url,opt)}finally{clearTimeout(t)}}
-async function sharePut(body){
- var res=await shareFetch(SHARE_API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
+async function sharePut(text){
+ var res=await shareFetch(SHARE_API,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:new URLSearchParams({content:text,syntax:'text',expiry_days:'365'}).toString()});
  if(!res.ok)throw Error('put '+res.status);
- var id=String(res.headers.get('x-jsonblob')||res.headers.get('location')||'').split('/').pop();
- if(!/^[A-Za-z0-9-]{8,64}$/.test(id))throw Error('no id');return id}
-async function shareGet(id){var res=await shareFetch(SHARE_API+'/'+id,{headers:{Accept:'application/json'}});if(!res.ok)throw Error('get '+res.status);return res.json()}
+ var id=String(await res.text()).trim().split('/').pop();
+ if(!/^[A-Za-z0-9]{6,32}$/.test(id))throw Error('no id');return id}
+async function shareGet(id){var res=await shareFetch('https://dpaste.com/'+id+'.txt');if(!res.ok)throw Error('get '+res.status);var t=(await res.text()).trim();if(!/^[01][A-Za-z0-9_-]+$/.test(t))throw Error('bad');return {v:1,g:+t.charAt(0),d:t.slice(1)}}
 async function shareShortLink(obj){
  if(!(window.crypto&&crypto.subtle))throw Error('no crypto');
- var c=await shareCompress(obj),sealed=await shareSeal(c.bytes),id=await sharePut({v:1,g:c.gz?1:0,d:b64u(sealed.box)});
+ var c=await shareCompress(obj),sealed=await shareSeal(c.bytes),id=await sharePut((c.gz?'1':'0')+b64u(sealed.box));
  return sendBase()+'#s='+id+'.'+b64u(sealed.key)}
 function shareCodeFrom(text){var m=String(text).match(/import=([gp]\.[A-Za-z0-9_-]+)/)||String(text).trim().match(/^([gp]\.[A-Za-z0-9_-]{8,})$/);return m?m[1]:null}
 function shareShortFrom(text){var m=String(text).match(/[#?&]s=([A-Za-z0-9-]{8,64})\.([A-Za-z0-9_-]{22})(?![A-Za-z0-9_-])/);return m?{id:m[1],key:m[2]}:null}
