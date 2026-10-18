@@ -605,7 +605,14 @@ document.addEventListener("visibilitychange",function(){if(document.hidden){comm
 var S={ready:false,songs:[],view:"home",id:null,mode:"sing",sel:null,tab:"sym",
   show:{sym:true,memo:2,hl:true},fs:(window.matchMedia&&matchMedia('(min-width:700px)').matches?32:24),play:false,speed:3,menu:null,confirm:null,phrases:PHRASES.slice(),pedit:false};
 var historyPast=[],historyFuture=[],historyRestoring=false,saveState="保存済み";
-S.query="";S.libraryPurpose='normal';S.allSymbols=false;S.singDockCollapsed=true;
+S.query="";S.libraryPurpose='normal';S.allSymbols=false;S.singDockCollapsed=true;S.symOrder=[];
+var SYM_DEFAULT8=['f','p','cresc','ten','vib','fal','breath','star'];
+/* 記号パレットの並び：最近使った記号を左端へ。「よく使う8種類」は先頭8個（足りない分は初期の8種類で補う） */
+function symMru(){var seen={};return (S.symOrder||[]).filter(function(id){if(!SYM[id]||seen[id])return false;seen[id]=1;return true})}
+function symPalette(all){var mru=symMru(),inMru={};mru.forEach(function(id){inMru[id]=1});
+ var ids=all?mru.concat(SYMS.map(function(d){return d[0]}).filter(function(id){return !inMru[id]})):mru.concat(SYM_DEFAULT8.filter(function(id){return !inMru[id]})).slice(0,8);
+ return ids.map(function(id){return SYMS.filter(function(d){return d[0]===id})[0]}).filter(Boolean)}
+function symUsed(id){S.symOrder=[id].concat(symMru().filter(function(x){return x!==id})).slice(0,40);savePrefs()}
 function stateJSON(){return JSON.stringify(S.songs)}
 function recordHistory(){
   if(historyRestoring||!S.ready)return;
@@ -626,9 +633,10 @@ function restoreHistory(redo){
   if(S.view==='song'&&!cur())S.view='list';render();toast(redo?'やり直しました':'元に戻しました');
 }
 function setSaveState(msg){saveState=msg;document.querySelectorAll('[data-save-state]').forEach(function(el){el.textContent=msg})}
-function savePrefs(){try{Store.lsSet('prefs',JSON.stringify({fs:S.fs,speed:S.speed,show:S.show,singDockCollapsed:S.singDockCollapsed}))}catch(e){toast('表示設定を保存できませんでした')}}
+function savePrefs(){try{Store.lsSet('prefs',JSON.stringify({fs:S.fs,speed:S.speed,show:S.show,singDockCollapsed:S.singDockCollapsed,symOrder:symMru()}))}catch(e){toast('表示設定を保存できませんでした')}}
 function loadPrefs(){try{var p=JSON.parse(Store.lsGet('prefs')||'null');if(!p)return;
   if(typeof p.singDockCollapsed==='boolean')S.singDockCollapsed=p.singDockCollapsed;
+  if(Array.isArray(p.symOrder))S.symOrder=p.symOrder.filter(function(id){return typeof id==='string'&&SYM[id]}).slice(0,40);
   if(Number.isFinite(p.fs))S.fs=Math.max(16,Math.min(40,p.fs));if(Number.isFinite(p.speed))S.speed=Math.max(1,Math.min(10,p.speed));
   if(p.show){S.show.sym=p.show.sym!==false;S.show.hl=p.show.hl!==false;if([1,2,3].indexOf(p.show.memo)>=0)S.show.memo=p.show.memo}
 }catch(e){}}
@@ -886,7 +894,7 @@ function markDock(){
  if(S.tab==='memo')h+=palHTML(l)+'<div class="selinfo">行の下の入力欄にメモを書けます。</div>';
  else if(lo)h+='<div class="selinfo">記号や色は、付けたい文字をタップしてください。</div>';
  else if(S.tab==='sym'){
-  h+='<div class="grid">'+(S.allSymbols?SYMS:SYMS.filter(function(d){return ['f','p','cresc','ten','vib','fal','breath','star'].indexOf(d[0])>=0})).map(function(d){return gridBtn('sym',d[0],symOn(l,d[0]),'<span class="k-'+d[2]+'">'+d[4]+'</span>',d[1])}).join('')+'</div><div class="symbol-row-label"><a href="'+esc(learnURL('symbols'))+'">記号の意味を調べる</a><button data-act="symbols-toggle">'+(S.allSymbols?'よく使う8種類':'すべての記号')+'</button></div>';
+  h+='<div class="grid">'+symPalette(S.allSymbols).map(function(d){return gridBtn('sym',d[0],symOn(l,d[0]),'<span class="k-'+d[2]+'">'+d[4]+'</span>',d[1])}).join('')+'</div><div class="symbol-row-label"><a href="'+esc(learnURL('symbols'))+'">記号の意味を調べる</a><button data-act="symbols-toggle">'+(S.allSymbols?'よく使う8種類':'すべての記号')+'</button></div>';
  }else{
   h+='<div class="grid r4">'+RANGES.map(function(r){var all=true;for(var i=a;i<=b;i++)if(!csvHas(l.r,i,r[0]))all=false;return gridBtn('rng',r[0],all,r[2]?'<span class="sw" style="background:'+r[3]+'"></span>':'',r[1])}).join('')+'</div><div class="symbol-row-label"><span>左右にスクロール</span><button data-act="clr">選んだ範囲の記号・色を消す</button></div>';
  }
@@ -1329,7 +1337,7 @@ function act(a,el){
     if(S.sel.a<S.sel.b&&SPANK[v]){l.sp=l.sp||[];var sa=S.sel.a,sb=S.sel.b,ex=l.sp.some(function(x){return x.k===v&&x.a===sa&&x.b===sb});
       l.sp=l.sp.filter(function(x){return !(x.k===v&&x.a<=sb&&x.b>=sa)});if(!ex)l.sp.push({a:sa,b:sb,k:v})}
     else{i=SYM[v].pos==="a"?S.sel.a:S.sel.b;csvToggle(l.m,i,v)}
-    touch();render();break;
+    symUsed(v);touch();render();break;
   case "rng":l=selLine();if(!l||S.sel.lineOnly)break;var all=true;for(i=S.sel.a;i<=S.sel.b;i++)if(!csvHas(l.r,i,v))all=false;
     for(i=S.sel.a;i<=S.sel.b;i++){if(!all&&/^hl/.test(v))["hl1","hl2","hl3","hl4"].forEach(function(k){csvToggle(l.r,i,k,false)});csvToggle(l.r,i,v,!all)}
     touch();render();break;
