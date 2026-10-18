@@ -419,6 +419,8 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 @media(max-width:380px){.home-help{font-size:11px;padding:7px}.home-choice{padding:18px 14px;gap:12px;min-height:108px}.choice-icon{width:40px;height:44px}.choice-copy b{font-size:20px}.choice-copy small{font-size:12px}}
 </style>
 <style>
+/* 行末の空白スロット：メモ画面では薄い下線で場所を示し、記号は空白の真上に置く */
+.mark .c.blank:not(.sel){box-shadow:inset 0 -2px 0 var(--line)}.c.blank .sy.af{left:50%}
 /* マーカー（蛍光ペン）：鮮やかな背景の上は常に濃い文字にする */
 .hl1,.hl2,.hl3,.hl4{color:#141a24}.nohl .hl1,.nohl .hl2,.nohl .hl3,.nohl .hl4{color:inherit}
 /* タブレット（iPad縦・横）：幅700px以上で、画面を広く使い、文字と操作ボタンを大きくする。スマホ（699px以下）は変更なし。 */
@@ -795,6 +797,11 @@ function lineHTML(l,mark){
     var ids=l.m[i]?l.m[i].split(","):[];if(ids.length&&spanHas(l,i))cls+=" hsp";
     h+='<span class="'+cls+'"'+(mark?' data-i="'+i+'" data-line="'+l.id+'"':"")+'>'+esc(t[i])+spanHTML(l,i)+symHTML(ids,"a")+symHTML(ids,"f")+'</span>';
   }
+  if(t){/* 行末に1文字分の空白スロット（ブレス記号などを付ける場所）。メモ画面では常に表示、ほかの画面では記号・色が付いているときだけ表示 */
+    var bi=t.length,bids=l.m[bi]?l.m[bi].split(","):[];
+    if(mark||l.m[bi]||l.r[bi]){var bc="c blank";if(l.r[bi])bc+=" "+l.r[bi].split(",").join(" ");if(bi>=lo&&bi<=hi)bc+=" sel";if(bids.length&&spanHas(l,bi))bc+=" hsp";
+      h+='<span class="'+bc+'"'+(mark?' data-i="'+bi+'" data-line="'+l.id+'" aria-label="行末の空白"':"")+'>\u3000'+spanHTML(l,bi)+symHTML(bids,"a")+symHTML(bids,"f")+'</span>'}
+  }
   if(!t)h='<span style="opacity:.35">(空の行)</span>';
   var hs=Object.keys(l.m).length>0||(l.sp&&l.sp.length>0),hs2=(l.sp||[]).some(function(s){return LABELED[s.k]});
   var out='<div class="ln'+(hs2?" hs2":hs?" hs":"")+(selOn&&S.sel.lineOnly?" lsel":"")+'" data-view-line="'+l.id+'"'+(mark?' data-lineid="'+l.id+'"':"")+'>'+h+'</div>';
@@ -889,7 +896,7 @@ function markDock(){
  if(S.reading)return '';
  var l=selLine();
  if(!l)return '<div class="dock mark-dock"><div class="in"><div class="dock-heading"><span class="selinfo">文字をタップして書き込む</span>'+quickUndo()+'</div></div></div>';
- var lo=S.sel.lineOnly,a=S.sel.a,b=S.sel.b,txt=lo?l.t:l.t.slice(a,b+1);
+ var lo=S.sel.lineOnly,a=S.sel.a,b=S.sel.b,txt=lo?l.t:l.t.slice(a,b+1);if(!lo&&b>=l.t.length)txt+=(txt?' ＋ ':'')+'行末の空白';
  var h='<div class="dock mark-dock"><div class="in"><div class="dock-heading"><div class="selinfo">'+(lo?'この行':'選択中')+'：<b>'+esc(txt)+'</b></div>'+quickUndo()+'<button data-act="dock-collapse" aria-expanded="'+!S.dockCollapsed+'">'+(S.dockCollapsed?'道具を開く ▴':'たたむ ▾')+'</button><button data-act="selection-clear" aria-label="選択を解除">×</button></div>';
  if(S.dockCollapsed)return h+'</div></div>';
  h+='<div class="tabs">'+[['sym','記号'],['rng','色・線'],['memo','行メモ']].map(function(x){return '<button data-act="tab" data-v="'+x[0]+'" aria-pressed="'+(S.tab===x[0])+'">'+x[1]+'</button>'}).join('')+'</div>';
@@ -1119,10 +1126,11 @@ function videoIndex(t,starts){var a=0,b=starts.length;while(a<b){var m=(a+b)>>1;
 function videoFormat(){if(typeof MediaRecorder==='undefined'||typeof HTMLCanvasElement==='undefined'||!HTMLCanvasElement.prototype.captureStream)return null;var types=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8','video/webm;codecs=vp9','video/webm'];for(var i=0;i<types.length;i++)if(MediaRecorder.isTypeSupported&&MediaRecorder.isTypeSupported(types[i]))return types[i];return null}
 function videoRecorder(stream){var types=['video/mp4;codecs=avc1.42E01E','video/mp4','video/webm;codecs=vp8','video/webm;codecs=vp9','video/webm'];for(var i=0;i<types.length;i++){if(!MediaRecorder.isTypeSupported(types[i]))continue;try{return new MediaRecorder(stream,{mimeType:types[i],videoBitsPerSecond:1800000})}catch(e){}}throw Error('この端末で動画の保存処理を開始できませんでした。');}
 function videoFont(ctx,size,bold,italic){ctx.font=(italic?'italic ':'')+(bold?'600 ':'400 ')+size+'px system-ui, "Hiragino Sans", "Yu Gothic", sans-serif'}
+function videoCharsB(line){var a=videoChars(line.t),n=line.t.length;if(n&&(line.m[n]||line.r[n]))a.push({t:'\u3000',index:n,blank:true});return a}
 function videoChars(text){var out=[],index=0;Array.from(String(text)).forEach(function(t){out.push({t:t,index:index});index+=t.length});return out}
 function videoWrap(ctx,text,width,size,maxLines){videoFont(ctx,size,false);var lines=[''];videoChars(text).forEach(function(c){if(c.t==='\n'){lines.push('');return}var last=lines.length-1;if(lines[last]&&ctx.measureText(lines[last]+c.t).width>width)lines.push(c.t);else lines[last]+=c.t});if(maxLines&&lines.length>maxLines){lines=lines.slice(0,maxLines);var last=lines.length-1;while(lines[last]&&ctx.measureText(lines[last]+'…').width>width)lines[last]=Array.from(lines[last]).slice(0,-1).join('');lines[last]+='…'}return lines}
 function videoLineLayout(ctx,line,width,size){
- var rows=[{tokens:[],width:0}];videoChars(line.t).forEach(function(c){var ranges=(line.r[c.index]||'').split(','),ids=(line.m[c.index]||'').split(',').filter(function(k){return SYM[k]}),after=ids.filter(function(k){return SYM[k].pos==='f'});videoFont(ctx,size,ranges.indexOf('bold')>=0);var glyph=ctx.measureText(c.t).width,w=glyph+size*.015+after.length*size*.48,row=rows[rows.length-1];if(row.tokens.length&&row.width+w>width){row={tokens:[],width:0};rows.push(row)}row.tokens.push({t:c.t,index:c.index,x:row.width,width:w,glyph:glyph,ranges:ranges,ids:ids});row.width+=w});
+ var rows=[{tokens:[],width:0}];videoCharsB(line).forEach(function(c){var ranges=(line.r[c.index]||'').split(','),ids=(line.m[c.index]||'').split(',').filter(function(k){return SYM[k]}),after=ids.filter(function(k){return SYM[k].pos==='f'});videoFont(ctx,size,ranges.indexOf('bold')>=0);var glyph=ctx.measureText(c.t).width,w=glyph+size*.015+(c.blank?0:after.length*size*.48),row=rows[rows.length-1];if(row.tokens.length&&row.width+w>width){row={tokens:[],width:0};rows.push(row)}row.tokens.push({t:c.t,index:c.index,x:row.width,width:w,glyph:glyph,ranges:ranges,ids:ids,blank:!!c.blank});row.width+=w});
  var height=0;rows.forEach(function(row){row.annotated=row.tokens.some(function(c){return c.ids.some(function(k){return SYM[k].pos==='a'})||(line.sp||[]).some(function(sp){return c.index>=sp.a&&c.index<=sp.b&&SYM[sp.k]})});row.ascent=size*(row.annotated?2.05:1.15);row.height=row.ascent+size*.5;row.offset=height;height+=row.height});return {rows:rows,height:height};
 }
 function videoLayout(ctx,item,width,height,initial,memo){
@@ -1143,7 +1151,7 @@ function videoDrawLyric(ctx,line,layout,x,y,assets){
  var fs=layout.fs;layout.lyric.rows.forEach(function(row){var baseline=y+row.offset+row.ascent;
  (line.sp||[]).forEach(function(sp){if(!SYM[sp.k])return;var chars=row.tokens.filter(function(c){return c.index>=sp.a&&c.index<=sp.b});if(!chars.length)return;var first=chars[0],last=chars[chars.length-1],n=sp.b-sp.a+1;videoDrawRange(ctx,sp.k,x+first.x,baseline-fs*1.4,last.x+last.glyph-first.x,fs*.4,(first.index-sp.a)/n,Math.min(1,(last.index+last.t.length-sp.a)/n),first.index<=sp.a,last.index+last.t.length>sp.b)});
  row.tokens.forEach(function(c){var px=x+c.x,high=c.ranges.filter(function(k){return /^hl[1-4]$/.test(k)})[0],colors={hl1:'#ffd633',hl2:'#ff7eb8',hl3:'#5aaeff',hl4:'#4fd673'};if(high){ctx.fillStyle=colors[high];ctx.fillRect(px,baseline-fs*.88,c.glyph,fs*1.1)}videoFont(ctx,fs,c.ranges.indexOf('bold')>=0);ctx.fillStyle=high?'#141a24':c.ranges.indexOf('soft')>=0?'#b4bfce':'#f5f7ff';ctx.fillText(c.t,px,baseline);
- var top=c.ids.filter(function(k){return SYM[k].pos==='a'}),after=c.ids.filter(function(k){return SYM[k].pos==='f'});top.forEach(function(k,j){videoDrawSymbol(ctx,k,px+c.glyph/2+(j-(top.length-1)/2)*fs*.45-fs*.23,baseline-fs*1.95,fs*.46,assets)});after.forEach(function(k,j){videoDrawSymbol(ctx,k,px+c.glyph+j*fs*.48,baseline-fs*.7,fs*.46,assets)});
+ var top=c.ids.filter(function(k){return SYM[k].pos==='a'}),after=c.ids.filter(function(k){return SYM[k].pos==='f'});top.forEach(function(k,j){videoDrawSymbol(ctx,k,px+c.glyph/2+(j-(top.length-1)/2)*fs*.45-fs*.23,baseline-fs*1.95,fs*.46,assets)});var ax=c.blank?px+(c.glyph-after.length*fs*.48)/2:px+c.glyph;after.forEach(function(k,j){videoDrawSymbol(ctx,k,ax+j*fs*.48,baseline-fs*.7,fs*.46,assets)});
  if(c.ranges.indexOf('long')>=0){ctx.fillStyle='#7fdec9';ctx.fillRect(px,baseline+fs*.2,c.glyph,Math.max(2,fs*.05))}if(c.ranges.indexOf('wave')>=0){ctx.beginPath();ctx.strokeStyle='#a8d9ff';ctx.lineWidth=2;for(var j=0;j<=12;j++){var xx=px+c.glyph*j/12,yy=baseline+fs*.24+Math.sin(j/12*Math.PI*4)*fs*.04;if(j)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)}ctx.stroke()}
  });
  });
