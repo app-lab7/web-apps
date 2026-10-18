@@ -671,56 +671,95 @@ function restorePosition(pos){
  if(target)window.scrollBy(0,target.getBoundingClientRect().top-headerEdge()-(pos.offset||0));else window.scrollTo(0,pos.y||0);
 }
 /* ---------- 共有URL（曲を1本のURLにして、別の端末・ほかの人へ渡す） ----------
-   曲のデータを圧縮してURLの「#import=」以降（サーバーには送られない部分）に入れる。受け取った側がリンクを開く、またはコードを貼り付けると取り込み確認が出る。 */
-var SEND_MAX_LINK=30000;
+   短いURL：曲を圧縮→端末内で暗号化(AES-GCM)→外部の無料保存サービスに預け、URLには「ID＋鍵」だけを入れる（#s=ID.鍵、約110文字）。鍵はURLの # 以降にあり、サービスにも送られない。
+   長いURL：曲を圧縮してURLの #import= 以降にそのまま入れる（通信なし、1曲で約350文字〜）。短いURLを作れなかったときの代わりにも使う。 */
+var SEND_MAX_LINK=30000,SHARE_API='https://jsonblob.com/api/jsonBlob';
 function sendBase(){return location.origin+location.pathname}
+function b64u(bytes){var bin='';for(var i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function unb64u(str){var b=String(str).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';var bin=atob(b),out=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)out[i]=bin.charCodeAt(i);return out}
 async function shareReadCapped(stream,max){var reader=stream.getReader(),chunks=[],total=0;
  for(;;){var r=await reader.read();if(r.done)break;total+=r.value.length;if(total>max){try{reader.cancel()}catch(e){}throw Error('too large')}chunks.push(r.value)}
  var out=new Uint8Array(total),pos=0;chunks.forEach(function(c){out.set(c,pos);pos+=c.length});return out}
-async function shareEncode(obj){
- var bytes=new TextEncoder().encode(JSON.stringify(obj)),prefix='p.';
- if(window.CompressionStream){try{var cs=new CompressionStream('gzip'),w=cs.writable.getWriter();w.write(bytes);w.close();bytes=await shareReadCapped(cs.readable,20*1024*1024);prefix='g.'}catch(e){bytes=new TextEncoder().encode(JSON.stringify(obj));prefix='p.'}}
- var bin='';for(var i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
- return prefix+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-}
-async function shareDecode(code){
- var gz=code.charAt(0)==='g',b=code.slice(2).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
- var bin=atob(b),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+async function shareCompress(obj){
+ var raw=new TextEncoder().encode(JSON.stringify(obj));
+ if(window.CompressionStream){try{var cs=new CompressionStream('gzip'),w=cs.writable.getWriter();w.write(raw);w.close();return {bytes:await shareReadCapped(cs.readable,20*1024*1024),gz:true}}catch(e){}}
+ return {bytes:raw,gz:false}}
+async function shareInflate(bytes,gz){
  if(gz){if(!window.DecompressionStream)throw Error('unsupported');var ds=new DecompressionStream('gzip'),w=ds.writable.getWriter();w.write(bytes);w.close();bytes=await shareReadCapped(ds.readable,20*1024*1024)}
  else if(bytes.length>20*1024*1024)throw Error('too large');
- return new TextDecoder().decode(bytes);
-}
+ return new TextDecoder().decode(bytes)}
+async function shareEncode(obj){var c=await shareCompress(obj);return (c.gz?'g.':'p.')+b64u(c.bytes)}
+async function shareDecode(code){return shareInflate(unb64u(code.slice(2)),code.charAt(0)==='g')}
+async function shareSeal(bytes){
+ var key=await crypto.subtle.generateKey({name:'AES-GCM',length:128},true,['encrypt']),iv=crypto.getRandomValues(new Uint8Array(12)),
+  ct=new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,bytes)),raw=new Uint8Array(await crypto.subtle.exportKey('raw',key)),box=new Uint8Array(12+ct.length);
+ box.set(iv);box.set(ct,12);return {box:box,key:raw}}
+async function shareOpen(box,rawKey){
+ var key=await crypto.subtle.importKey('raw',rawKey,{name:'AES-GCM'},false,['decrypt']);
+ return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv:box.slice(0,12)},key,box.slice(12)))}
+async function shareFetch(url,opt){var ac=new AbortController(),t=setTimeout(function(){ac.abort()},15000);try{opt=opt||{};opt.signal=ac.signal;return await fetch(url,opt)}finally{clearTimeout(t)}}
+async function sharePut(body){
+ var res=await shareFetch(SHARE_API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)});
+ if(!res.ok)throw Error('put '+res.status);
+ var id=String(res.headers.get('x-jsonblob')||res.headers.get('location')||'').split('/').pop();
+ if(!/^[A-Za-z0-9-]{8,64}$/.test(id))throw Error('no id');return id}
+async function shareGet(id){var res=await shareFetch(SHARE_API+'/'+id,{headers:{Accept:'application/json'}});if(!res.ok)throw Error('get '+res.status);return res.json()}
+async function shareShortLink(obj){
+ if(!(window.crypto&&crypto.subtle))throw Error('no crypto');
+ var c=await shareCompress(obj),sealed=await shareSeal(c.bytes),id=await sharePut({v:1,g:c.gz?1:0,d:b64u(sealed.box)});
+ return sendBase()+'#s='+id+'.'+b64u(sealed.key)}
 function shareCodeFrom(text){var m=String(text).match(/import=([gp]\.[A-Za-z0-9_-]+)/)||String(text).trim().match(/^([gp]\.[A-Za-z0-9_-]{8,})$/);return m?m[1]:null}
-function shareImportText(text,label){var code=shareCodeFrom(text);if(!code)return false;
- shareDecode(code).then(function(json){stageRestore(json,label||'共有URL')}).catch(function(){toast('共有URLを読み込めませんでした。もう一度共有してもらってください')});return true}
-function handleShareHash(){var h=location.hash||'';if(h.indexOf('#import=')!==0)return;
+function shareShortFrom(text){var m=String(text).match(/[#?&]s=([A-Za-z0-9-]{8,64})\.([A-Za-z0-9_-]{22})(?![A-Za-z0-9_-])/);return m?{id:m[1],key:m[2]}:null}
+function shareFail(){toast('共有URLを読み込めませんでした。期限切れ・通信エラー・URLの途切れの可能性があります')}
+function shareImportShort(sh,label){toast('共有URLを読み込んでいます…');
+ shareGet(sh.id).then(function(o){if(!o||o.v!==1||typeof o.d!=='string')throw Error('bad');return shareOpen(unb64u(o.d),unb64u(sh.key)).then(function(bytes){return shareInflate(bytes,o.g===1)})})
+  .then(function(json){stageRestore(json,label||'共有URL')}).catch(shareFail)}
+function shareImportText(text,label){
+ var sh=shareShortFrom(text);if(sh){shareImportShort(sh,label);return true}
+ var code=shareCodeFrom(text);if(!code)return false;
+ shareDecode(code).then(function(json){stageRestore(json,label||'共有URL')}).catch(shareFail);return true}
+function handleShareHash(){var h=location.hash||'';if(h.indexOf('#import=')!==0&&h.indexOf('#s=')!==0)return;
  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
  shareImportText(h,'共有URL')}
 var SendState=null;
 function sharePayload(songs,withSettings){var o={app:'utanote',v:1,share:true,songs:songs};if(withSettings){o.phrases=S.phrases.slice();o.prefs={fs:S.fs,speed:S.speed,show:{sym:S.show.sym,memo:S.show.memo,hl:S.show.hl},symOrder:symMru()}}return o}
 function sendSelectedSongs(){var ids=SendState?SendState.ids:{};return S.songs.filter(function(x){return ids[x.id]})}
-async function sendBuild(){var st=SendState;if(!st)return;st.link=null;st.token=(st.token||0)+1;var token=st.token;sendPaint();
- var songs=sendSelectedSongs();if(!songs.length){st.error='';sendPaint();return}
- try{var code=await shareEncode(sharePayload(songs,st.withSettings));if(SendState!==st||st.token!==token)return;st.link=sendBase()+'#import='+code;st.error=st.link.length>SEND_MAX_LINK?'曲が多い・長いため、リンクが長くなっています。曲を減らすか、「使い方・データ保存」のファイル保存をお使いください。':''}
- catch(e){if(SendState!==st||st.token!==token)return;st.error='リンクを作れませんでした。'}
- sendPaint()}
+/* 選択や設定が変わったとき：長いURLはすぐ作る。短いURLは「共有URLを作る」を押したときに作る（外部に預けるのは押したときだけ） */
+async function sendBuild(){var st=SendState;if(!st)return;st.link=null;st.note='';st.error='';st.busy=false;st.token=(st.token||0)+1;var token=st.token;
+ if(st.short||!sendSelectedSongs().length){sendPaint();return}
+ sendPaint();await sendLong(st,token);sendPaint()}
+async function sendLong(st,token){
+ try{var code=await shareEncode(sharePayload(sendSelectedSongs(),st.withSettings));if(SendState!==st||st.token!==token)return false;
+  st.link=sendBase()+'#import='+code;
+  if(st.link.length>SEND_MAX_LINK){st.error='曲が多い・長いため、URLが長すぎます。曲を減らすか、「使い方・データ保存」のファイル保存をお使いください。';st.link=null}}
+ catch(e){if(SendState!==st||st.token!==token)return false;st.error='共有URLを作れませんでした。'}
+ return !!st.link}
+async function sendMake(){var st=SendState;if(!st||st.busy)return;var songs=sendSelectedSongs();if(!songs.length)return;
+ st.token=(st.token||0)+1;var token=st.token;st.busy=true;st.link=null;st.note='';st.error='';sendPaint();
+ try{var link=await shareShortLink(sharePayload(songs,st.withSettings));if(SendState!==st||st.token!==token)return;st.link=link}
+ catch(e){if(SendState!==st||st.token!==token)return;
+  var ok=await sendLong(st,token);if(SendState!==st||st.token!==token)return;
+  if(ok)st.note='短い共有URLを作れませんでした（通信できないなど）。代わりに、サーバーを使わない長いURLにしています。'}
+ st.busy=false;sendPaint()}
 function sendPaint(){var st=SendState,root=$('#sendModal');if(!st||!root)return;
  var n=sendSelectedSongs().length,ok=!!st.link&&!st.error&&n>0;
- var status=!n?'送る曲を選んでください。':st.error?st.error:st.link?'共有URLの準備ができました（'+n+'曲）':'準備しています…';
- $('#sendStatus',root).textContent=status;
+ var status=!n?'共有する曲を選んでください。':st.busy?'預けています…':st.error?st.error:st.link?'共有URLの準備ができました（'+n+'曲・'+st.link.length+'文字）'+(st.note?'\n'+st.note:''):st.short?'「共有URLを作る」を押すと、暗号化して預けます。':'準備しています…';
+ var el=$('#sendStatus',root);el.textContent=status;el.style.whiteSpace='pre-line';
+ var mk=$('#sendMake',root);mk.hidden=!st.short;mk.disabled=!n||st.busy;mk.textContent=st.link?'共有URLを作り直す':'共有URLを作る';
  $('#sendShare',root).disabled=!ok;$('#sendCopy',root).disabled=!ok}
 function sendModal(){var cur0=S.view==='song'?cur():null;
- SendState={ids:{},link:null,error:'',token:0,withSettings:false};
+ SendState={ids:{},link:null,error:'',note:'',token:0,busy:false,withSettings:false,short:true};
  S.songs.forEach(function(x){SendState.ids[x.id]=cur0?x.id===cur0.id:true});
  var list=S.songs.map(function(x){return '<label class="send-row"><input type="checkbox" class="send-chk" data-sendid="'+esc(x.id)+'"'+(SendState.ids[x.id]?' checked':'')+'><span>'+esc(x.title||'(無題)')+(x.artist?'<small> / '+esc(x.artist)+'</small>':'')+'</span></label>'}).join('');
  var old=document.querySelector('.sheetwrap');if(old)old.remove();
  $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" data-act="imp-x"><div class="modal" id="sendModal" role="dialog" aria-label="共有URL"><h3>共有URL</h3>'+
   '<p class="sub">曲を1本のURLにして、iPadなど別の端末や、ほかの人に渡せます。記号・色・メモもそのまま移ります。受け取った側がURLを開くと、内容を確認してから取り込みます。</p>'+
   '<div class="send-list">'+(list||'<p class="sub">曲がありません。</p>')+'</div>'+
-  '<p class="sub" id="sendStatus" role="status">準備しています…</p>'+
-  '<div class="tools"><button class="btn pri" id="sendShare" data-act="send-share" disabled>共有する（AirDrop・メッセージなど）</button><button class="btn" id="sendCopy" data-act="send-copy" disabled>共有URLをコピー</button><button class="btn" data-act="imp-x">閉じる</button></div>'+
+  '<label class="send-row send-opt"><input type="checkbox" id="sendShort" checked><span>短いURLにする<small>（端末内で暗号化して外部の無料サービスに預けます。鍵はURLの中だけにあり、URLを知らない人は読めません。保存期間は保証されません）</small></span></label>'+
   '<label class="send-row send-opt"><input type="checkbox" id="sendSettings"><span>表示設定・記号の並び・メモのパレットも含める<small>（受け取った側で、取り込むか選べます）</small></span></label>'+
-  '<ol class="how"><li>受け取った側で共有URLを開き、「取り込む」を押します。</li><li>ホーム画面に追加したアプリで使っている場合は、共有URLをコピーして、アプリの「使い方・データ保存」→「バックアップから復元」に貼り付けてください。</li><li>同じ曲をもう一度共有すると、上書きして更新します。</li></ol><p class="sub">歌詞は著作物です。ほかの人に渡すときは、私的な範囲でお使いください。</p></div></div>');
+  '<p class="sub" id="sendStatus" role="status"></p>'+
+  '<div class="tools"><button class="btn pri" id="sendMake" data-act="send-make">共有URLを作る</button><button class="btn pri" id="sendShare" data-act="send-share" disabled>共有する（AirDrop・メッセージなど）</button><button class="btn" id="sendCopy" data-act="send-copy" disabled>共有URLをコピー</button><button class="btn" data-act="imp-x">閉じる</button></div>'+
+  '<ol class="how"><li>受け取った側で共有URLを開き、「取り込む」を押します。</li><li>ホーム画面に追加したアプリで使っている場合は、共有URLをコピーして、アプリの「使い方・データ保存」→「バックアップから復元」に貼り付けてください。</li><li>同じ曲をもう一度共有すると、上書きして更新します（短いURLは、そのつど新しいURLになります）。</li></ol><p class="sub">歌詞は著作物です。ほかの人に渡すときは、私的な範囲でお使いください。大切な曲は、ファイル保存でバックアップしておくと安心です。</p></div></div>');
  sendBuild()}
 function sendDo(kind){var st=SendState;if(!st||!st.link||st.error)return;var url=st.link,n=sendSelectedSongs().length;
  if(kind==='share'){
@@ -728,7 +767,10 @@ function sendDo(kind){var st=SendState;if(!st||!st.link||st.error)return;var url
   else sendDo('copy');return}
  (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(function(){toast('共有URLをコピーしました')}).catch(function(){
   var ta=document.createElement('textarea');ta.value=url;ta.readOnly=true;ta.style.cssText='position:fixed;left:0;top:0;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?'共有URLをコピーしました':'コピーできませんでした')})}
-document.addEventListener('change',function(e){var t=e.target;if(!t||!SendState)return;if(t.id==='sendSettings'){SendState.withSettings=t.checked;sendBuild();return}if(!t.classList||!t.classList.contains('send-chk'))return;SendState.ids[t.dataset.sendid]=t.checked;sendBuild()});
+document.addEventListener('change',function(e){var t=e.target;if(!t||!SendState)return;
+ if(t.id==='sendSettings'){SendState.withSettings=t.checked;sendBuild();return}
+ if(t.id==='sendShort'){SendState.short=t.checked;sendBuild();return}
+ if(!t.classList||!t.classList.contains('send-chk'))return;SendState.ids[t.dataset.sendid]=t.checked;sendBuild()});
 function backupData(){commitEdits();flushAllSaves();return {app:'utanote',v:1,songs:S.songs,phrases:S.phrases}}
 function downloadBackup(){
  try{var blob=new Blob([JSON.stringify(backupData(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -1429,6 +1471,7 @@ function act(a,el){
       $("#layer").insertAdjacentHTML("beforeend",'<div class="sheetwrap top" data-act="imp-x"><div class="modal"><h3>バックアップ</h3><div class="sub" style="margin-bottom:8px">全体をコピーして保管してください。</div><textarea id="cpTa" readonly>'+esc(bt)+'</textarea><div style="margin-top:10px"><button class="btn" data-act="imp-x">閉じる</button></div></div></div>');
       var c2=$("#cpTa");if(c2){c2.focus();c2.select()}});break;
   case "send-open":sendModal();break;
+  case "send-make":sendMake();break;
   case "send-share":sendDo("share");break;
   case "send-copy":sendDo("copy");break;
   case "bk-open":var w3=$(".sheetwrap");if(w3)w3.remove();$("#layer").insertAdjacentHTML("beforeend",restoreModal());setTimeout(function(){var t=$("#bkTa");if(t)t.focus()},50);break;
