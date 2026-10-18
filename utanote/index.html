@@ -419,8 +419,8 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 @media(max-width:380px){.home-help{font-size:11px;padding:7px}.home-choice{padding:18px 14px;gap:12px;min-height:108px}.choice-icon{width:40px;height:44px}.choice-copy b{font-size:20px}.choice-copy small{font-size:12px}}
 </style>
 <style>
-/* 別の端末へ送る */
-.send-list{display:grid;gap:4px;max-height:34vh;overflow-y:auto;margin:10px 0;border:1px solid var(--line);border-radius:8px;padding:4px}.send-row{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 8px;border-radius:6px}.send-row input{width:22px;height:22px;flex:none}.send-row small{color:var(--muted)}
+/* 共有URL */
+.send-list{display:grid;gap:4px;max-height:34vh;overflow-y:auto;margin:10px 0;border:1px solid var(--line);border-radius:8px;padding:4px}.send-row{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 8px;border-radius:6px}.send-row input{width:22px;height:22px;flex:none}.send-row small{color:var(--muted)}.send-opt{margin:6px 0;border:1px solid var(--line)}.send-row span{display:flex;flex-direction:column}
 /* 行末の空白スロット：メモ画面では薄い下線で場所を示し、記号は空白の真上に置く */
 .mark .c.blank:not(.sel){box-shadow:inset 0 -2px 0 var(--line)}.c.blank .sy.af{left:50%}
 /* マーカー（蛍光ペン）：鮮やかな背景の上は常に濃い文字にする */
@@ -670,7 +670,7 @@ function restorePosition(pos){
  if(!target&&pos.section){nodes=document.querySelectorAll('[data-view-sec]');for(var j=0;j<nodes.length;j++)if(nodes[j].dataset.viewSec===pos.section){target=nodes[j];break}}
  if(target)window.scrollBy(0,target.getBoundingClientRect().top-headerEdge()-(pos.offset||0));else window.scrollTo(0,pos.y||0);
 }
-/* ---------- 別の端末へ送る（リンク／コード） ----------
+/* ---------- 共有URL（曲を1本のURLにして、別の端末・ほかの人へ渡す） ----------
    曲のデータを圧縮してURLの「#import=」以降（サーバーには送られない部分）に入れる。受け取った側がリンクを開く、またはコードを貼り付けると取り込み確認が出る。 */
 var SEND_MAX_LINK=30000;
 function sendBase(){return location.origin+location.pathname}
@@ -692,41 +692,43 @@ async function shareDecode(code){
 }
 function shareCodeFrom(text){var m=String(text).match(/import=([gp]\.[A-Za-z0-9_-]+)/)||String(text).trim().match(/^([gp]\.[A-Za-z0-9_-]{8,})$/);return m?m[1]:null}
 function shareImportText(text,label){var code=shareCodeFrom(text);if(!code)return false;
- shareDecode(code).then(function(json){stageRestore(json,label||'共有されたリンク')}).catch(function(){toast('リンクを読み込めませんでした。もう一度送ってもらってください')});return true}
+ shareDecode(code).then(function(json){stageRestore(json,label||'共有URL')}).catch(function(){toast('共有URLを読み込めませんでした。もう一度共有してもらってください')});return true}
 function handleShareHash(){var h=location.hash||'';if(h.indexOf('#import=')!==0)return;
  try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
- shareImportText(h,'共有されたリンク')}
+ shareImportText(h,'共有URL')}
 var SendState=null;
+function sharePayload(songs,withSettings){var o={app:'utanote',v:1,share:true,songs:songs};if(withSettings){o.phrases=S.phrases.slice();o.prefs={fs:S.fs,speed:S.speed,show:{sym:S.show.sym,memo:S.show.memo,hl:S.show.hl},symOrder:symMru()}}return o}
 function sendSelectedSongs(){var ids=SendState?SendState.ids:{};return S.songs.filter(function(x){return ids[x.id]})}
 async function sendBuild(){var st=SendState;if(!st)return;st.link=null;st.token=(st.token||0)+1;var token=st.token;sendPaint();
  var songs=sendSelectedSongs();if(!songs.length){st.error='';sendPaint();return}
- try{var code=await shareEncode({app:'utanote',v:1,songs:songs});if(SendState!==st||st.token!==token)return;st.link=sendBase()+'#import='+code;st.error=st.link.length>SEND_MAX_LINK?'曲が多い・長いため、リンクが長くなっています。曲を減らすか、「使い方・データ保存」のファイル保存をお使いください。':''}
+ try{var code=await shareEncode(sharePayload(songs,st.withSettings));if(SendState!==st||st.token!==token)return;st.link=sendBase()+'#import='+code;st.error=st.link.length>SEND_MAX_LINK?'曲が多い・長いため、リンクが長くなっています。曲を減らすか、「使い方・データ保存」のファイル保存をお使いください。':''}
  catch(e){if(SendState!==st||st.token!==token)return;st.error='リンクを作れませんでした。'}
  sendPaint()}
 function sendPaint(){var st=SendState,root=$('#sendModal');if(!st||!root)return;
  var n=sendSelectedSongs().length,ok=!!st.link&&!st.error&&n>0;
- var status=!n?'送る曲を選んでください。':st.error?st.error:st.link?'リンクの準備ができました（'+n+'曲）':'準備しています…';
+ var status=!n?'送る曲を選んでください。':st.error?st.error:st.link?'共有URLの準備ができました（'+n+'曲）':'準備しています…';
  $('#sendStatus',root).textContent=status;
  $('#sendShare',root).disabled=!ok;$('#sendCopy',root).disabled=!ok}
 function sendModal(){var cur0=S.view==='song'?cur():null;
- SendState={ids:{},link:null,error:'',token:0};
+ SendState={ids:{},link:null,error:'',token:0,withSettings:false};
  S.songs.forEach(function(x){SendState.ids[x.id]=cur0?x.id===cur0.id:true});
  var list=S.songs.map(function(x){return '<label class="send-row"><input type="checkbox" class="send-chk" data-sendid="'+esc(x.id)+'"'+(SendState.ids[x.id]?' checked':'')+'><span>'+esc(x.title||'(無題)')+(x.artist?'<small> / '+esc(x.artist)+'</small>':'')+'</span></label>'}).join('');
  var old=document.querySelector('.sheetwrap');if(old)old.remove();
- $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" data-act="imp-x"><div class="modal" id="sendModal" role="dialog" aria-label="別の端末へ送る"><h3>別の端末へ送る</h3>'+
-  '<p class="sub">iPadなど、別の端末でリリペンに曲を移します。記号・色・メモもそのまま移ります。</p>'+
+ $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" data-act="imp-x"><div class="modal" id="sendModal" role="dialog" aria-label="共有URL"><h3>共有URL</h3>'+
+  '<p class="sub">曲を1本のURLにして、iPadなど別の端末や、ほかの人に渡せます。記号・色・メモもそのまま移ります。受け取った側がURLを開くと、内容を確認してから取り込みます。</p>'+
   '<div class="send-list">'+(list||'<p class="sub">曲がありません。</p>')+'</div>'+
   '<p class="sub" id="sendStatus" role="status">準備しています…</p>'+
-  '<div class="tools"><button class="btn pri" id="sendShare" data-act="send-share" disabled>共有する（AirDrop・メッセージなど）</button><button class="btn" id="sendCopy" data-act="send-copy" disabled>リンクをコピー</button><button class="btn" data-act="imp-x">閉じる</button></div>'+
-  '<ol class="how"><li>送り先でリンクを開く → 「取り込む」を押します。</li><li>ホーム画面に追加したアプリで使っている場合は、リンクをコピーして、アプリの「使い方・データ保存」→「バックアップから復元」に貼り付けてください。</li><li>同じ曲を送り直すと、上書きして更新します。</li></ol></div></div>');
+  '<div class="tools"><button class="btn pri" id="sendShare" data-act="send-share" disabled>共有する（AirDrop・メッセージなど）</button><button class="btn" id="sendCopy" data-act="send-copy" disabled>共有URLをコピー</button><button class="btn" data-act="imp-x">閉じる</button></div>'+
+  '<label class="send-row send-opt"><input type="checkbox" id="sendSettings"><span>表示設定・記号の並び・メモのパレットも含める<small>（受け取った側で、取り込むか選べます）</small></span></label>'+
+  '<ol class="how"><li>受け取った側で共有URLを開き、「取り込む」を押します。</li><li>ホーム画面に追加したアプリで使っている場合は、共有URLをコピーして、アプリの「使い方・データ保存」→「バックアップから復元」に貼り付けてください。</li><li>同じ曲をもう一度共有すると、上書きして更新します。</li></ol><p class="sub">歌詞は著作物です。ほかの人に渡すときは、私的な範囲でお使いください。</p></div></div>');
  sendBuild()}
 function sendDo(kind){var st=SendState;if(!st||!st.link||st.error)return;var url=st.link,n=sendSelectedSongs().length;
  if(kind==='share'){
-  if(navigator.share)navigator.share({title:'リリペンの曲（'+n+'曲）',text:'リリペンで開くと曲を取り込めます',url:url}).catch(function(e){if(e&&e.name!=='AbortError')sendDo('copy')});
+  if(navigator.share)navigator.share({title:'リリペンの共有URL（'+n+'曲）',text:'リリペンで開くと曲を取り込めます',url:url}).catch(function(e){if(e&&e.name!=='AbortError')sendDo('copy')});
   else sendDo('copy');return}
- (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(function(){toast('リンクをコピーしました')}).catch(function(){
-  var ta=document.createElement('textarea');ta.value=url;ta.readOnly=true;ta.style.cssText='position:fixed;left:0;top:0;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?'リンクをコピーしました':'コピーできませんでした')})}
-document.addEventListener('change',function(e){var t=e.target;if(!t||!t.classList||!t.classList.contains('send-chk')||!SendState)return;SendState.ids[t.dataset.sendid]=t.checked;sendBuild()});
+ (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(function(){toast('共有URLをコピーしました')}).catch(function(){
+  var ta=document.createElement('textarea');ta.value=url;ta.readOnly=true;ta.style.cssText='position:fixed;left:0;top:0;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?'共有URLをコピーしました':'コピーできませんでした')})}
+document.addEventListener('change',function(e){var t=e.target;if(!t||!SendState)return;if(t.id==='sendSettings'){SendState.withSettings=t.checked;sendBuild();return}if(!t.classList||!t.classList.contains('send-chk'))return;SendState.ids[t.dataset.sendid]=t.checked;sendBuild()});
 function backupData(){commitEdits();flushAllSaves();return {app:'utanote',v:1,songs:S.songs,phrases:S.phrases}}
 function downloadBackup(){
  try{var blob=new Blob([JSON.stringify(backupData(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -741,14 +743,20 @@ function stageRestore(raw,name){
  if(songs.length!==data.songs.length){toast('読み込めない曲データがあります');return false}
  var ids=Object.create(null);songs=songs.filter(function(song){if(ids[song.id])return false;ids[song.id]=true;return true});
  var overwrite=songs.filter(function(song){return S.songs.some(function(old){return old.id===song.id})}).length;
- pendingRestore={songs:songs,phrases:Array.isArray(data.phrases)?data.phrases.map(String).filter(Boolean).slice(0,60):null};
+ var prefs=null;if(data.prefs&&typeof data.prefs==='object'){var dp=data.prefs;prefs={};
+  if(Number.isFinite(dp.fs))prefs.fs=Math.max(16,Math.min(40,dp.fs));if(Number.isFinite(dp.speed))prefs.speed=Math.max(1,Math.min(10,dp.speed));
+  if(dp.show&&typeof dp.show==='object'){prefs.show={sym:dp.show.sym!==false,hl:dp.show.hl!==false,memo:[1,2,3].indexOf(dp.show.memo)>=0?dp.show.memo:2}}
+  if(Array.isArray(dp.symOrder))prefs.symOrder=dp.symOrder.filter(function(id){return typeof id==='string'&&SYM[id]}).slice(0,40)}
+ pendingRestore={songs:songs,share:data.share===true,prefs:prefs,phrases:Array.isArray(data.phrases)?data.phrases.map(String).filter(Boolean).slice(0,60):null};
  var old=document.querySelector('.sheetwrap');if(old)old.remove();
- document.querySelector('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="復元内容の確認"><h3>バックアップから復元</h3><p class="sub">'+esc(name||'バックアップ')+'</p><p>'+songs.length+'曲を取り込みます。<br>新しく追加：'+(songs.length-overwrite)+'曲<br>同じ曲を上書き：'+overwrite+'曲</p><p class="sub">バックアップにない曲は残ります。曲の取り込みは「元に戻す」で取り消せます。</p><div class="tools"><button class="btn pri" data-act="bk-apply">復元する</button><button class="btn" data-act="imp-x">キャンセル</button></div></div></div>');return true;
+ document.querySelector('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="取り込み内容の確認"><h3>'+(pendingRestore.share?'共有URLから取り込み':'バックアップから復元')+'</h3><p class="sub">'+esc(name||'バックアップ')+'</p><p>'+songs.length+'曲を取り込みます。<br>新しく追加：'+(songs.length-overwrite)+'曲<br>同じ曲を上書き：'+overwrite+'曲</p><p class="sub">バックアップにない曲は残ります。曲の取り込みは「元に戻す」で取り消せます。</p>'+(pendingRestore.share&&(pendingRestore.prefs||pendingRestore.phrases)?'<label class="send-row"><input type="checkbox" id="rsSettings" checked><span>表示設定・記号の並び・メモのパレットも取り込む<small>（この端末の設定を上書きします）</small></span></label>':'')+'<div class="tools"><button class="btn pri" data-act="bk-apply">'+(pendingRestore.share?'取り込む':'復元する')+'</button><button class="btn" data-act="imp-x">キャンセル</button></div></div></div>');return true;
 }
 function applyRestore(){
  if(!pendingRestore)return;commitEdits();var data=pendingRestore;pendingRestore=null;
  data.songs.forEach(function(song){var i=S.songs.findIndex(function(old){return old.id===song.id});if(i<0)S.songs.push(song);else S.songs[i]=song});
- if(data.phrases&&data.phrases.length){S.phrases=data.phrases;savePh()}
+ var sw=document.querySelector('#rsSettings'),useSettings=!data.share||!!(sw&&sw.checked);
+ if(useSettings&&data.phrases&&data.phrases.length){S.phrases=data.phrases;savePh()}
+ if(useSettings&&data.prefs){var dp=data.prefs;if(dp.fs!==undefined)S.fs=dp.fs;if(dp.speed!==undefined)S.speed=dp.speed;if(dp.show)S.show=dp.show;if(dp.symOrder)S.symOrder=dp.symOrder;savePrefs()}
  recordHistory();var modal=document.querySelector('.sheetwrap');if(modal)modal.remove();render();setSaveState('保存中…');
  Promise.all(data.songs.map(function(song){return Promise.resolve().then(function(){return Store.save(song)})})).then(function(){setSaveState('保存済み');toast(data.songs.length+'曲を復元しました')}).catch(function(){setSaveState('保存できませんでした');toast('保存できませんでした。バックアップを保管してください')});
 }
@@ -892,7 +900,7 @@ function modeIcon(m){return '<span class="mode-icon" aria-hidden="true"><svg vie
 function modeBanner(){var d=MODES[S.mode];return '<div class="mode-banner">'+modeIcon(S.mode)+'<div><h2>'+d.title+'</h2><p>'+d.hint+'</p></div></div>'}
 function topBar(s){
   var m=S.mode;
-  return '<div class="top mode-top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div>'+(m==='edit'?'':'<button class="header-action" data-act="reading" aria-pressed="'+!!S.reading+'">'+(S.reading?'戻す':'広く見る')+'</button>')+'<button class="header-action" data-act="send-open" aria-label="この曲を別の端末へ送る">送る</button><button class="header-action" data-act="card-image" aria-label="メモ付きの歌詞を画像として保存">画像</button><button class="header-action" data-act="print" aria-label="メモ付きの歌詞を印刷・PDF保存">印刷</button><button class="header-action" data-act="tools" aria-label="元に戻す・やり直す" aria-expanded="'+!!S.toolsOpen+'">⋯</button></div>'+
+  return '<div class="top mode-top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div>'+(m==='edit'?'':'<button class="header-action" data-act="reading" aria-pressed="'+!!S.reading+'">'+(S.reading?'戻す':'広く見る')+'</button>')+'<button class="header-action" data-act="send-open" aria-label="この曲の共有URLを作る">共有</button><button class="header-action" data-act="card-image" aria-label="メモ付きの歌詞を画像として保存">画像</button><button class="header-action" data-act="print" aria-label="メモ付きの歌詞を印刷・PDF保存">印刷</button><button class="header-action" data-act="tools" aria-label="元に戻す・やり直す" aria-expanded="'+!!S.toolsOpen+'">⋯</button></div>'+
    '<div class="seg mode-tabs" role="group" aria-label="操作モードを切り替え">'+["sing","mark","edit"].map(function(k){var d=MODES[k];
      return '<button data-act="mode" data-v="'+k+'" aria-label="'+d.label+'：'+d.short+'" aria-pressed="'+(m===k)+'"><span class="mode-label">'+modeIcon(k)+d.label+'</span><small>'+d.short+'</small><span class="mode-current" aria-hidden="true">✓ 選択中</span></button>'}).join("")+'</div><div class="tools'+(S.toolsOpen?' is-open':'')+'">'+undoButtons()+'</div><span class="save-state" data-save-state role="status">'+esc(saveState)+'</span></div>';
 }
@@ -1012,11 +1020,11 @@ function helpModal(){
    '<li><b>メモする</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
    '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。ライブでは「ライブ用プロンプター」からフレーズごとの表示時間を設定して、大きな歌詞とメモを表示できます。</li></ol>'+
    '<h3>印刷・PDF保存</h3><p class="sub">曲を開いて右上の「印刷」を押すと、記号・色・メモを付けた歌詞を印刷できます。PDF保存は端末の印刷画面から選べます。</p><h3>保存について</h3><p class="sub" style="margin:0 0 10px;font-size:13px">'+(db?"ログインしているアカウントの専用領域に保存されます。ほかの人には見えません。":"この端末のアプリ内に保存されます。アプリの削除やブラウザのデータ消去で失われるので、バックアップを取っておくと安心です。")+'</p>'+
-   '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-act="send-open">別の端末へ送る</button><button class="btn sm" data-act="bk-download">ファイルに保存</button><button class="btn sm" data-act="bk-file">ファイルから復元</button><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
+   '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-act="send-open">共有URL</button><button class="btn sm" data-act="bk-download">ファイルに保存</button><button class="btn sm" data-act="bk-file">ファイルから復元</button><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
 }
 function restoreModal(){
   return '<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="バックアップから復元"><h3>バックアップから復元</h3>'+
-   '<div class="sub" style="margin-bottom:8px">「バックアップをコピー」で控えたテキスト、または「別の端末へ送る」のリンクを貼り付けます。同じ曲は上書き、ない曲は追加されます。</div>'+
+   '<div class="sub" style="margin-bottom:8px">「バックアップをコピー」で控えたテキスト、または「共有URL」を貼り付けます。同じ曲は上書き、ない曲は追加されます。</div>'+
    '<textarea id="bkTa" placeholder="ここに貼り付け"></textarea><div style="display:flex;gap:8px;margin-top:10px"><button class="btn pri" data-act="bk-go">復元する</button><button class="btn" data-act="imp-x">キャンセル</button></div></div></div>';
 }
 function normSong(s){
@@ -1424,7 +1432,7 @@ function act(a,el){
   case "send-share":sendDo("share");break;
   case "send-copy":sendDo("copy");break;
   case "bk-open":var w3=$(".sheetwrap");if(w3)w3.remove();$("#layer").insertAdjacentHTML("beforeend",restoreModal());setTimeout(function(){var t=$("#bkTa");if(t)t.focus()},50);break;
-  case "bk-go":var raw0=$("#bkTa")?$("#bkTa").value:'';if(!shareImportText(raw0,'貼り付けたリンク'))stageRestore(raw0,'貼り付けたバックアップ');break;
+  case "bk-go":var raw0=$("#bkTa")?$("#bkTa").value:'';if(!shareImportText(raw0,'貼り付けた共有URL'))stageRestore(raw0,'貼り付けたバックアップ');break;
   case "memodone":if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();document.body.classList.remove("typing");S.sel=null;render();break;
   case "pedit":S.pedit=!S.pedit;render();break;
   case "phnew":$("#layer").insertAdjacentHTML("beforeend",phraseModal());setTimeout(function(){var t=$("#phNew");if(t)t.focus()},50);break;
