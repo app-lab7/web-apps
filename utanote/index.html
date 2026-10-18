@@ -419,6 +419,8 @@ input,textarea{background:var(--surface);border-radius:7px}.ecard textarea{borde
 @media(max-width:380px){.home-help{font-size:11px;padding:7px}.home-choice{padding:18px 14px;gap:12px;min-height:108px}.choice-icon{width:40px;height:44px}.choice-copy b{font-size:20px}.choice-copy small{font-size:12px}}
 </style>
 <style>
+/* 別の端末へ送る */
+.send-list{display:grid;gap:4px;max-height:34vh;overflow-y:auto;margin:10px 0;border:1px solid var(--line);border-radius:8px;padding:4px}.send-row{display:flex;align-items:center;gap:10px;min-height:44px;padding:4px 8px;border-radius:6px}.send-row input{width:22px;height:22px;flex:none}.send-row small{color:var(--muted)}
 /* 行末の空白スロット：メモ画面では薄い下線で場所を示し、記号は空白の真上に置く */
 .mark .c.blank:not(.sel){box-shadow:inset 0 -2px 0 var(--line)}.c.blank .sy.af{left:50%}
 /* マーカー（蛍光ペン）：鮮やかな背景の上は常に濃い文字にする */
@@ -668,6 +670,63 @@ function restorePosition(pos){
  if(!target&&pos.section){nodes=document.querySelectorAll('[data-view-sec]');for(var j=0;j<nodes.length;j++)if(nodes[j].dataset.viewSec===pos.section){target=nodes[j];break}}
  if(target)window.scrollBy(0,target.getBoundingClientRect().top-headerEdge()-(pos.offset||0));else window.scrollTo(0,pos.y||0);
 }
+/* ---------- 別の端末へ送る（リンク／コード） ----------
+   曲のデータを圧縮してURLの「#import=」以降（サーバーには送られない部分）に入れる。受け取った側がリンクを開く、またはコードを貼り付けると取り込み確認が出る。 */
+var SEND_MAX_LINK=30000;
+function sendBase(){return location.origin+location.pathname}
+async function shareReadCapped(stream,max){var reader=stream.getReader(),chunks=[],total=0;
+ for(;;){var r=await reader.read();if(r.done)break;total+=r.value.length;if(total>max){try{reader.cancel()}catch(e){}throw Error('too large')}chunks.push(r.value)}
+ var out=new Uint8Array(total),pos=0;chunks.forEach(function(c){out.set(c,pos);pos+=c.length});return out}
+async function shareEncode(obj){
+ var bytes=new TextEncoder().encode(JSON.stringify(obj)),prefix='p.';
+ if(window.CompressionStream){try{var cs=new CompressionStream('gzip'),w=cs.writable.getWriter();w.write(bytes);w.close();bytes=await shareReadCapped(cs.readable,20*1024*1024);prefix='g.'}catch(e){bytes=new TextEncoder().encode(JSON.stringify(obj));prefix='p.'}}
+ var bin='';for(var i=0;i<bytes.length;i+=0x8000)bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+ return prefix+btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+async function shareDecode(code){
+ var gz=code.charAt(0)==='g',b=code.slice(2).replace(/-/g,'+').replace(/_/g,'/');while(b.length%4)b+='=';
+ var bin=atob(b),bytes=new Uint8Array(bin.length);for(var i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+ if(gz){if(!window.DecompressionStream)throw Error('unsupported');var ds=new DecompressionStream('gzip'),w=ds.writable.getWriter();w.write(bytes);w.close();bytes=await shareReadCapped(ds.readable,20*1024*1024)}
+ else if(bytes.length>20*1024*1024)throw Error('too large');
+ return new TextDecoder().decode(bytes);
+}
+function shareCodeFrom(text){var m=String(text).match(/import=([gp]\.[A-Za-z0-9_-]+)/)||String(text).trim().match(/^([gp]\.[A-Za-z0-9_-]{8,})$/);return m?m[1]:null}
+function shareImportText(text,label){var code=shareCodeFrom(text);if(!code)return false;
+ shareDecode(code).then(function(json){stageRestore(json,label||'共有されたリンク')}).catch(function(){toast('リンクを読み込めませんでした。もう一度送ってもらってください')});return true}
+function handleShareHash(){var h=location.hash||'';if(h.indexOf('#import=')!==0)return;
+ try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+ shareImportText(h,'共有されたリンク')}
+var SendState=null;
+function sendSelectedSongs(){var ids=SendState?SendState.ids:{};return S.songs.filter(function(x){return ids[x.id]})}
+async function sendBuild(){var st=SendState;if(!st)return;st.link=null;st.token=(st.token||0)+1;var token=st.token;sendPaint();
+ var songs=sendSelectedSongs();if(!songs.length){st.error='';sendPaint();return}
+ try{var code=await shareEncode({app:'utanote',v:1,songs:songs});if(SendState!==st||st.token!==token)return;st.link=sendBase()+'#import='+code;st.error=st.link.length>SEND_MAX_LINK?'曲が多い・長いため、リンクが長くなっています。曲を減らすか、「使い方・データ保存」のファイル保存をお使いください。':''}
+ catch(e){if(SendState!==st||st.token!==token)return;st.error='リンクを作れませんでした。'}
+ sendPaint()}
+function sendPaint(){var st=SendState,root=$('#sendModal');if(!st||!root)return;
+ var n=sendSelectedSongs().length,ok=!!st.link&&!st.error&&n>0;
+ var status=!n?'送る曲を選んでください。':st.error?st.error:st.link?'リンクの準備ができました（'+n+'曲）':'準備しています…';
+ $('#sendStatus',root).textContent=status;
+ $('#sendShare',root).disabled=!ok;$('#sendCopy',root).disabled=!ok}
+function sendModal(){var cur0=S.view==='song'?cur():null;
+ SendState={ids:{},link:null,error:'',token:0};
+ S.songs.forEach(function(x){SendState.ids[x.id]=cur0?x.id===cur0.id:true});
+ var list=S.songs.map(function(x){return '<label class="send-row"><input type="checkbox" class="send-chk" data-sendid="'+esc(x.id)+'"'+(SendState.ids[x.id]?' checked':'')+'><span>'+esc(x.title||'(無題)')+(x.artist?'<small> / '+esc(x.artist)+'</small>':'')+'</span></label>'}).join('');
+ var old=document.querySelector('.sheetwrap');if(old)old.remove();
+ $('#layer').insertAdjacentHTML('beforeend','<div class="sheetwrap top" data-act="imp-x"><div class="modal" id="sendModal" role="dialog" aria-label="別の端末へ送る"><h3>別の端末へ送る</h3>'+
+  '<p class="sub">iPadなど、別の端末でリリペンに曲を移します。記号・色・メモもそのまま移ります。</p>'+
+  '<div class="send-list">'+(list||'<p class="sub">曲がありません。</p>')+'</div>'+
+  '<p class="sub" id="sendStatus" role="status">準備しています…</p>'+
+  '<div class="tools"><button class="btn pri" id="sendShare" data-act="send-share" disabled>共有する（AirDrop・メッセージなど）</button><button class="btn" id="sendCopy" data-act="send-copy" disabled>リンクをコピー</button><button class="btn" data-act="imp-x">閉じる</button></div>'+
+  '<ol class="how"><li>送り先でリンクを開く → 「取り込む」を押します。</li><li>ホーム画面に追加したアプリで使っている場合は、リンクをコピーして、アプリの「使い方・データ保存」→「バックアップから復元」に貼り付けてください。</li><li>同じ曲を送り直すと、上書きして更新します。</li></ol></div></div>');
+ sendBuild()}
+function sendDo(kind){var st=SendState;if(!st||!st.link||st.error)return;var url=st.link,n=sendSelectedSongs().length;
+ if(kind==='share'){
+  if(navigator.share)navigator.share({title:'リリペンの曲（'+n+'曲）',text:'リリペンで開くと曲を取り込めます',url:url}).catch(function(e){if(e&&e.name!=='AbortError')sendDo('copy')});
+  else sendDo('copy');return}
+ (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(url):Promise.reject()).then(function(){toast('リンクをコピーしました')}).catch(function(){
+  var ta=document.createElement('textarea');ta.value=url;ta.readOnly=true;ta.style.cssText='position:fixed;left:0;top:0;opacity:0';document.body.appendChild(ta);ta.focus();ta.select();var ok=false;try{ok=document.execCommand('copy')}catch(e){}ta.remove();toast(ok?'リンクをコピーしました':'コピーできませんでした')})}
+document.addEventListener('change',function(e){var t=e.target;if(!t||!t.classList||!t.classList.contains('send-chk')||!SendState)return;SendState.ids[t.dataset.sendid]=t.checked;sendBuild()});
 function backupData(){commitEdits();flushAllSaves();return {app:'utanote',v:1,songs:S.songs,phrases:S.phrases}}
 function downloadBackup(){
  try{var blob=new Blob([JSON.stringify(backupData(),null,2)],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');
@@ -833,7 +892,7 @@ function modeIcon(m){return '<span class="mode-icon" aria-hidden="true"><svg vie
 function modeBanner(){var d=MODES[S.mode];return '<div class="mode-banner">'+modeIcon(S.mode)+'<div><h2>'+d.title+'</h2><p>'+d.hint+'</p></div></div>'}
 function topBar(s){
   var m=S.mode;
-  return '<div class="top mode-top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div>'+(m==='edit'?'':'<button class="header-action" data-act="reading" aria-pressed="'+!!S.reading+'">'+(S.reading?'戻す':'広く見る')+'</button>')+'<button class="header-action" data-act="card-image" aria-label="メモ付きの歌詞を画像として保存">画像</button><button class="header-action" data-act="print" aria-label="メモ付きの歌詞を印刷・PDF保存">印刷</button><button class="header-action" data-act="tools" aria-label="元に戻す・やり直す" aria-expanded="'+!!S.toolsOpen+'">⋯</button></div>'+
+  return '<div class="top mode-top"><div class="row"><button class="ib" data-act="back" aria-label="一覧へ">'+IC.back+'</button><div class="ttl">'+esc(s.title||"(無題)")+'</div>'+(m==='edit'?'':'<button class="header-action" data-act="reading" aria-pressed="'+!!S.reading+'">'+(S.reading?'戻す':'広く見る')+'</button>')+'<button class="header-action" data-act="send-open" aria-label="この曲を別の端末へ送る">送る</button><button class="header-action" data-act="card-image" aria-label="メモ付きの歌詞を画像として保存">画像</button><button class="header-action" data-act="print" aria-label="メモ付きの歌詞を印刷・PDF保存">印刷</button><button class="header-action" data-act="tools" aria-label="元に戻す・やり直す" aria-expanded="'+!!S.toolsOpen+'">⋯</button></div>'+
    '<div class="seg mode-tabs" role="group" aria-label="操作モードを切り替え">'+["sing","mark","edit"].map(function(k){var d=MODES[k];
      return '<button data-act="mode" data-v="'+k+'" aria-label="'+d.label+'：'+d.short+'" aria-pressed="'+(m===k)+'"><span class="mode-label">'+modeIcon(k)+d.label+'</span><small>'+d.short+'</small><span class="mode-current" aria-hidden="true">✓ 選択中</span></button>'}).join("")+'</div><div class="tools'+(S.toolsOpen?' is-open':'')+'">'+undoButtons()+'</div><span class="save-state" data-save-state role="status">'+esc(saveState)+'</span></div>';
 }
@@ -953,11 +1012,11 @@ function helpModal(){
    '<li><b>メモする</b>タブで行や文字をタップすると、歌い方のメモ、記号、色を付けられます。言葉を2か所タップして範囲を選ぶと、記号が範囲に合わせて伸びます。</li>'+
    '<li><b>歌う</b>タブで見ながら歌います。自動スクロールと、文字サイズ・表示の切り替えが使えます。ライブでは「ライブ用プロンプター」からフレーズごとの表示時間を設定して、大きな歌詞とメモを表示できます。</li></ol>'+
    '<h3>印刷・PDF保存</h3><p class="sub">曲を開いて右上の「印刷」を押すと、記号・色・メモを付けた歌詞を印刷できます。PDF保存は端末の印刷画面から選べます。</p><h3>保存について</h3><p class="sub" style="margin:0 0 10px;font-size:13px">'+(db?"ログインしているアカウントの専用領域に保存されます。ほかの人には見えません。":"この端末のアプリ内に保存されます。アプリの削除やブラウザのデータ消去で失われるので、バックアップを取っておくと安心です。")+'</p>'+
-   '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-act="bk-download">ファイルに保存</button><button class="btn sm" data-act="bk-file">ファイルから復元</button><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
+   '<p class="sub">間違えた操作は「元に戻す」で取り消せます（この画面を開いている間、最大24操作）。文字サイズ・表示・スクロール速度は次回も引き継ぎます。</p>'+installHTML()+'<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sm pri" data-act="send-open">別の端末へ送る</button><button class="btn sm" data-act="bk-download">ファイルに保存</button><button class="btn sm" data-act="bk-file">ファイルから復元</button><button class="btn sm" data-act="bk-copy">バックアップをコピー</button><button class="btn sm" data-act="bk-open">バックアップから復元</button><button class="btn sm pri" data-act="imp-x">閉じる</button></div></div></div>';
 }
 function restoreModal(){
   return '<div class="sheetwrap top" data-act="imp-x"><div class="modal" role="dialog" aria-label="バックアップから復元"><h3>バックアップから復元</h3>'+
-   '<div class="sub" style="margin-bottom:8px">「バックアップをコピー」で控えたテキストを貼り付けます。同じ曲は上書き、ない曲は追加されます。</div>'+
+   '<div class="sub" style="margin-bottom:8px">「バックアップをコピー」で控えたテキスト、または「別の端末へ送る」のリンクを貼り付けます。同じ曲は上書き、ない曲は追加されます。</div>'+
    '<textarea id="bkTa" placeholder="ここに貼り付け"></textarea><div style="display:flex;gap:8px;margin-top:10px"><button class="btn pri" data-act="bk-go">復元する</button><button class="btn" data-act="imp-x">キャンセル</button></div></div></div>';
 }
 function normSong(s){
@@ -1361,8 +1420,11 @@ function act(a,el){
       var w2=$(".sheetwrap");if(w2)w2.remove();
       $("#layer").insertAdjacentHTML("beforeend",'<div class="sheetwrap top" data-act="imp-x"><div class="modal"><h3>バックアップ</h3><div class="sub" style="margin-bottom:8px">全体をコピーして保管してください。</div><textarea id="cpTa" readonly>'+esc(bt)+'</textarea><div style="margin-top:10px"><button class="btn" data-act="imp-x">閉じる</button></div></div></div>');
       var c2=$("#cpTa");if(c2){c2.focus();c2.select()}});break;
+  case "send-open":sendModal();break;
+  case "send-share":sendDo("share");break;
+  case "send-copy":sendDo("copy");break;
   case "bk-open":var w3=$(".sheetwrap");if(w3)w3.remove();$("#layer").insertAdjacentHTML("beforeend",restoreModal());setTimeout(function(){var t=$("#bkTa");if(t)t.focus()},50);break;
-  case "bk-go":stageRestore($("#bkTa")?$("#bkTa").value:'','貼り付けたバックアップ');break;
+  case "bk-go":var raw0=$("#bkTa")?$("#bkTa").value:'';if(!shareImportText(raw0,'貼り付けたリンク'))stageRestore(raw0,'貼り付けたバックアップ');break;
   case "memodone":if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();document.body.classList.remove("typing");S.sel=null;render();break;
   case "pedit":S.pedit=!S.pedit;render();break;
   case "phnew":$("#layer").insertAdjacentHTML("beforeend",phraseModal());setTimeout(function(){var t=$("#phNew");if(t)t.focus()},50);break;
@@ -1426,7 +1488,7 @@ Store.init().then(function(){return Store.loadAll()}).then(function(r){
   if(!r.seeded&&!S.songs.length){var sm=sampleSong();S.songs.push(sm);Store.save(sm).catch(function(){});Store.markSeeded()}
   else if(!r.seeded)Store.markSeeded();
   restoreLearningReturn();
-  S.ready=true;recordHistory();render();
+  S.ready=true;recordHistory();render();handleShareHash();
 }).catch(function(){S.ready=true;render()});
 </script>
 <script>
