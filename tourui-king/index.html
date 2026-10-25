@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>盗塁王 - 牽制をかいくぐれ!</title>
+<meta name="description" content="投手が脚を上げたら走れ。牽制に刺されたら終わり。何盗塁できる?">
+<meta property="og:title" content="盗塁王 - 牽制をかいくぐれ!">
+<meta property="og:description" content="投手が脚を上げたら走れ。牽制に刺されたら終わり。何盗塁できる?">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<!-- 公開後にOGP画像を絶対URLで設定してください(Xのシェア時のサムネになります)
+<meta property="og:image" content="https://app-lab7.github.io/web-apps/tourui-king/og.png">
+<meta property="og:url" content="https://app-lab7.github.io/web-apps/tourui-king/">
+<meta name="twitter:image" content="https://app-lab7.github.io/web-apps/tourui-king/og.png">
+<meta name="twitter:image" content="https://ユーザー名.github.io/リポジトリ名/og.png">
+-->
+<style>
+html,body{margin:0;height:100%;background:#050d17;overflow:hidden;overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+#stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
+canvas{display:block;touch-action:none;width:min(100vw,calc(100vh*0.5625));height:min(100vh,calc(100vw/0.5625))}
+@supports (height:100dvh){canvas{width:min(100vw,calc(100dvh*0.5625));height:min(100dvh,calc(100vw/0.5625))}}
+</style>
+</head>
+<body>
+<div id="stage"><canvas id="c" width="360" height="640"></canvas></div>
+<script>
+(function(){
+'use strict';
+const cv=document.getElementById('c'),ctx=cv.getContext('2d');
+const W=360,H=640;
+let DPR=1;
+function resize(){DPR=Math.min(window.devicePixelRatio||1,2.5);cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);}
+resize();window.addEventListener('resize',resize);
+
+/* ---------- 定数 ---------- */
+const BASE_FT=90;
+const SPEED=62,ACC=0.5,MAXLEAD=12,LEAD_RATE=13,BACK_RATE=70,PICK_FLY=0.28;
+/* 球場は真上から見た配置: ホームが下、一塁が右、二塁が上、三塁が左 */
+const HOME={x:180,y:448},B1={x:300,y:328},B2={x:180,y:208},B3={x:60,y:328},MOUND={x:180,y:334};
+const FBM={x:324,y:322},SSM={x:148,y:226},SECM={x:240,y:252},TBM={x:44,y:324},BAT={x:142,y:452},CATCH={x:180,y:472};
+const HP={x:MOUND.x+6,y:MOUND.y-30};            // 投手の手元
+const FBG={x:FBM.x-12,y:FBM.y-22};              // 一塁手のグラブ
+const CGL={x:CATCH.x,y:CATCH.y-24};             // 捕手のミット
+const TG={x:B2.x-8,y:B2.y-14};                  // 二塁でのタッチ位置
+const INSET={x:12,y:62,w:200,h:130};
+const FOOT={x:218,y:62,w:130,h:130};            // 足元アップ(脚上げ=GOの合図を見る窓)            // 投手アップ(クセを見る窓)
+const SHARE_BTN={x:30,y:404,w:300,h:52},RETRY_BTN={x:30,y:470,w:300,h:52};
+function pathPos(s){const u=s/BASE_FT;return {x:B1.x+(B2.x-B1.x)*u,y:B1.y+(B2.y-B1.y)*u};}
+const MSG={
+ pick:['アウト!','牽制に刺された…'],
+ pickgo:['アウト!','牽制に釣られた!!'],
+ caught:['アウト!','スタートが遅かった…'],
+ read:['アウト!','投球前にスタート!読まれた…']
+};
+const CAUSE={pick:'牽制死',pickgo:'牽制に釣られた',caught:'盗塁死',read:'フライング'};
+
+/* ---------- 状態 ---------- */
+const S={phase:'title',time:0,steals:0,outs:0,lv:0,introLv:-1,intro:false,L:0,picks:0,ab:0,
+ setT:0,holdTime:1,planned:false,action:'pitch',tellOn:false,tellKind:null,tellStart:0,tellEnd:0,
+ t:0,goT:null,runL:0,runTe:0,eta:0,willSafe:false,resolved:false,timer:0,banner:null,after:'',cause:'',
+ resS:0,resBall:{x:0,y:0},slideDir:1,toast:'',toastT:0,overAt:0,best:0,newBest:false,goFlash:0};
+if(location.search.indexOf('debug')>=0)window.__stealGame={S:S,makePitcher:function(n){return makePitcher(n);}}; // テスト用(?debug の時だけ公開)
+try{S.best=parseInt(localStorage.getItem('tourui_best')||'0',10)||0;}catch(e){}
+function saveBest(){try{localStorage.setItem('tourui_best',String(S.best));}catch(e){}}
+
+const P=()=>S.pitcher;
+const clamp01=x=>x<0?0:x>1?1:x;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const rand=(a,b)=>a+Math.random()*(b-a);
+function runS(L0,te){if(te<=0)return L0;if(te<ACC)return L0+SPEED*te*te/(2*ACC);return L0+SPEED*(te-ACC/2);}
+function runTime(L0){return (BASE_FT-L0)/SPEED+ACC/2;}
+function rankOf(n){if(n>=25)return '伝説の盗塁王';if(n>=15)return '盗塁王';if(n>=10)return '韋駄天';if(n>=6)return '盗塁職人';if(n>=3)return '俊足レギュラー';if(n>=1)return '代走要員';return '一塁ベース番';}
+
+/* ---------- 音・振動 ---------- */
+let AC=null;
+function audioInit(){try{if(!AC){const C=window.AudioContext||window.webkitAudioContext;if(C)AC=new C();}if(AC&&AC.state==='suspended')AC.resume();}catch(e){}}
+function tone(f,d,type,vol,f2){if(!AC)return;try{const o=AC.createOscillator(),g=AC.createGain(),n=AC.currentTime;o.type=type||'square';o.frequency.setValueAtTime(f,n);if(f2)o.frequency.exponentialRampToValueAtTime(f2,n+d);g.gain.setValueAtTime(vol||.05,n);g.gain.exponentialRampToValueAtTime(.0001,n+d);o.connect(g);g.connect(AC.destination);o.start();o.stop(n+d);}catch(e){}}
+function vib(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
+
+/* ---------- ゲーム進行 ---------- */
+function resetAB(){S.L=0;S.picks=0;S.ab=0;S.goT=null;S.resolved=false;}
+function startGame(){
+ S.steals=0;S.outs=0;S.pitcher=makePitcher(0);camPose=null;S.cause='';S.banner=null;S.toastT=0;
+ resetAB();enterReady(1.7);
+}
+function enterReady(t){
+ S.phase='ready';S.intro=true;S.timer=Math.max(t,(S.steals===0&&S.outs===0)?1.8:1.2);
+}
+function startSet(){
+ const p=P();
+ S.phase='set';S.setT=0;S.holdTime=rand(p.hold[0],p.hold[1]);S.planned=false;
+ S.tellOn=false;S.tellKind=null;S.goT=null;S.t=0;S.resolved=false;S.fakeLift=false;S.dv=0;S.pRel=p.pickRel;S.t1=T1(p);
+}
+const T1=p=>p.lift+(p.deliv-p.lift)*.22; // 踏み込み(ホームへ脚が出る)開始時刻
+function plan(){
+ const p=P();
+ const can=S.picks<2;
+ const pp=can?Math.min(.85,p.pBase+.15):0;
+ S.action=Math.random()<pp?'pickoff':'pitch';
+ S.fakeLift=S.action==='pickoff'&&Math.random()<p.ambig;
+ // 左腕は脚を上げても(前に踏み出して=クロスさせなければ)一塁へ牽制できる。右腕は脚を上げたら投球が基本
+ S.t1=T1(p);S.dv=0;S.pRel=p.pickRel;
+ if(S.fakeLift){
+  if(p.rh){S.dv=Math.max(p.dir,.1);}
+  else{S.dv=S.t1;S.pRel=S.t1+p.pickRel*.5;}
+ }
+ const show=false; // クセは廃止(手がかりは脚の動きだけ)
+ if(show){
+  S.tellOn=true;
+  S.tellKind=p.tell==='any'?TELLS[Math.floor(Math.random()*TELLS.length)]:p.tell;
+  S.tellStart=S.setT;S.tellEnd=S.setT+Math.min(.32,p.tellLead-.02);
+ }
+}
+function moveLead(dt,hold){
+ if(hold)S.L=Math.min(MAXLEAD,S.L+LEAD_RATE*dt);
+ else S.L=Math.max(0,S.L-BACK_RATE*dt);
+}
+function updateSet(dt){
+ const p=P();S.setT+=dt;moveLead(dt,holding());
+ const planAt=S.holdTime-p.tellLead;
+ if(!S.planned&&S.setT>=planAt){S.planned=true;plan();}
+ if(S.tellOn&&S.setT>S.tellEnd)S.tellOn=false;
+ if(S.setT>=S.holdTime){
+  if(!S.planned){S.planned=true;plan();}
+  S.t=S.setT-S.holdTime;S.goT=null;S.resolved=false;S.tellOn=false;
+  if(S.action==='pickoff'){S.phase='pickoff';S.picks++;tone(700,.12,'triangle',.03,300);}
+  else S.phase='pitch';
+ }
+}
+function updatePickoff(dt){
+ const p=P();S.t+=dt;
+ if(S.goT===null)moveLead(dt,holding());
+ const arrive=S.pRel+PICK_FLY;
+ if(!S.resolved&&S.t>=arrive){
+  S.resolved=true;
+  if(S.goT!==null)resolveOut('pickgo',0,Math.min(BASE_FT-1,runS(S.runL,S.t-S.goT)));
+  else if(S.L>0.05)resolveOut('pick',0,S.L);
+  else{S.phase='recover';S.timer=.9;S.resBall=FBG;S.toast='牽制をかわした!';S.toastT=.9;}
+ }
+}
+function updatePitch(dt){
+ const p=P();S.t+=dt;
+ const tc=p.deliv+p.flight,ballAt=tc+p.pop;
+ if(S.goT===null){
+  moveLead(dt,holding());
+  if(S.t>=tc)passPitch();
+ }else if(!S.resolved){
+  if(S.willSafe){if(S.t>=S.eta){S.resolved=true;resolveSafe(ballAt-S.eta);}}
+  else if(S.t>=ballAt){S.resolved=true;resolveOut('caught',S.eta-ballAt,Math.min(BASE_FT-1,runS(S.runL,S.t-S.goT)));}
+ }
+}
+function passPitch(){
+ S.ab++;let msg='見送り';
+ if(S.ab>=3){S.ab=0;S.picks=0;msg='打者交代 牽制回数リセット';}
+ S.toast=msg;S.toastT=1.1;
+ S.phase='recover';S.timer=.8;S.resBall=CGL;
+}
+function pressGo(){
+ const ph=S.phase,p=P();
+ if(ph==='set'){S.phase='busted';S.runL=S.L;S.runTe=0;S.timer=.9;S.tellOn=false;S.goFlash=.2;tone(500,.1,'square',.04,900);return;}
+ if(ph==='pickoff'&&S.goT===null){S.goT=S.t;S.runL=S.L;S.goFlash=.2;tone(500,.1,'square',.04,900);return;}
+ if(ph==='pitch'&&S.goT===null){
+  S.goT=S.t;S.runL=S.L;S.goFlash=.2;
+  S.eta=S.goT+runTime(S.L);
+  S.willSafe=S.eta<=(p.deliv+p.flight+p.pop);
+  tone(500,.1,'square',.04,900);
+ }
+}
+function resolveSafe(margin){
+ S.steals++;S.phase='result';S.after='safe';S.timer=1.3;
+ let rec='';S.resS=BASE_FT;S.slideDir=1;
+ S.resBall=TG;
+ S.banner={t:'SAFE!',s:(margin<.08?'ギリギリセーフ!!':'盗塁成功! (余裕'+margin.toFixed(2)+'秒)')+rec,c:'#4ade80'};
+ tone(660,.1,'square',.05);setTimeout(()=>tone(990,.18,'square',.05),110);vib(30);
+}
+function resolveOut(cause,extra,s){
+ S.outs++;S.cause=cause;S.phase='result';S.after='out';S.timer=1.4;
+ const m=MSG[cause];let sub=m[1];
+ if(cause==='caught'&&extra>0)sub+=' (あと'+extra.toFixed(2)+'秒)';
+ S.banner={t:m[0],s:sub,c:'#f87171'};
+ S.resS=(s==null?S.L:s);S.slideDir=(cause==='pick')?-1:1;
+ S.resBall=(cause==='pick'||cause==='pickgo')?FBG:TG;
+ tone(320,.5,'sawtooth',.06,70);vib([60,40,90]);
+}
+function afterResult(){
+ S.pitcher=makePitcher(S.steals);camPose=null;
+ if(S.outs>=3){gameOver();return;}
+ resetAB();enterReady(.9);
+}
+function gameOver(){
+ S.phase='over';S.overAt=S.time;S.newBest=false;
+ if(S.steals>S.best){S.best=S.steals;S.newBest=true;saveBest();}
+}
+function update(dt){
+ if(S.toastT>0)S.toastT-=dt;if(S.goFlash>0)S.goFlash-=dt;
+ switch(S.phase){
+  case 'ready':moveLead(dt,false);S.timer-=dt;if(S.timer<=0)startSet();break;
+  case 'set':updateSet(dt);break;
+  case 'pickoff':updatePickoff(dt);break;
+  case 'pitch':updatePitch(dt);break;
+  case 'busted':S.runTe+=dt;S.timer-=dt;if(S.timer<=0)resolveOut('read',0,Math.min(BASE_FT-2,runS(S.runL,S.runTe)));break;
+  case 'recover':moveLead(dt,holding());S.timer-=dt;if(S.timer<=0)startSet();break;
+  case 'result':S.timer-=dt;if(S.timer<=0)afterResult();break;
+ }
+}
+
+/* ---------- 入力 ---------- */
+const ptr=new Map(),keys=new Set();
+// ボタンは1つ(GO)。リードは自動で取り、牽制の送球が始まったら自動で帰塁する
+function holding(){if(S.phase==='pickoff')return S.t<S.pRel;return S.phase!=='ready'&&S.phase!=='over'&&S.phase!=='title';}
+function toLocal(e){const r=cv.getBoundingClientRect();return {x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height};}
+function hit(b,p){return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h;}
+function share(){
+ const n=S.steals;
+ const text='盗塁王で'+n+'盗塁! 称号「'+rankOf(n)+'」 死因:'+(CAUSE[S.cause]||'不明')+' 牽制をかいくぐれ! #盗塁王ゲーム';
+ const url='https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(location.href.split('#')[0]);
+ try{window.open(url,'_blank','noopener');}catch(e){}
+}
+cv.addEventListener('pointerdown',e=>{
+ e.preventDefault();audioInit();try{cv.setPointerCapture(e.pointerId);}catch(_){}
+ const p=toLocal(e);
+ if(S.phase==='title'){ptr.set(e.pointerId,'ui:start');return;}
+ if(S.phase==='over'){
+  if(S.time-S.overAt<.7)return;
+  if(hit(SHARE_BTN,p))ptr.set(e.pointerId,'ui:share');
+  else if(hit(RETRY_BTN,p))ptr.set(e.pointerId,'ui:retry');
+  return;
+ }
+ if(p.y<190)return;
+ ptr.set(e.pointerId,'go');pressGo();
+});
+cv.addEventListener('pointerup',e=>{
+ const v=ptr.get(e.pointerId);ptr.delete(e.pointerId);if(!v)return;
+ if(v==='ui:start'&&S.phase==='title')startGame();
+ else if(v==='ui:retry'&&S.phase==='over')startGame();
+ else if(v==='ui:share'&&S.phase==='over')share();
+});
+cv.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+function uiStart(){
+ if(S.phase==='title')startGame();
+ else if(S.phase==='over'&&S.time-S.overAt>.7)startGame();
+}
+window.addEventListener('keydown',e=>{
+ const k=e.key;
+ if(k===' '||k==='Enter'||k==='ArrowRight'||k==='ArrowLeft'||k==='a'||k==='A'||k==='l'||k==='L'){
+  e.preventDefault();audioInit();
+  if(S.phase==='title'||S.phase==='over'){if(!e.repeat)uiStart();}else if(!e.repeat)pressGo();
+ }
+});
+window.addEventListener('blur',()=>{ptr.clear();keys.clear();});
+
+/* ---------- 描画ヘルパー ---------- */
+function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
+function txt(s,x,y,size,color,align,weight,stroke){
+ ctx.font=(weight||'bold')+' '+size+'px "Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif';
+ ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';
+ if(stroke){ctx.lineWidth=stroke.w;ctx.strokeStyle=stroke.c;ctx.lineJoin='round';ctx.strokeText(s,x,y);}
+ ctx.fillStyle=color;ctx.fillText(s,x,y);
+}
+/* ---------- 投手のモーション(左腕: 腕は画面右、牽制は一塁側=画面右へ) ---------- */
+const easeIO=u=>{u=clamp01(u);return u*u*(3-2*u);};
+const easeOut=u=>{u=clamp01(u);return 1-(1-u)*(1-u);};
+const easeIn=u=>{u=clamp01(u);return u*u;};
+const POSE_SET={ys:1,lean:0,tw:0,hdy:0,z:1,hipDy:0,hx:16,hy:-32,gx:13,gy:-32,pox:30,poy:-6,
+ kfx:-4,kfy:42,ffx:-4,ffy:68,kbx:5,kby:42,fbx:5,fby:62,capDy:0,pup:0,hdx:0,tgy:0,tnod:0,tsh:0};
+const mk=o=>Object.assign({},POSE_SET,o);
+const TELLS=['cap','glance','glove','nod','shrug'];
+const FORM_LABEL={over:'上手投げ',three:'スリークォーター',side:'横手投げ',under:'下手投げ',tornado:'トルネード'};
+const FORMS={
+ over:{cock:{hx:56,hy:-66,pox:74,poy:-60},rel:{hx:28,hy:-98,pox:62,poy:-80,lean:-.2,hdy:6},fol:{hx:-6,hy:-16,lean:-.28}},
+ three:{cock:{hx:62,hy:-58,pox:76,poy:-50},rel:{hx:50,hy:-80,pox:70,poy:-62,lean:-.16,hdy:5},fol:{hx:6,hy:-18,lean:-.2}},
+ side:{cock:{hx:68,hy:-44,pox:80,poy:-36},rel:{hx:78,hy:-50,pox:70,poy:-20,lean:-.08,hdy:3},fol:{hx:30,hy:-26,lean:-.12}},
+ under:{cock:{hx:44,hy:-10,pox:70,poy:-6,lean:.12},rel:{hx:72,hy:-6,pox:70,poy:6,lean:.22,hdy:2},fol:{hx:44,hy:-44,lean:.12}},
+ tornado:{cock:{hx:30,hy:-52,pox:50,poy:-60,tw:-.9,lean:.05,gx:-30,gy:-50},rel:{hx:28,hy:-98,pox:62,poy:-80,lean:-.2,hdy:6},fol:{hx:-6,hy:-16,lean:-.28}}
+};
+const KICKS={
+ quick:{kfy:36,kfx:-8,ffy:54,ffx:-6,hipDy:0},
+ low:{kfy:30,kfx:-8,ffy:50,ffx:-6,hipDy:-1},
+ mid:{kfy:22,kfx:-9,ffy:44,ffx:-6,hipDy:-2},
+ high:{kfy:8,kfx:-9,ffy:34,ffx:-6,hipDy:-4},
+ big:{kfy:6,kfx:-9,ffy:32,ffx:-6,hipDy:-4,hx:12,hy:-90,gx:-6,gy:-90,pox:40,poy:-60}
+};
+const MIRX=['ys','hx','gx','pox','kfx','kbx','ffx','fbx','hdx','pup','tw'];
+function mirrorPose(o){const r=Object.assign({},o);MIRX.forEach(k=>{r[k]=-o[k];});r.lean=-o.lean;return r;}
+function buildPoses(form,kick,rh){
+ const f=FORMS[form],k=KICKS[kick];
+ const P0={
+  set:mk({}),
+  lift:mk(Object.assign({ys:.8,lean:.05,hdy:-2,hx:16,hy:-38,gx:12,gy:-38,pox:30,poy:-12},k)),
+  cock:mk(Object.assign({ys:.25,lean:.1,z:1.02,hipDy:2,gx:-40,gy:-60,kfx:-8,kfy:40,ffx:-6,ffy:62,fbx:10},f.cock)),
+  rel:mk(Object.assign({ys:0,z:1.1,hipDy:8,gx:-12,gy:-38,kfx:-8,kfy:48,ffx:-8,ffy:70,kbx:14,kby:40,fbx:16,fby:58},f.rel)),
+  fol:mk(Object.assign({ys:0,hdy:8,z:1.12,hipDy:10,gx:-16,gy:-28,pox:30,poy:10,kfx:-8,kfy:48,ffx:-8,ffy:70,kbx:14,kby:40,fbx:16,fby:58},f.fol))
+ };
+ if(!rh){
+  P0.pcock=mk({ys:.7,tw:.5,hx:36,hy:-58,gx:-26,gy:-36,pox:62,poy:-52,ffx:14,ffy:52});
+  P0.prel=mk({ys:.9,lean:.12,tw:1,hx:78,hy:-36,gx:-14,gy:-30,pox:60,poy:-14,ffx:28,ffy:66,fbx:0,fby:62});
+  P0.pfol=mk({ys:.9,lean:.14,tw:1,hx:84,hy:-26,gx:-10,gy:-26,pox:62,poy:-6,ffx:30,ffy:66,fbx:2,fby:60});
+  return P0;
+ }
+ const R={};
+ ['set','lift','cock','rel','fol'].forEach(n=>{R[n]=mirrorPose(P0[n]);});
+ // 右投手の牽制: 体をひねり、投げ腕を体の前から一塁側へ
+ R.pcock=mk({ys:-.2,tw:.5,hx:-52,hy:-52,gx:40,gy:-40,pox:-70,poy:-44,ffx:14,ffy:54,fbx:-12,fby:52});
+ R.prel=mk({ys:.9,lean:.18,tw:1,hx:46,hy:-38,gx:30,gy:-30,pox:20,poy:-10,ffx:28,ffy:66,fbx:-14,fby:52});
+ R.pfol=mk({ys:.9,lean:.2,tw:1,hx:54,hy:-26,gx:26,gy:-26,pox:24,poy:-4,ffx:30,ffy:66,fbx:-14,fby:52});
+ return R;
+}
+function shade(hex,f){
+ const n=parseInt(hex.slice(1),16),r=n>>16&255,g=n>>8&255,b=n&255,t=f<0?0:255,a=Math.abs(f);
+ const c=v=>Math.round(v+(t-v)*a);
+ return 'rgb('+c(r)+','+c(g)+','+c(b)+')';
+}
+const JERSEYS=['#c0392b','#16a34a','#f59e0b','#7c3aed','#374151','#e11d48','#0f766e','#ea580c'];
+const SKINS=['#f2c9a0','#e0ac80','#c68a5c','#f7d7bd','#a8714a'];
+const HAIRS=['#2b1b10','#4a2c17','#111111','#6b3b1a','#9ca3af'];
+function makeLook(first){
+ if(first)return {jersey:'#c0392b',cap:'#8e2118',skin:'#f2c9a0',hair:'#2b1b10',bw:1,sc:1,glasses:false,stache:false,band:false,brow:0,sleeve:null,num:'1'};
+ const j=pick(JERSEYS);
+ return {jersey:j,cap:Math.random()<.5?shade(j,-.35):pick(['#111827','#1f2937','#7f1d1d']),skin:pick(SKINS),hair:pick(HAIRS),
+  bw:pick([.86,1,1,1.12,1.24]),sc:pick([.94,1,1,1.06,1.1]),glasses:Math.random()<.2,stache:Math.random()<.25,band:Math.random()<.25,
+  brow:Math.random()<.4?1:0,sleeve:Math.random()<.4?pick(['#111827','#e5e7eb']):null,num:String(1+Math.floor(Math.random()*40))};
+}
+/* 投手は毎回ランダム生成。盗塁数に応じて少しずつ難しくなる
+   E=最初(やさしい) → M=30盗塁(標準的に上手い人) → X=48盗塁以上(超高難度) */
+const DE={dir:.10,lift:.45,ambig:0,pickRel:.50,deliv:.86,flight:.44,pop:1.18,habit:1,fake:0,tellLead:.55,amp:1.1,pBase:.13,h0:.9,h1:2.3};
+const DM={dir:.16,lift:.30,ambig:.35,pickRel:.36,deliv:.67,flight:.38,pop:.95,habit:.5,fake:.2,tellLead:.34,amp:.7,pBase:.32,h0:.8,h1:2.2};
+const DX={dir:.19,lift:.20,ambig:.55,pickRel:.28,deliv:.60,flight:.35,pop:.90,habit:.3,fake:.3,tellLead:.28,amp:.6,pBase:.4,h0:.8,h1:2.0};
+const SURN=['氷室','火野','牧野','東雲','荒川','朝倉','神谷','岩崎','白石','黒田','九条','雷田','風間','鉄','早乙女'];
+const GIVEN=['一誠','太郎','剛','翔','岳','蓮','隼','大地','悠真','烈'];
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function makePitcher(steals){
+ const D=steals/30;let a,b,u;
+ if(D<=1){a=DE;b=DM;u=D;}else{a=DM;b=DX;u=Math.min(1,(D-1)/.6);}
+ const v={};for(const k in a)v[k]=lerp(a[k],b[k],u);
+ let form,kick,tell,tellOn,rh;
+ if(steals===0){form='over';kick='mid';tell='cap';tellOn='pickoff';rh=true;}
+ else if(steals<3){form=pick(['over','three','under']);kick=pick(['quick','low','mid','big']);tell=pick(['cap','glance','glove']);tellOn='pickoff';rh=Math.random()<.5;}
+ else{form=pick(['over','three','side','under','tornado']);kick=pick(['quick','low','mid','high','big']);tell=D>1.3?'any':pick(TELLS);tellOn=Math.random()<.7?'pickoff':'pitch';rh=Math.random()<.65;}
+ const lk=Math.min(1,steals/10); // 左腕は盗塁が増えるほど牽制が見分けにくい
+ const grade=D<.35?'新人':D<.75?'中堅':D<1.2?'エース':'守護神';
+ const name=steals===0?'ひよっこ 投一郎':pick(SURN)+' '+pick(GIVEN);
+ return {name:name,grade:grade,rh:rh,style:(rh?'右投 ':'左投 ')+FORM_LABEL[form],form:form,kick:kick,tell:tell,tellOn:tellOn,look:makeLook(steals===0),
+  habit:v.habit,fake:v.fake,tellLead:v.tellLead,amp:v.amp,dir:v.dir+(rh?0:.1*lk),lift:v.lift,ambig:rh?0:Math.min(.95,v.ambig+.5*lk),pickRel:v.pickRel*(rh?1:1-.1*lk),deliv:v.deliv*(rh?1:1+.12*lk),flight:v.flight,pop:v.pop,pBase:v.pBase,
+  hold:[v.h0,v.h1],poses:buildPoses(form,kick,rh)};
+}
+S.pitcher=makePitcher(0);
+function mixP(a,b,u){const o={};for(const k in a)o[k]=a[k]+(b[k]-a[k])*u;return o;}
+function pitchPose(p,t){
+ // 本物の投球: 脚をゆっくり上げる → 踏み込み → リリース
+ const lt=p.lift;let b;
+ if(t<lt)b=mixP(p.poses.set,p.poses.lift,easeOut(t/lt));
+ else{
+  const k=clamp01((t-lt)/(p.deliv-lt));
+  b=k<.5?mixP(p.poses.lift,p.poses.cock,easeIO(k*2)):mixP(p.poses.cock,p.poses.rel,easeIn((k-.5)*2));
+ }
+ if(t>p.deliv)b=mixP(p.poses.rel,p.poses.fol,easeOut((t-p.deliv)/.35));
+ return b;
+}
+function computePose(){
+ const p=P(),ph=S.phase,t=S.t;let b;
+ const action=(ph==='pickoff'||ph==='pitch');
+ if(action){
+  if(ph==='pitch')b=pitchPose(p,t);
+  else{
+   // 牽制: 右腕は脚を上げずに振り向く(ベテランはフェイントで一度脚を上げる)。
+   // 左腕は投球と同じ脚上げのまま、踏み出す直前に一塁へ向く
+   const dv=S.dv,pr=S.pRel;
+   if(t<dv)b=pitchPose(p,t);
+   else{
+    const k=clamp01((t-dv)/(pr-dv));
+    const from=S.fakeLift?pitchPose(p,dv):p.poses.set;
+    b=k<.4?mixP(from,p.poses.pcock,easeIO(k/.4)):mixP(p.poses.pcock,p.poses.prel,easeIn((k-.4)/.6));
+    if(t>pr)b=mixP(p.poses.prel,p.poses.pfol,easeOut((t-pr)/.3));
+   }
+  }
+  b.pup=b.tw*3;
+ }else{
+  b=Object.assign({},p.poses.set);
+  b.hipDy+=Math.sin(S.time*3)*1.2;b.hy+=Math.sin(S.time*3+1)*.8;b.gy+=Math.sin(S.time*3+1)*.8;
+  if(ph==='set'&&S.tellOn){
+   const e=Math.sin(clamp01((S.setT-S.tellStart)/Math.max(.01,S.tellEnd-S.tellStart))*Math.PI),amp=p.amp;
+   if(S.tellKind==='cap')b.capDy=-13*e*amp;
+   if(S.tellKind==='glance'){const a=Math.max(.7,amp);b.pup=4.5*e*a;b.hdx=5*e*a;}
+   if(S.tellKind==='glove')b.tgy=18*e*amp;
+   if(S.tellKind==='nod')b.tnod=9*e*amp;
+   if(S.tellKind==='shrug')b.tsh=7*e*amp;
+  }
+ }
+ return b;
+}
+let camPose=null;
+function updatePose(dt){
+ const target=computePose(),ph=S.phase;
+ if(!camPose||ph==='pickoff'||ph==='pitch'||ph==='title'){camPose=target;return;}
+ const a=Math.min(1,dt*9);
+ for(const k in target)camPose[k]+=(target[k]-camPose[k])*a;
+ // クセは即座に出す(なまらせない)
+ camPose.capDy=target.capDy;camPose.pup=target.pup;camPose.hdx=target.hdx;camPose.tgy=target.tgy;camPose.tnod=target.tnod;camPose.tsh=target.tsh;
+}
+function ballInHand(){
+ const p=P(),ph=S.phase;
+ if(ph==='pickoff')return S.t<S.pRel;
+ if(ph==='pitch')return S.t<p.deliv;
+ if(ph==='busted')return S.runTe<.1;
+ if(ph==='recover')return S.timer<=.4;
+ if(ph==='result')return false;
+ return true;
+}
+/* フィールド上のボール位置(真上から見た座標) */
+function ballPos(){
+ const p=P(),ph=S.phase;
+ const arc=(a,b,u,h)=>({x:lerp(a.x,b.x,u),y:lerp(a.y,b.y,u)-Math.sin(u*Math.PI)*h});
+ if(ph==='pickoff'){
+  if(S.t<S.pRel)return HP;
+  return arc(HP,FBG,clamp01((S.t-S.pRel)/PICK_FLY),10);
+ }
+ if(ph==='pitch'){
+  const t=S.t,tc=p.deliv+p.flight,ballAt=tc+p.pop;
+  if(t<p.deliv)return HP;
+  if(t<tc)return arc(HP,CGL,clamp01((t-p.deliv)/p.flight),5);
+  if(S.goT!==null){
+   const tr=tc+p.pop*.45;if(t<tr)return CGL;
+   return arc(CGL,TG,clamp01((t-tr)/(ballAt-tr)),34);
+  }
+  return CGL;
+ }
+ if(ph==='result')return S.resBall;
+ if(ph==='recover')return S.timer>.4?S.resBall:HP;
+ if(ph==='busted'){const u=clamp01((S.runTe-.1)/.5);return u<=0?HP:arc(HP,TG,u,30);}
+ return HP;
+}
+function runnerFt(){
+ if((S.phase==='pickoff'||S.phase==='pitch')&&S.goT!==null)return Math.min(BASE_FT,runS(S.runL,S.t-S.goT));
+ if(S.phase==='busted')return Math.min(BASE_FT-2,runS(S.runL,S.runTe));
+ if(S.phase==='result')return S.resS;
+ return S.L;
+}
+function goEnabled(){
+ return S.phase==='set'||(S.phase==='pickoff'&&S.goT===null)||(S.phase==='pitch'&&S.goT===null);
+}
+
+/* ---------- 描画 ---------- */
+function drawBG(){
+ ctx.fillStyle='#08121e';ctx.fillRect(0,0,W,H);
+ ctx.save();ctx.beginPath();ctx.rect(0,0,W,480);ctx.clip();
+ // 外野の芝(ホームを中心にした刈り跡)
+ const g=ctx.createLinearGradient(0,0,0,480);g.addColorStop(0,'#123524');g.addColorStop(1,'#1d5c33');
+ ctx.fillStyle=g;ctx.fillRect(0,0,W,480);
+ ctx.lineWidth=34;
+ for(let r=200,i=0;r<640;r+=34,i++){ctx.strokeStyle=i%2?'rgba(255,255,255,.035)':'rgba(0,0,0,.06)';ctx.beginPath();ctx.arc(HOME.x,HOME.y,r,0,7);ctx.stroke();}
+ // 内野の土
+ ctx.fillStyle='#9a7648';ctx.beginPath();ctx.arc(MOUND.x,MOUND.y,158,0,7);ctx.fill();
+ // 内野の芝(ベースラインの内側)
+ ctx.fillStyle='#24703f';ctx.beginPath();
+ ctx.moveTo(HOME.x,HOME.y-22);ctx.lineTo(B1.x-20,B1.y);ctx.lineTo(B2.x,B2.y+20);ctx.lineTo(B3.x+20,B3.y);ctx.closePath();ctx.fill();
+ // マウンド
+ ctx.fillStyle='#b08a58';ctx.beginPath();ctx.arc(MOUND.x,MOUND.y,20,0,7);ctx.fill();
+ ctx.fillStyle='#fff';ctx.fillRect(MOUND.x-6,MOUND.y-1,12,3);
+ // ファウルライン
+ ctx.strokeStyle='rgba(255,255,255,.85)';ctx.lineWidth=2;ctx.lineCap='butt';
+ ctx.beginPath();ctx.moveTo(HOME.x,HOME.y);ctx.lineTo(HOME.x+190,HOME.y-190);ctx.moveTo(HOME.x,HOME.y);ctx.lineTo(HOME.x-190,HOME.y-190);ctx.stroke();
+ // バッターボックス
+ ctx.lineWidth=1.5;
+ ctx.strokeRect(HOME.x-36,HOME.y-14,24,34);ctx.strokeRect(HOME.x+12,HOME.y-14,24,34);
+ // ベース
+ [B1,B2,B3].forEach(b=>{ctx.save();ctx.translate(b.x,b.y);ctx.rotate(Math.PI/4);ctx.fillStyle='#fff';ctx.fillRect(-7,-7,14,14);ctx.restore();});
+ ctx.fillStyle='#fff';ctx.beginPath();
+ ctx.moveTo(HOME.x-9,HOME.y-7);ctx.lineTo(HOME.x+9,HOME.y-7);ctx.lineTo(HOME.x+9,HOME.y+2);ctx.lineTo(HOME.x,HOME.y+10);ctx.lineTo(HOME.x-9,HOME.y+2);ctx.closePath();ctx.fill();
+ txt('二塁',B2.x,B2.y-14,10,'rgba(255,255,255,.55)','center','normal');
+ txt('一塁',B1.x+4,B1.y+26,10,'rgba(255,255,255,.55)','center','normal');
+ ctx.restore();
+ ctx.fillStyle='#09131d';ctx.fillRect(0,480,W,H-480);
+ ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(0,0,W,62);
+}
+function person(x,y,sc,body,capc,o){
+ o=o||{};
+ ctx.save();ctx.translate(x,y);if(o.flip)ctx.scale(-1,1);if(o.run)ctx.rotate(.12);ctx.scale(sc,sc);
+ ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(0,0,15,4,0,0,7);ctx.fill();
+ const sw=o.run?Math.sin(S.time*24)*9:0;
+ ctx.lineCap='round';ctx.strokeStyle='#e4e4e4';ctx.lineWidth=6;
+ ctx.beginPath();ctx.moveTo(-4,-16);ctx.lineTo(-4+sw,-1);ctx.moveTo(4,-16);ctx.lineTo(4-sw,-1);ctx.stroke();
+ ctx.fillStyle=body;rr(-9,-36,18,24,6);ctx.fill();
+ ctx.fillStyle=o.skin||'#f2c9a0';ctx.beginPath();ctx.arc(0,-44,8,0,7);ctx.fill();
+ ctx.fillStyle=capc;ctx.beginPath();ctx.arc(0,-46,8.5,Math.PI,0);ctx.closePath();ctx.fill();ctx.fillRect(-1,-47,12,3);
+ if(o.bat){ctx.strokeStyle='#d6a35c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(8,-30);ctx.lineTo(18,-58);ctx.stroke();}
+ if(o.glove){ctx.fillStyle='#7a4a21';ctx.beginPath();ctx.arc(o.glove[0],o.glove[1],6,0,7);ctx.fill();}
+ ctx.restore();
+}
+function slideFig(x,y,dir){
+ ctx.save();ctx.translate(x,y);ctx.scale(dir,1);
+ ctx.fillStyle='rgba(205,175,125,.55)';ctx.beginPath();ctx.ellipse(-8,-2,26,7,0,0,7);ctx.fill();
+ ctx.fillStyle='#2563eb';rr(-18,-17,30,13,5);ctx.fill();
+ ctx.strokeStyle='#e4e4e4';ctx.lineWidth=6;ctx.lineCap='round';
+ ctx.beginPath();ctx.moveTo(10,-12);ctx.lineTo(27,-6);ctx.stroke();
+ ctx.fillStyle='#f2c9a0';ctx.beginPath();ctx.arc(-23,-14,8,0,7);ctx.fill();
+ ctx.fillStyle='#1e3a8a';ctx.beginPath();ctx.arc(-23,-16,8.5,Math.PI,0);ctx.closePath();ctx.fill();
+ ctx.restore();
+}
+/* 選手を奥(y小)から手前(y大)の順に描く */
+function drawActors(){
+ const rs=runnerFt(),rp=pathPos(rs);
+ const running=((S.phase==='pickoff'||S.phase==='pitch')&&S.goT!==null)||S.phase==='busted';
+ const R='#c0392b',RC='#8e2118';
+ const L=[
+  {y:BAT.y,f:()=>person(BAT.x,BAT.y,1,'#2563eb','#1e3a8a',{bat:true})},
+  {y:CATCH.y,f:()=>person(CATCH.x,CATCH.y,1.05,R,'#333',{glove:[0,-24]})},
+  {y:MOUND.y,f:()=>{const pt=P(),L=pt.look;person(MOUND.x+(camPose?camPose.tw*6:0),MOUND.y+(camPose?(camPose.z-1)*60:0),1.05*L.sc,L.jersey,L.cap,{glove:[pt.rh?12:-12,-22],skin:L.skin});}},
+  {y:FBM.y,f:()=>person(FBM.x,FBM.y,1,R,RC,{glove:[-13,-22],flip:true})},
+  {y:SSM.y,f:()=>person(SSM.x,SSM.y,1,R,RC,{glove:[13,-22]})},
+  {y:SECM.y,f:()=>person(SECM.x,SECM.y,1,R,RC,{glove:[-13,-22]})},
+  {y:TBM.y,f:()=>person(TBM.x,TBM.y,1,R,RC,{glove:[13,-22]})},
+  {y:rp.y,f:()=>{
+    if(S.phase==='result')slideFig(rp.x,rp.y+6,-S.slideDir);
+    else person(rp.x,rp.y+6,1.1,'#2563eb','#1e3a8a',{run:running,flip:true});
+  }}
+ ];
+ L.sort((a,b)=>a.y-b.y);
+ L.forEach(o=>o.f());
+}
+function ik(sx,sy,tx,ty,l1,l2,px,py){
+ let dx=tx-sx,dy=ty-sy,d=Math.hypot(dx,dy);const mx=l1+l2-1;
+ if(d>mx){const f=mx/d;dx*=f;dy*=f;d=mx;tx=sx+dx;ty=sy+dy;}
+ if(d<10){dx=dx||1;const f=10/Math.hypot(dx,dy);dx*=f;dy*=f;d=10;tx=sx+dx;ty=sy+dy;}
+ const a=(l1*l1-l2*l2+d*d)/(2*d),h=Math.sqrt(Math.max(0,l1*l1-a*a)),ux=dx/d,uy=dy/d;
+ const e1=[sx+ux*a-uy*h,sy+uy*a+ux*h],e2=[sx+ux*a+uy*h,sy+uy*a-ux*h];
+ const d1=(e1[0]-px)*(e1[0]-px)+(e1[1]-py)*(e1[1]-py),d2=(e2[0]-px)*(e2[0]-px)+(e2[1]-py)*(e2[1]-py);
+ return {e:d1<d2?e1:e2,h:[tx,ty]};
+}
+function drawLimb(pts,w,col){
+ ctx.strokeStyle=col;ctx.lineWidth=w;ctx.lineCap='round';ctx.lineJoin='round';
+ ctx.beginPath();ctx.moveTo(pts[0][0],pts[0][1]);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i][0],pts[i][1]);ctx.stroke();
+}
+function drawPitcher(po,withBall){
+ const pt=P(),L=pt.look,rh=pt.rh,bw=L.bw,pvy=18+po.hipDy;
+ const ya=Math.abs(po.ys),hw=14*bw*(1-.55*ya),sx=(1-.3*Math.abs(po.tw))*(1-.6*ya),sh=po.tw*6,ca=Math.cos(po.lean),sa=Math.sin(po.lean);
+ const T=(x,y)=>{const X=x*sx+sh;return [X*ca-y*sa,pvy+X*sa+y*ca];};
+ const capDark=shade(L.cap,-.25);
+ ctx.save();
+ const zz=po.z*L.sc;
+ ctx.translate(0,72);ctx.scale(zz,zz);ctx.translate(0,-72);
+ ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(0,72,46*bw,9,0,0,7);ctx.fill();
+ // 脚
+ const pdx=po.ys*60+(rh?-14:14),sd=po.ys>=0?1:-1;
+ const legs=[[hw,po.fbx,po.fby],[-hw,po.ffx,po.ffy]];
+ for(let i=0;i<2;i++){
+  const lg=legs[i],k=ik(lg[0],pvy,lg[1],lg[2],27,27,lg[0]+pdx,pvy+8);
+  drawLimb([[lg[0],pvy],k.e,k.h],15,'#dcdcdc');
+  ctx.fillStyle='#222';ctx.beginPath();ctx.ellipse(k.h[0]+sd*(2+4*ya),k.h[1]+3,10,5,0,0,7);ctx.fill();
+ }
+ // 胴
+ ctx.save();ctx.translate(0,pvy);ctx.rotate(po.lean);ctx.translate(sh,0);ctx.scale(sx,1);
+ ctx.fillStyle=L.jersey;rr(-27*bw,-72,54*bw,76,14);ctx.fill();
+ ctx.fillStyle='#222';ctx.fillRect(-27*bw,-6,54*bw,6);
+ if(ya<.6)txt(L.num,0,-32,L.num.length>1?18:22,'#fff','center');
+ ctx.restore();
+ // 頭
+ const hc=T(0,-98+po.hdy+po.tnod-po.tsh*.5),hx=hc[0]+po.hdx+po.ys*3,hy=hc[1];
+ ctx.fillStyle=L.skin;ctx.beginPath();ctx.arc(hx,hy,24,0,7);ctx.fill();
+ ctx.fillStyle=L.hair;rr(hx-25,hy-6,7,16,3);ctx.fill();rr(hx+18,hy-6,7,16,3);ctx.fill();
+ ctx.fillStyle='#fff';
+ ctx.beginPath();ctx.arc(hx-9,hy+10,7,0,7);ctx.fill();ctx.beginPath();ctx.arc(hx+9,hy+10,7,0,7);ctx.fill();
+ const pu=Math.max(-3.5,Math.min(3.5,po.pup));
+ ctx.fillStyle='#111';
+ ctx.beginPath();ctx.arc(hx-9+pu,hy+10,3.5,0,7);ctx.fill();ctx.beginPath();ctx.arc(hx+9+pu,hy+10,3.5,0,7);ctx.fill();
+ ctx.strokeStyle=L.hair;ctx.lineWidth=3;ctx.lineCap='round';
+ ctx.beginPath();
+ if(L.brow){ctx.moveTo(hx-15,hy);ctx.lineTo(hx-4,hy+4);ctx.moveTo(hx+15,hy);ctx.lineTo(hx+4,hy+4);}
+ else{ctx.moveTo(hx-15,hy+3);ctx.lineTo(hx-4,hy+3);ctx.moveTo(hx+15,hy+3);ctx.lineTo(hx+4,hy+3);}
+ ctx.stroke();
+ if(L.glasses){ctx.strokeStyle='#111';ctx.lineWidth=1.8;ctx.beginPath();ctx.arc(hx-9,hy+10,9,0,7);ctx.stroke();ctx.beginPath();ctx.arc(hx+9,hy+10,9,0,7);ctx.stroke();ctx.beginPath();ctx.moveTo(hx-1,hy+10);ctx.lineTo(hx+1,hy+10);ctx.stroke();}
+ if(L.stache){ctx.fillStyle=L.hair;rr(hx-9,hy+15,18,5,2.5);ctx.fill();}
+ else{ctx.strokeStyle='#8a4b2a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(hx-5,hy+19);ctx.lineTo(hx+5,hy+19);ctx.stroke();}
+ ctx.fillStyle=L.cap;ctx.beginPath();ctx.arc(hx,hy-4+po.capDy,25,Math.PI,0);ctx.closePath();ctx.fill();
+ ctx.fillStyle=capDark;rr(hx-30,hy-6+po.capDy,60,7,3);ctx.fill();
+ if(L.band){ctx.fillStyle='#f3f4f6';ctx.fillRect(hx-24,hy-12+po.capDy,48,4);}
+ // 腕(グラブ側/投げ手: 右投げは左右が逆)
+ const S1=T(-28*bw,-60-po.tsh),S2=T(28*bw,-60-po.tsh);
+ const SG=rh?S2:S1,ST=rh?S1:S2;
+ const fore=L.sleeve||L.skin;
+ const a1=ik(SG[0],SG[1],po.gx,po.gy+po.tgy,32,32,rh?34:-34,-10);
+ drawLimb([SG,a1.e],12,L.jersey);drawLimb([a1.e,a1.h],9,fore);
+ ctx.fillStyle='#7a4a21';ctx.beginPath();ctx.arc(a1.h[0],a1.h[1],13,0,7);ctx.fill();
+ ctx.fillStyle='rgba(255,255,255,.15)';ctx.beginPath();ctx.arc(a1.h[0]-4,a1.h[1]-4,5,0,7);ctx.fill();
+ const a2=ik(ST[0],ST[1],po.hx,po.hy,33,33,po.pox,po.poy);
+ drawLimb([ST,a2.e],12,L.jersey);drawLimb([a2.e,a2.h],9,fore);
+ ctx.fillStyle=L.skin;ctx.beginPath();ctx.arc(a2.h[0],a2.h[1],6.5,0,7);ctx.fill();
+ if(withBall)ballAt(a2.h[0],a2.h[1],8.5);
+ ctx.restore();
+}
+function ballAt(x,y,r){
+ ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,r,0,7);ctx.fill();
+ ctx.strokeStyle='#d33';ctx.lineWidth=Math.max(1,r*.22);
+ ctx.beginPath();ctx.arc(x-r*.65,y,r*.75,-1,1);ctx.stroke();
+ ctx.beginPath();ctx.arc(x+r*.65,y,r*.75,Math.PI-1,Math.PI+1);ctx.stroke();
+}
+/* 投手アップ: マウンドの投手を拡大して、クセと牽制/投球の向きを見せる */
+function drawPitcherCam(){
+ if(!camPose)return;
+ const I=INSET;
+ ctx.save();
+ rr(I.x,I.y,I.w,I.h,14);ctx.clip();
+ const g=ctx.createLinearGradient(0,I.y,0,I.y+I.h);g.addColorStop(0,'#1a3a5e');g.addColorStop(1,'#1d5c33');
+ ctx.fillStyle=g;ctx.fillRect(I.x,I.y,I.w,I.h);
+ ctx.translate(I.x+I.w/2,I.y+82);ctx.scale(.6,.6);
+ drawPitcher(camPose,ballInHand());
+ ctx.restore();
+ ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=2;rr(I.x,I.y,I.w,I.h,14);ctx.stroke();
+ drawFootCam();
+ txt('投手',I.x+10,I.y+17,11,'rgba(255,255,255,.8)','left');
+ {const rh=P().rh;ctx.fillStyle=rh?'#dc2626':'#2563eb';rr(I.x+8,I.y+26,50,20,10);ctx.fill();
+  txt(rh?'右腕':'左腕',I.x+33,I.y+41,13,'#fff','center','bold');}
+}
+/* 足元アップ(真横から): 脚上げ→踏み込み、牽制は脚を上げない */
+function pitchFoot(p,t){
+ let lh=0,stride=0,sink=0;
+ const kl={quick:.55,low:.7,mid:.85,high:1,big:1.05}[p.kick]||.85;
+ const lt=p.lift,dl=p.deliv,t1=T1(p),t2=dl*.92;
+ if(t<lt)lh=easeOut(t/lt)*kl;
+ else if(t<t1)lh=kl;
+ else if(t<t2){const u=clamp01((t-t1)/(t2-t1));lh=kl*(1-easeIn(u));stride=easeOut(u);}
+ else{stride=1;sink=clamp01((t-t2)/.2);}
+ return {lh:lh,stride:stride,sink:sink,side:0,off:0};
+}
+function footParams(){
+ const p=P(),ph=S.phase,t=S.t;
+ if(ph==='pitch')return pitchFoot(p,t);
+ if(ph==='pickoff'){
+  const dv=S.dv;
+  if(S.fakeLift){
+   if(t<dv)return pitchFoot(p,t);
+   const f=pitchFoot(p,dv),u=clamp01((t-dv)/.25);
+   // 左腕: ホームへ踏み出さず、一塁側(手前)へ足を下ろす
+   return {lh:f.lh*(1-u),stride:0,sink:0,side:p.rh?0:easeOut(u),off:0};
+  }
+  return {lh:p.rh?.25*Math.sin(clamp01(t/S.pRel)*Math.PI):.2*Math.sin(clamp01(t/S.pRel)*Math.PI),stride:0,sink:0,side:easeIO(clamp01(t/S.pRel)),off:p.rh?easeOut(clamp01(t/(S.pRel*.55))):0};
+ }
+ return {lh:0,stride:0,sink:0,side:0,off:0};
+}
+function shoe(x,y,ang,dir,sq){
+ ctx.save();ctx.translate(x,y);ctx.rotate(ang*dir);ctx.scale(dir*sq,1);
+ ctx.fillStyle='#1f2937';rr(-11,-7,32,13,6);ctx.fill();
+ ctx.fillStyle='#f3f4f6';ctx.fillRect(-10,4,30,2);
+ ctx.restore();
+}
+/* 足元アップ: 画面右=一塁(ランナー)。右腕は三塁側(左)、左腕は一塁側(右)を向いて立つ。
+   投球=脚を上げてホーム(手前)へ踏み出す / 左腕の牽制=一塁側(右)へ踏み出す / 右腕の牽制=軸足(右足)をプレートから外して振り向く */
+function drawFootCam(){
+ const F=FOOT,p=P(),L=p.look,fp=footParams(),fd=p.rh?-1:1;
+ ctx.save();rr(F.x,F.y,F.w,F.h,14);ctx.clip();
+ const g=ctx.createLinearGradient(0,F.y,0,F.y+F.h);g.addColorStop(0,'#1a3a5e');g.addColorStop(1,'#245c36');
+ ctx.fillStyle=g;ctx.fillRect(F.x,F.y,F.w,F.h);
+ const gy=F.y+F.h-22,cx=F.x+F.w/2,bob=(S.phase==='set'||S.phase==='ready')?Math.sin(S.time*3)*1.2:0;
+ ctx.fillStyle='#8a5a32';ctx.fillRect(F.x,gy,F.w,F.h);
+ ctx.fillStyle='#f3f4f6';rr(cx-34,gy-2,68,6,3);ctx.fill();   // ピッチャープレート(一塁-三塁方向に長い)
+ const hipY=F.y+28+5*fp.stride+5*fp.sink+bob,hx=fd*6*fp.stride;
+ const hipB=[cx-3+hx,hipY],hipF=[cx+3+hx,hipY];
+ const fy0=gy-6,topY=hipY+26;
+ const pivot=[cx-2,fy0-13*fp.off-fp.lh*2];
+ const front=[cx+4-fd*8*fp.lh+fd*8*fp.stride+34*fp.side,fy0+5-fp.lh*(fy0+5-topY)+12*fp.stride];
+ const toR=p.rh&&fp.side>.4,dF=toR?1:fd,pd=toR?1:fd;
+ const legs=[[hipB,pivot,'#c9c9c9',0,fd,1],[hipF,front,'#e8e8e8',fp.lh*.4,dF,1-.45*fp.stride]];
+ for(let i=0;i<2;i++){
+  const lg=legs[i],k=ik(lg[0][0],lg[0][1],lg[1][0],lg[1][1],41,41,lg[0][0]+pd*200,lg[0][1]);
+  drawLimb([lg[0],k.e],19,lg[2]);drawLimb([k.e,k.h],17,lg[2]);
+  const m=[k.e[0]+(k.h[0]-k.e[0])*.45,k.e[1]+(k.h[1]-k.e[1])*.45];
+  drawLimb([m,k.h],14,L.jersey);
+  shoe(k.h[0]+lg[4]*2,k.h[1]+2,lg[3],lg[4],lg[5]);
+ }
+ const bx=(hipB[0]+hipF[0])/2;
+ ctx.fillStyle=L.jersey;rr(bx-24,hipY-34,48,28,8);ctx.fill();
+ ctx.fillStyle='#222';ctx.fillRect(bx-24,hipY-8,48,5);
+ ctx.fillStyle='#dcdcdc';rr(bx-24,hipY-3,48,12,5);ctx.fill();
+ // 画面端のランナー側表示
+ txt('→一塁',F.x+F.w-8,F.y+F.h-6,10,'rgba(255,255,255,.75)','right');
+ ctx.restore();
+ ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=2;rr(F.x,F.y,F.w,F.h,14);ctx.stroke();
+ txt('足元',F.x+10,F.y+17,11,'rgba(255,255,255,.85)','left');
+}
+function drawBall(){const b=ballPos();ballAt(b.x,b.y,5);}
+function drawHUD(){
+ const p=P();
+ txt('盗塁 '+S.steals,14,34,28,'#fde047','left','bold',{w:4,c:'rgba(0,0,0,.5)'});
+ txt(p.grade+'  '+p.name,14,56,13,'#cbd5e1','left');
+ txt('OUT',214,24,13,'#cbd5e1','left');
+ for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(262+i*24,19,8,0,7);if(i<S.outs){ctx.fillStyle='#ef4444';ctx.fill();}else{ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.stroke();}}
+ if(S.toastT>0)txt(S.toast,W/2,204,16,'#fff','center','bold',{w:4,c:'rgba(0,0,0,.7)'});
+ else if(S.steals<2&&(S.phase==='set'||S.phase==='pitch'||S.phase==='pickoff')&&S.goT===null){
+  const ph=S.phase,rh=p.rh;let m,c='#fff';
+  if(ph==='set')m=rh?'脚が上がったらタップ! 牽制のときは押さない!':'左腕は脚を上げても牽制あり! 前へ踏み出したらタップ!';
+  else if(ph==='pitch'){
+   if(rh){m='▲ 脚が上がった!タップ!';c='#fde047';}
+   else if(S.t>=S.t1){m='▲ 踏み出した!タップ!';c='#fde047';}
+   else m='脚が上がった…踏み出す向きを見ろ!';
+  }else{
+   if(S.fakeLift&&S.t<S.dv)m='脚が上がった…踏み出す向きを見ろ!';
+   else{m='牽制だ!押すな!';c='#fca5a5';}
+  }
+  txt(m,W/2,204,15,c,'center','bold',{w:4,c:'rgba(0,0,0,.7)'});
+ }
+}
+function btn(x,y,w,h,col,label,sub,on){
+ ctx.fillStyle=col;rr(x,y,w,h,18);ctx.fill();
+ ctx.strokeStyle=on?'#fff':'rgba(255,255,255,.25)';ctx.lineWidth=on?4:2;rr(x,y,w,h,18);ctx.stroke();
+ txt(label,x+w/2,y+h/2+4,30,'#fff','center','bold');
+ txt(sub,x+w/2,y+h-18,11,'rgba(255,255,255,.8)','center','normal');
+}
+function drawControls(){
+ const go=goEnabled();
+ btn(12,492,336,130,S.goFlash>0?'#fbbf24':(go?'#d97706':'#5a3f10'),'GO!','脚が上がったらタップ(牽制のときは押さない)',S.goFlash>0);
+}
+function drawBanner(){
+ let big=null,sub='',col='#fff';
+ if(S.phase==='result'&&S.banner){big=S.banner.t;sub=S.banner.s;col=S.banner.c;}
+ else if(S.phase==='ready'){
+  const p=P();
+  big=p.grade+' 登板!';sub=p.name+'('+p.style+')'; col='#fde047';
+ }
+ if(!big)return;
+ ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,70,W,84);
+ txt(big,W/2,114,36,col,'center','bold',{w:5,c:'rgba(0,0,0,.6)'});
+ txt(sub,W/2,140,14,'#e5e7eb','center');
+}
+function drawTitle(){
+ ctx.fillStyle='rgba(5,12,20,.78)';ctx.fillRect(0,0,W,H);
+ txt('盗塁王',W/2,150,68,'#fde047','center','bold',{w:8,c:'#7c2d12'});
+ txt('牽制をかいくぐれ!',W/2,190,20,'#fff','center');
+ const r=['投手が脚を上げたら','タップで盗塁!','牽制のときは押すな!','3アウトで終了'];
+ r.forEach((s,i)=>txt(s,W/2,262+i*38,i<3?22:15,i==2?'#fca5a5':(i<3?'#e5e7eb':'#94a3b8'),'center',i<3?'bold':'normal'));
+ const a=.55+.45*Math.sin(S.time*4);
+ ctx.globalAlpha=a;txt('TAP TO START',W/2,452,26,'#fff','center');ctx.globalAlpha=1;
+ if(S.best>0)txt('ベスト '+S.best+' 盗塁',W/2,490,15,'#93c5fd','center');
+}
+function drawOver(){
+ ctx.fillStyle='rgba(5,12,20,.84)';ctx.fillRect(0,0,W,H);
+ txt('GAME OVER',W/2,96,26,'#f87171','center','bold');
+ txt('盗塁',W/2,140,18,'#cbd5e1','center');
+ txt(String(S.steals),W/2,214,76,'#fde047','center','bold',{w:6,c:'#7c2d12'});
+ txt('「'+rankOf(S.steals)+'」',W/2,262,26,'#fff','center','bold');
+ txt('死因:'+(CAUSE[S.cause]||'-'),W/2,302,17,'#fca5a5','center');
+ txt('ベスト '+S.best+(S.newBest?'  NEW!':''),W/2,336,16,S.newBest?'#fde047':'#93c5fd','center');
+ txt('Xでシェアして友達に挑戦させよう',W/2,382,13,'#94a3b8','center','normal');
+ ctx.fillStyle='#1d9bf0';rr(SHARE_BTN.x,SHARE_BTN.y,SHARE_BTN.w,SHARE_BTN.h,14);ctx.fill();
+ txt('Xでシェア',W/2,SHARE_BTN.y+34,22,'#fff','center');
+ ctx.fillStyle='#16a34a';rr(RETRY_BTN.x,RETRY_BTN.y,RETRY_BTN.w,RETRY_BTN.h,14);ctx.fill();
+ txt('もう一回',W/2,RETRY_BTN.y+34,22,'#fff','center');
+}
+function draw(){
+ ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
+ drawBG();drawActors();drawBall();drawPitcherCam();
+ if(S.phase==='title'){drawTitle();return;}
+ drawHUD();drawControls();drawBanner();
+ if(S.phase==='over')drawOver();
+}
+
+/* ---------- ループ ---------- */
+let last=0;
+function frame(ts){
+ const dt=Math.min(.033,Math.max(0,(ts-last)/1000||0));last=ts;
+ S.time+=dt;update(dt);updatePose(dt);draw();requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
