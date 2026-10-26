@@ -44,6 +44,53 @@ const CGL={x:CATCH.x,y:CATCH.y-24};             // 捕手のミット
 const TG={x:B2.x-8,y:B2.y-14};                  // 二塁でのタッチ位置
 const INSET={x:12,y:62,w:200,h:130};
 const FOOT={x:218,y:62,w:130,h:130};            // 足元アップ(脚上げ=GOの合図を見る窓)            // 投手アップ(クセを見る窓)
+/* ---------- ランキング(Supabase / 未設定ならボタンごと非表示) ---------- */
+const RANK_CFG={url:'',key:''}; // ← Supabaseの Project URL と anon key を入れると有効化
+const RANK_ON=()=>!!(RANK_CFG.url&&RANK_CFG.key);
+const RANK_BTN={x:30,y:536,w:300,h:48};
+const RK={open:false,tab:'score',rows:null,loading:false,err:'',submitted:false,sending:false,name:''};
+try{RK.name=localStorage.getItem('tourui_name')||'';}catch(e){}
+function rkHeaders(extra){return Object.assign({apikey:RANK_CFG.key,Authorization:'Bearer '+RANK_CFG.key},extra||{});}
+function rkFetch(tab){
+ RK.tab=tab;RK.loading=true;RK.err='';RK.rows=null;
+ const ord=tab==='score'?'score.desc,steals.desc':'steals.desc,score.desc';
+ const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),6000);
+ fetch(RANK_CFG.url+'/rest/v1/tourui_scores?select=name,steals,score&order='+ord+'&limit=15',{headers:rkHeaders(),signal:ctl.signal})
+  .then(r=>{if(!r.ok)throw 0;return r.json();}).then(j=>{if(RK.tab===tab){RK.rows=j;RK.loading=false;}})
+  .catch(()=>{RK.err='ランキングを取得できません';RK.loading=false;}).finally(()=>clearTimeout(to));
+}
+function rkSubmit(){
+ if(RK.sending||RK.submitted||S.score<=0)return;
+ let nm=RK.name;
+ try{nm=window.prompt('ランキングに載せる名前(12文字まで)',RK.name||'');}catch(e){}
+ if(nm===null||nm===undefined)return;
+ nm=String(nm).trim().slice(0,12);if(!nm)return;
+ RK.name=nm;try{localStorage.setItem('tourui_name',nm);}catch(e){}
+ RK.sending=true;RK.err='';
+ fetch(RANK_CFG.url+'/rest/v1/tourui_scores',{method:'POST',headers:rkHeaders({'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({name:nm,steals:S.steals,score:S.score})})
+  .then(r=>{if(!r.ok)throw 0;RK.submitted=true;rkFetch(RK.tab);}).catch(()=>{RK.err='送信できませんでした';}).finally(()=>{RK.sending=false;});
+}
+const RK_TAB1={x:20,y:66,w:155,h:36},RK_TAB2={x:185,y:66,w:155,h:36},RK_SUB={x:30,y:508,w:300,h:48},RK_CLOSE={x:30,y:566,w:300,h:46};
+function drawRank(){
+ ctx.fillStyle='#050c14';ctx.fillRect(0,0,W,H);
+ txt('ランキング',W/2,48,26,'#fde047','center','bold');
+ [[RK_TAB1,'スコア順','score'],[RK_TAB2,'盗塁数順','steals']].forEach(([b,l,k])=>{ctx.fillStyle=RK.tab===k?'#d97706':'rgba(255,255,255,.1)';rr(b.x,b.y,b.w,b.h,10);ctx.fill();txt(l,b.x+b.w/2,b.y+24,16,'#fff','center','bold');});
+ if(RK.loading)txt('読み込み中…',W/2,300,16,'#cbd5e1','center');
+ else if(RK.rows&&RK.rows.length===0)txt('まだ記録がありません',W/2,300,16,'#cbd5e1','center');
+ else if(RK.rows)RK.rows.forEach((r,i)=>{
+  const y=134+i*24,col=i===0?'#fde047':(i<3?'#fff':'#cbd5e1');
+  txt(String(i+1),40,y,14,col,'right','bold');
+  txt(String(r.name||'').slice(0,12),52,y,14,col,'left','bold');
+  txt(r.score+'点',250,y,14,col,'right','bold');
+  txt(r.steals+'盗塁',322,y,13,col,'right','normal');
+ });
+ if(RK.err)txt(RK.err,W/2,492,13,'#fca5a5','center');
+ const can=S.score>0&&!RK.submitted;
+ ctx.fillStyle=can?'#16a34a':'#374151';rr(RK_SUB.x,RK_SUB.y,RK_SUB.w,RK_SUB.h,14);ctx.fill();
+ txt(RK.submitted?'登録しました!':(can?'今回の記録を登録('+S.score+'点)':'登録できる記録がありません'),W/2,RK_SUB.y+31,17,'#fff','center','bold');
+ ctx.fillStyle='rgba(255,255,255,.12)';rr(RK_CLOSE.x,RK_CLOSE.y,RK_CLOSE.w,RK_CLOSE.h,14);ctx.fill();
+ txt('閉じる',W/2,RK_CLOSE.y+30,18,'#fff','center','bold');
+}
 const SHARE_BTN={x:30,y:404,w:300,h:52},RETRY_BTN={x:30,y:470,w:300,h:52};
 function pathPos(s){const u=s/BASE_FT;return {x:B1.x+(B2.x-B1.x)*u,y:B1.y+(B2.y-B1.y)*u};}
 const MSG={
@@ -56,13 +103,14 @@ const MSG={
 const CAUSE={pick:'牽制死',pickgo:'牽制に釣られた',caught:'盗塁死',read:'フライング',pass:'見送り'};
 
 /* ---------- 状態 ---------- */
-const S={phase:'title',time:0,steals:0,outs:0,lv:0,introLv:-1,intro:false,L:0,picks:0,ab:0,
+const S={phase:'title',paused:false,time:0,steals:0,outs:0,lv:0,introLv:-1,intro:false,L:0,picks:0,ab:0,
  setT:0,holdTime:1,planned:false,action:'pitch',tellOn:false,tellKind:null,tellStart:0,tellEnd:0,
  t:0,goT:null,runL:0,runTe:0,eta:0,willSafe:false,resolved:false,timer:0,banner:null,after:'',cause:'',
- resS:0,resT:0,tagT:99,bannerAt:0,arr:0,u0:0,tagDone:false,resBall:{x:0,y:0},slideDir:1,toast:'',toastT:0,overAt:0,best:0,newBest:false,goFlash:0};
+ resS:0,resT:0,tagT:99,bannerAt:0,arr:0,u0:0,tagDone:false,resBall:{x:0,y:0},slideDir:1,toast:'',toastT:0,waitNext:false,waitT:0,overAt:0,best:0,bestScore:0,bestTime:0,score:0,gain:0,dodges:0,lastTime:0,newBest:false,newBestScore:false,goFlash:0};
 if(location.search.indexOf('debug')>=0)window.__stealGame={S:S,makePitcher:function(n){return makePitcher(n);}}; // テスト用(?debug の時だけ公開)
 try{S.best=parseInt(localStorage.getItem('tourui_best')||'0',10)||0;}catch(e){}
-function saveBest(){try{localStorage.setItem('tourui_best',String(S.best));}catch(e){}}
+try{S.bestScore=parseInt(localStorage.getItem('tourui_best_score')||'0',10)||0;S.bestTime=parseFloat(localStorage.getItem('tourui_best_time')||'0')||0;}catch(e){}
+function saveBest(){try{localStorage.setItem('tourui_best',String(S.best));localStorage.setItem('tourui_best_score',String(S.bestScore));localStorage.setItem('tourui_best_time',String(S.bestTime));}catch(e){}}
 
 const P=()=>S.pitcher;
 const clamp01=x=>x<0?0:x>1?1:x;
@@ -70,7 +118,7 @@ const lerp=(a,b,t)=>a+(b-a)*t;
 const rand=(a,b)=>a+Math.random()*(b-a);
 function runS(L0,te){if(te<=0)return L0;if(te<ACC)return L0+SPEED*te*te/(2*ACC);return L0+SPEED*(te-ACC/2);}
 function runTime(L0){return (BASE_FT-L0)/SPEED+ACC/2;}
-function rankOf(n){if(n>=25)return '伝説の盗塁王';if(n>=15)return '盗塁王';if(n>=10)return '韋駄天';if(n>=6)return '盗塁職人';if(n>=3)return '俊足レギュラー';if(n>=1)return '代走要員';return '一塁ベース番';}
+function rankOf(n){if(n>=25)return '伝説の盗塁王';if(n>=15)return '盗塁王';if(n>=10)return '韋駄天';if(n>=6)return '盗塁職人';if(n>=3)return '俊足レギュラー';if(n>=1)return '盗塁デビュー';return '一塁ベース番';}
 
 /* ---------- 音・振動 ---------- */
 let AC=null;
@@ -81,7 +129,7 @@ function vib(p){try{if(navigator.vibrate)navigator.vibrate(p);}catch(e){}}
 /* ---------- ゲーム進行 ---------- */
 function resetAB(){S.L=0;S.picks=0;S.ab=0;S.goT=null;S.resolved=false;}
 function startGame(){
- S.steals=0;S.outs=0;S.pitcher=makePitcher(0);camPose=null;S.cause='';S.banner=null;S.toastT=0;
+ RK.open=false;RK.submitted=false;RK.err='';S.paused=false;S.score=0;S.gain=0;S.dodges=0;S.steals=0;S.outs=0;S.pitcher=makePitcher(0);camPose=null;S.cause='';S.banner=null;S.toastT=0;
  resetAB();enterReady(1.2);
 }
 function enterReady(t){
@@ -136,7 +184,7 @@ function updatePickoff(dt){
   S.resolved=true;
   if(S.goT!==null)resolveOut('pickgo',0,Math.min(BASE_FT-1,runS(S.runL,S.t-S.goT)));
   else if(S.L>0.05)resolveOut('pick',0,S.L);
-  else{S.phase='recover';S.timer=.55;S.resBall=FBG;S.toast='牽制をかわした!';S.toastT=.6;}
+  else{S.phase='recover';S.timer=.55;S.resBall=FBG;S.dodges++;S.score+=50;S.toast='牽制をかわした! +50';S.toastT=.9;}
  }
 }
 function updatePitch(dt){
@@ -158,6 +206,7 @@ function passPitch(){
 }
 function pressGo(){
  const ph=S.phase,p=P();
+ if(ph==='result'){if(S.waitNext&&S.waitT>.25)afterResult();return;}
  if(ph==='set'){S.phase='busted';S.runL=S.L;S.runTe=0;S.timer=.9;S.tellOn=false;S.goFlash=.2;tone(500,.1,'square',.04,900);return;}
  if(ph==='pickoff'&&S.goT===null){S.goT=S.t;S.runL=S.L;S.goFlash=.2;tone(500,.1,'square',.04,900);return;}
  if(ph==='pitch'&&S.goT===null){
@@ -168,17 +217,20 @@ function pressGo(){
  }
 }
 function resolveSafe(margin){
- S.steals++;S.phase='result';S.after='safe';
+ S.steals++;S.phase='result';S.after='safe';S.waitNext=false;S.waitT=0;
+ {const tm=S.eta,base=100+Math.min(100,S.steals*4),tb=Math.round(clamp01((2.5-tm)/1.2)*300/10)*10;
+  S.lastTime=tm;S.gain=base+tb;S.score+=S.gain;S.safeBase=base;S.safeTb=tb;
+  if(S.bestTime===0||tm<S.bestTime)S.bestTime=tm;}
  let rec='';S.resS=BASE_FT;S.slideDir=1;
  S.resBall=TG;
  {const p=P(),tc=p.deliv+p.flight,tr=tc+p.pop*.45,ba=tc+p.pop;
   S.u0=clamp01((S.t-tr)/(ba-tr));S.arr=Math.min(margin,.45)+.1;
   S.resT=0;S.tagDone=false;S.tagT=S.arr+.05+.12;S.bannerAt=S.tagT+.08;S.timer=S.bannerAt+.75;}
- S.banner={t:'SAFE!',s:(margin<.08?'ギリギリセーフ!!':'盗塁成功! (余裕'+margin.toFixed(2)+'秒)')+rec,c:'#4ade80'};
+ S.banner={t:'SAFE!',s:'タイム '+S.lastTime.toFixed(2)+'秒  '+(margin<.08?'ギリギリセーフ!! ':'')+'+'+S.safeBase+(S.safeTb?'  タイムボーナス +'+S.safeTb:''),c:'#4ade80'};
  tone(660,.1,'square',.05);setTimeout(()=>tone(990,.18,'square',.05),110);vib(30);
 }
 function resolveOut(cause,extra,s){
- S.outs++;S.cause=cause;S.phase='result';S.after='out';S.timer=1.1;
+ S.outs++;S.cause=cause;S.phase='result';S.after='out';S.timer=1.1;S.waitNext=false;S.waitT=0;
  S.resT=0;S.tagDone=false;S.tagT=99;S.bannerAt=0;S.arr=0;
  if(cause==='caught'||cause==='read'){S.tagT=.2;S.bannerAt=.28;S.timer=1.3;}
  const m=MSG[cause];let sub=m[1];
@@ -189,13 +241,16 @@ function resolveOut(cause,extra,s){
  tone(320,.5,'sawtooth',.06,70);vib([60,40,90]);
 }
 function afterResult(){
+ S.waitNext=false;S.waitT=0;
  S.pitcher=makePitcher(S.steals);camPose=null;
  if(S.outs>=3){gameOver();return;}
  resetAB();enterReady(.5);
 }
 function gameOver(){
- S.phase='over';S.overAt=S.time;S.newBest=false;
- if(S.steals>S.best){S.best=S.steals;S.newBest=true;saveBest();}
+ S.phase='over';S.overAt=S.time;S.newBest=false;S.newBestScore=false;
+ if(S.steals>S.best){S.best=S.steals;S.newBest=true;}
+ if(S.score>S.bestScore){S.bestScore=S.score;S.newBestScore=true;}
+ saveBest();
 }
 function update(dt){
  if(S.toastT>0)S.toastT-=dt;if(S.goFlash>0)S.goFlash-=dt;
@@ -206,7 +261,7 @@ function update(dt){
   case 'pitch':updatePitch(dt);break;
   case 'busted':S.runTe+=dt;S.timer-=dt;if(S.timer<=0)resolveOut('read',0,Math.min(BASE_FT-2,runS(S.runL,S.runTe)));break;
   case 'recover':moveLead(dt,holding());S.timer-=dt;if(S.timer<=0)startSet();break;
-  case 'result':S.timer-=dt;S.resT+=dt;if(!S.tagDone&&S.resT>=S.tagT){S.tagDone=true;tone(170,.09,'square',.06,70);vib(20);}if(S.timer<=0)afterResult();break;
+  case 'result':S.timer-=dt;S.resT+=dt;if(!S.tagDone&&S.resT>=S.tagT){S.tagDone=true;tone(170,.09,'square',.06,70);vib(20);}if(S.timer<=0){S.timer=0;S.waitNext=true;S.waitT+=dt;}break;
  }
 }
 
@@ -218,7 +273,7 @@ function toLocal(e){const r=cv.getBoundingClientRect();return {x:(e.clientX-r.le
 function hit(b,p){return p.x>=b.x&&p.x<=b.x+b.w&&p.y>=b.y&&p.y<=b.y+b.h;}
 function share(){
  const n=S.steals;
- const text='盗塁王で'+n+'盗塁! 称号「'+rankOf(n)+'」 死因:'+(CAUSE[S.cause]||'不明')+' 牽制をかいくぐれ! #盗塁王ゲーム';
+ const text='盗塁王で'+n+'盗塁・'+S.score+'点! 称号「'+rankOf(n)+'」 死因:'+(CAUSE[S.cause]||'不明')+' 牽制をかいくぐれ! #盗塁王ゲーム';
  const url='https://twitter.com/intent/tweet?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(location.href.split('#')[0]);
  try{window.open(url,'_blank','noopener');}catch(e){}
 }
@@ -228,10 +283,18 @@ cv.addEventListener('pointerdown',e=>{
  if(S.phase==='title'){ptr.set(e.pointerId,'ui:start');return;}
  if(S.phase==='over'){
   if(S.time-S.overAt<.7)return;
+  if(RK.open){
+   if(hit(RK_TAB1,p))ptr.set(e.pointerId,'ui:rk:score');else if(hit(RK_TAB2,p))ptr.set(e.pointerId,'ui:rk:steals');
+   else if(hit(RK_SUB,p))ptr.set(e.pointerId,'ui:rk:sub');else if(hit(RK_CLOSE,p))ptr.set(e.pointerId,'ui:rk:close');
+   return;
+  }
+  if(RANK_ON()&&hit(RANK_BTN,p)){ptr.set(e.pointerId,'ui:rank');return;}
   if(hit(SHARE_BTN,p))ptr.set(e.pointerId,'ui:share');
   else if(hit(RETRY_BTN,p))ptr.set(e.pointerId,'ui:retry');
   return;
  }
+ if(S.paused){if(hit(RESUME_BTN,p)||hit(PAUSE_BTN,p))ptr.set(e.pointerId,'ui:resume');return;}
+ if(hit(PAUSE_BTN,p)){ptr.set(e.pointerId,'ui:pause');return;}
  if(p.y<190)return;
  ptr.set(e.pointerId,'go');pressGo();
 });
@@ -240,28 +303,43 @@ cv.addEventListener('pointerup',e=>{
  if(v==='ui:start'&&S.phase==='title')startGame();
  else if(v==='ui:retry'&&S.phase==='over')startGame();
  else if(v==='ui:share'&&S.phase==='over')share();
+ else if(v==='ui:rank'&&S.phase==='over'){RK.open=true;rkFetch('score');}
+ else if(v==='ui:rk:score'||v==='ui:rk:steals')rkFetch(v.slice(6));
+ else if(v==='ui:rk:sub')rkSubmit();
+ else if(v==='ui:rk:close')RK.open=false;
+ else if(v==='ui:pause')setPause(true);
+ else if(v==='ui:resume')setPause(false);
 });
 cv.addEventListener('pointercancel',e=>{ptr.delete(e.pointerId);});
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+const PAUSE_BTN={x:304,y:8,w:46,h:46},RESUME_BTN={x:60,y:300,w:240,h:70};
+function canPause(){return S.phase!=='title'&&S.phase!=='over';}
+function setPause(v){if(v&&!canPause())return;S.paused=v;ptr.clear();}
 function uiStart(){
+ if(RK.open)return;
  if(S.phase==='title')startGame();
  else if(S.phase==='over'&&S.time-S.overAt>.7)startGame();
 }
 window.addEventListener('keydown',e=>{
  const k=e.key;
+ if(k==='p'||k==='P'||k==='Escape'){e.preventDefault();if(!e.repeat)setPause(!S.paused);return;}
+ if(S.paused&&(k===' '||k==='Enter')){e.preventDefault();if(!e.repeat)setPause(false);return;}
  if(k===' '||k==='Enter'||k==='ArrowRight'||k==='ArrowLeft'||k==='a'||k==='A'||k==='l'||k==='L'){
   e.preventDefault();audioInit();
   if(S.phase==='title'||S.phase==='over'){if(!e.repeat)uiStart();}else if(!e.repeat)pressGo();
  }
 });
-window.addEventListener('blur',()=>{ptr.clear();keys.clear();});
+window.addEventListener('blur',()=>{ptr.clear();keys.clear();if(canPause())S.paused=true;});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&canPause())S.paused=true;});
 
 /* ---------- 描画ヘルパー ---------- */
 function rr(x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath();}
 function txt(s,x,y,size,color,align,weight,stroke){
  ctx.font=(weight||'bold')+' '+size+'px "Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif';
  ctx.textAlign=align||'left';ctx.textBaseline='alphabetic';
+ {const al=align||'left',w0=ctx.measureText(s).width,av=al==='center'?2*Math.min(x,W-x)-16:(al==='right'?x-8:W-x-8);
+  if(w0>av&&av>40){size=Math.floor(size*av/w0*10)/10;ctx.font=(weight||'bold')+' '+size+'px "Hiragino Sans","Yu Gothic","Noto Sans JP",sans-serif';}}
  if(stroke){ctx.lineWidth=stroke.w;ctx.strokeStyle=stroke.c;ctx.lineJoin='round';ctx.strokeText(s,x,y);}
  ctx.fillStyle=color;ctx.fillText(s,x,y);
 }
@@ -801,7 +879,7 @@ function drawPitcherFP(po,withBall){
  const legs=[{h:hipP,f:fP,col:'#e8e8e8'},{h:hipF,f:fF,col:'#e8e8e8'}].sort((a,b)=>a.h[2]-b.h[2]);
  legs.forEach(lg=>{
   const side=lg.h[0]>=cx0?1:-1;
-  const k=ik(lg.h[0],lg.h[1],lg.f[0],lg.f[1],42,42,lg.h[0]+side*16+X(0,40),lg.h[1]+8);
+  const k=ik(lg.h[0],lg.h[1],lg.f[0],lg.f[1],52,52,lg.h[0]+side*16+X(0,40),lg.h[1]+8);
   drawTap([lg.h[0],lg.h[1]],k.e,17,12,lg.col);drawTap(k.e,k.h,12,9,lg.col);
   const m=[k.e[0]+(k.h[0]-k.e[0])*.5,k.e[1]+(k.h[1]-k.e[1])*.5];
   drawTap(m,k.h,10,8,L.cap);
@@ -911,8 +989,12 @@ function drawFPBG(){
  // 電光掲示板(中堅)
  ctx.fillStyle='#0a0f1a';rr(218,64,120,66,3);ctx.fill();ctx.strokeStyle='#2a3550';ctx.lineWidth=2;rr(218,64,120,66,3);ctx.stroke();
  ctx.fillStyle='#10192b';ctx.fillRect(223,69,110,56);
- txt('盗塁王',278,92,22,'#ffb23d','center','bold');
- txt('TOURUI KING',278,108,9,'#8fd0ff','center','bold');
+ if(S.phase==='title'){txt('盗塁王',278,92,22,'#ffb23d','center','bold');txt('TOURUI KING',278,108,9,'#8fd0ff','center','bold');}
+ else{
+  txt('SCORE',278,82,9,'#8fd0ff','center','bold');
+  txt(String(S.score),278,108,30,'#ffb23d','center','bold');
+  txt('盗塁 '+S.steals,278,121,10,'#8fd0ff','center','bold');
+ }
  // 外野フェンス
  ctx.fillStyle='#0f3b27';ctx.fillRect(0,WT,W,HZ-WT+6);
  const ads=[['#c0392b','ミナト'],['#2563eb','ひかり'],['#e9b44c','さくら'],['#7c3aed','NOVA'],['#0e9f6e','みどり'],['#e5e7eb','KOBO']];
@@ -933,7 +1015,9 @@ function drawFPBG(){
   ctx.fillStyle='rgba(255,255,255,.05)';ctx.beginPath();ctx.moveTo(x0,gy0);ctx.lineTo(x1,gy0);ctx.lineTo(V.x+(x1-V.x)*k,480);ctx.lineTo(V.x+(x0-V.x)*k,480);ctx.closePath();ctx.fill();
  }
  for(let y=gy0+8,i=0,h=9;y<480;i++){ctx.fillStyle=i%2?'rgba(0,0,0,.05)':'rgba(255,255,255,.025)';ctx.fillRect(0,y,W,h);y+=h;h+=3;}
- // 内野の土(外周)
+ // 内野の土(外周)はフェアゾーンだけ(ファウルゾーンは芝)
+ const FAIR=()=>{ctx.beginPath();ctx.moveTo(H0.x,H0.y);ctx.lineTo(282,gy0);ctx.lineTo(420,gy0);ctx.lineTo(420,520);ctx.lineTo(330,520);ctx.closePath();};
+ ctx.save();FAIR();ctx.clip();
  ctx.fillStyle='#86643b';ctx.beginPath();ctx.ellipse(186,384,262,106,0,0,7);ctx.fill();
  ctx.fillStyle='#9c7646';ctx.beginPath();ctx.ellipse(186,384,250,98,0,0,7);ctx.fill();
  // 内野の芝(ダイヤ)
@@ -942,11 +1026,14 @@ function drawFPBG(){
  ctx.fillStyle='#1f6a3a';ctx.strokeStyle='#1f6a3a';ctx.lineWidth=14;ctx.lineJoin='round';
  ctx.beginPath();pp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();ctx.stroke();
  ctx.save();ctx.clip();ctx.fillStyle='rgba(255,255,255,.05)';for(let i=0;i<8;i++)if(i%2)ctx.fillRect(0,pp[3][1]+i*24,W,24);ctx.restore();
+ ctx.restore();
  // 本塁まわり・塁まわりの土
  ctx.fillStyle='#9c7646';[[H0.x,H0.y,42,16],[B1.x,B1.y,34,14],[B2.x,B2.y,28,9],[B3.x,B3.y,26,8]].forEach(a=>{ctx.beginPath();ctx.ellipse(a[0],a[1],a[2],a[3],0,0,7);ctx.fill();});
  // 手前を暗く(砂のグラデ)
  g=ctx.createLinearGradient(0,420,0,480);g.addColorStop(0,'rgba(120,90,52,0)');g.addColorStop(1,'rgba(96,70,40,.9)');
- ctx.fillStyle=g;ctx.fillRect(0,420,W,60);
+ ctx.save();FAIR();ctx.clip();ctx.fillStyle=g;ctx.fillRect(0,420,W,60);ctx.restore();
+ // ファウルゾーンはやや暗い芝
+ ctx.save();ctx.beginPath();ctx.rect(0,gy0,W,480-gy0);FAIR();ctx.clip('evenodd');ctx.fillStyle='rgba(0,20,10,.16)';ctx.fillRect(0,gy0,W,480-gy0);ctx.restore();
  // ファウルライン(本塁→一塁、本塁→三塁→フェンス)
  const line=(x0,y0,x1,y1,w0,w1)=>{const dx=x1-x0,dy=y1-y0,n=Math.hypot(dx,dy),nx=-dy/n,ny=dx/n;ctx.fillStyle='rgba(255,255,255,.88)';ctx.beginPath();ctx.moveTo(x0+nx*w0,y0+ny*w0);ctx.lineTo(x1+nx*w1,y1+ny*w1);ctx.lineTo(x1-nx*w1,y1-ny*w1);ctx.lineTo(x0-nx*w0,y0-ny*w0);ctx.closePath();ctx.fill();};
  line(H0.x,H0.y,282,484,2.2,3.4);
@@ -957,7 +1044,7 @@ function drawFPBG(){
  g=ctx.createRadialGradient(FPX-6,FPG-4,3,FPX,FPG+4,52);g.addColorStop(0,'#c0975f');g.addColorStop(1,'#9c7646');
  ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(FPX,FPG+5,48,10,0,0,7);ctx.fill();
  ctx.fillStyle='rgba(0,0,0,.12)';ctx.beginPath();ctx.ellipse(FPX,FPG+9,48,5,0,0,Math.PI);ctx.fill();
- ctx.fillStyle='#f4f1e8';rr(FPX+12*.34-9,FPG+1.2,18,3.6,1.2);ctx.fill();ctx.fillStyle='rgba(0,0,0,.25)';ctx.fillRect(FPX+12*.34-9,FPG+4,18,.9);
+ ctx.fillStyle='#f4f1e8';rr(FPX+12*.34-2.6,FPG-3.6,5.2,11,1.4);ctx.fill();ctx.fillStyle='rgba(0,0,0,.28)';ctx.fillRect(FPX+12*.34-2.6,FPG+6.8,5.2,.9);
  // 本塁・バッターボックス(横から見て奥行きは半分に潰れる)
  {const O={x:52,y:312},P=(c,l)=>[O.x+c,O.y+c*.08+l*.5];
   ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=1;
@@ -1088,13 +1175,14 @@ function drawHUD(){
  const p=P();
  txt('盗塁 '+S.steals,14,34,28,'#fde047','left','bold',{w:4,c:'rgba(0,0,0,.5)'});
  txt(p.grade+'  '+p.name,14,56,13,'#cbd5e1','left');
- txt('OUT',214,24,13,'#cbd5e1','left');
- for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(262+i*24,19,8,0,7);if(i<S.outs){ctx.fillStyle='#ef4444';ctx.fill();}else{ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.stroke();}}
+ if(VIEW!=='fp')txt('SCORE '+S.score,14,80,15,'#fff','left','bold',{w:3,c:'rgba(0,0,0,.65)'});
+ txt('OUT',192,24,13,'#cbd5e1','left');
+ for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(240+i*24,19,8,0,7);if(i<S.outs){ctx.fillStyle='#ef4444';ctx.fill();}else{ctx.strokeStyle='#64748b';ctx.lineWidth=2;ctx.stroke();}}
  const hy=VIEW==='fp'?458:204;
  if(S.toastT>0)txt(S.toast,W/2,hy,16,'#fff','center','bold',{w:4,c:'rgba(0,0,0,.7)'});
  else if(S.steals<2&&(S.phase==='set'||S.phase==='pitch'||S.phase==='pickoff')&&S.goT===null){
   const ph=S.phase,rh=p.rh;let m,c='#fff';
-  if(ph==='set')m=rh?'脚が上がったらタップ! 牽制のときは押さない!':'左腕は脚を上げても牽制あり! 前へ踏み出したらタップ!';
+  if(ph==='set')m=rh?'脚が上がったらタップ! 牽制のときは押さない!':'左腕は脚を上げても牽制あり!\n前へ踏み出したらタップ!';
   else if(ph==='pitch'){
    if(rh){m='▲ 脚が上がった!タップ!';c='#fde047';}
    else if(S.t>=S.t1){m='▲ 踏み出した!タップ!';c='#fde047';}
@@ -1103,7 +1191,7 @@ function drawHUD(){
    if(S.fakeLift&&S.t<S.dv)m='脚が上がった…踏み出す向きを見ろ!';
    else{m='牽制だ!押すな!';c='#fca5a5';}
   }
-  txt(m,W/2,hy,15,c,'center','bold',{w:4,c:'rgba(0,0,0,.7)'});
+ m.split('\n').forEach((ln,i,arr)=>txt(ln,W/2,hy-(arr.length-1-i)*20,15,c,'center','bold',{w:4,c:'rgba(0,0,0,.7)'}));
  }
 }
 function btn(x,y,w,h,col,label,sub,on){
@@ -1113,6 +1201,11 @@ function btn(x,y,w,h,col,label,sub,on){
  txt(sub,x+w/2,y+h-18,11,'rgba(255,255,255,.8)','center','normal');
 }
 function drawControls(){
+ if(S.phase==='result'&&S.waitNext){
+  const fin=S.after==='out'&&S.outs>=3;
+  btn(12,492,336,130,'#16a34a',fin?'結果を見る':'次へ',fin?'タップで結果発表':'タップで次の盗塁へ',false);
+  return;
+ }
  const go=goEnabled();
  btn(12,492,336,130,S.goFlash>0?'#fbbf24':(go?'#d97706':'#5a3f10'),'GO!','脚が上がったらタップ(牽制は押さない・見送りはアウト)',S.goFlash>0);
 }
@@ -1129,34 +1222,70 @@ function drawBanner(){
  txt(sub,W/2,140,14,'#e5e7eb','center');
 }
 function drawTitle(){
- ctx.fillStyle='rgba(5,12,20,.78)';ctx.fillRect(0,0,W,H);
- txt('盗塁王',W/2,150,68,'#fde047','center','bold',{w:8,c:'#7c2d12'});
- txt('牽制をかいくぐれ!',W/2,190,20,'#fff','center');
- const r=['投手が脚を上げたら','タップで盗塁!','牽制のときは押すな!','投球を見送るとアウト!'];
- r.forEach((s,i)=>txt(s,W/2,262+i*38,i<3?22:16,i==2?'#fca5a5':(i<3?'#e5e7eb':'#fbbf24'),'center',i<3?'bold':'normal'));
+ ctx.fillStyle='rgba(5,12,20,.86)';ctx.fillRect(0,0,W,H);
+ txt('盗塁王',W/2,100,64,'#fde047','center','bold',{w:8,c:'#7c2d12'});
+ txt('牽制をかいくぐれ!',W/2,134,19,'#fff','center');
+ ctx.fillStyle='rgba(255,255,255,.08)';rr(16,152,328,330,16);ctx.fill();
+ ctx.strokeStyle='rgba(253,224,71,.5)';ctx.lineWidth=2;rr(16,152,328,330,16);ctx.stroke();
+ txt('ルール',W/2,180,18,'#fde047','center','bold');
+ txt('一塁から二塁へ盗塁!  3アウトで終了',W/2,206,14,'#cbd5e1','center','normal');
+ const blk=(y,col,head,l1,l2)=>{
+  ctx.fillStyle=col;rr(30,y-18,6,l2?56:38,3);ctx.fill();
+  txt(head,46,y,18,col,'left','bold');
+  txt(l1,46,y+22,14,'#e5e7eb','left','normal');
+  if(l2)txt(l2,46,y+40,14,'#e5e7eb','left','normal');
+ };
+ blk(244,'#4ade80','押す(GO!)','投手が足を上げて投げたら、すぐ押して','二塁へ走る');
+ blk(318,'#fca5a5','押さない','一塁へ牽制してきたときは押さない','(押すとアウト)');
+ blk(392,'#fde047','見送りもアウト','投球なのに押さずに見送ると、アウト');
+ txt('※左投手は足を上げても牽制あり。',W/2,452,13,'#93c5fd','center','normal');
+ txt('踏み出す向きがホーム側なら投球、一塁側なら牽制',W/2,470,13,'#93c5fd','center','normal');
  const a=.55+.45*Math.sin(S.time*4);
- ctx.globalAlpha=a;txt('TAP TO START',W/2,452,26,'#fff','center');ctx.globalAlpha=1;
- if(S.best>0)txt('ベスト '+S.best+' 盗塁',W/2,490,15,'#93c5fd','center');
+ ctx.globalAlpha=a;txt('TAP TO START',W/2,524,26,'#fff','center');ctx.globalAlpha=1;
+ if(S.best>0)txt('ベスト '+S.best+'盗塁 / '+S.bestScore+'点',W/2,556,15,'#93c5fd','center');
 }
 function drawOver(){
- ctx.fillStyle='rgba(5,12,20,.84)';ctx.fillRect(0,0,W,H);
- txt('GAME OVER',W/2,96,26,'#f87171','center','bold');
- txt('盗塁',W/2,140,18,'#cbd5e1','center');
- txt(String(S.steals),W/2,214,76,'#fde047','center','bold',{w:6,c:'#7c2d12'});
- txt('「'+rankOf(S.steals)+'」',W/2,262,26,'#fff','center','bold');
- txt('死因:'+(CAUSE[S.cause]||'-'),W/2,302,17,'#fca5a5','center');
- txt('ベスト '+S.best+(S.newBest?'  NEW!':''),W/2,336,16,S.newBest?'#fde047':'#93c5fd','center');
- txt('Xでシェアして友達に挑戦させよう',W/2,382,13,'#94a3b8','center','normal');
+ ctx.fillStyle='rgba(5,12,20,.86)';ctx.fillRect(0,0,W,H);
+ txt('GAME OVER',W/2,70,26,'#f87171','center','bold');
+ txt('盗塁',W/2,106,16,'#cbd5e1','center');
+ txt(String(S.steals),W/2,170,66,'#fde047','center','bold',{w:6,c:'#7c2d12'});
+ txt('「'+rankOf(S.steals)+'」',W/2,208,23,'#fff','center','bold');
+ txt('SCORE',W/2,244,14,'#cbd5e1','center');
+ txt(String(S.score),W/2,286,44,'#4ade80','center','bold',{w:5,c:'#064e3b'});
+ txt('死因:'+(CAUSE[S.cause]||'-')+'  /  牽制回避 '+S.dodges+'回',W/2,316,14,'#fca5a5','center');
+ txt('ベスト 盗塁 '+S.best+(S.newBest?' NEW!':'')+'  スコア '+S.bestScore+(S.newBestScore?' NEW!':''),W/2,342,14,(S.newBest||S.newBestScore)?'#fde047':'#93c5fd','center');
+ if(S.bestTime>0)txt('最速タイム '+S.bestTime.toFixed(2)+'秒',W/2,364,13,'#93c5fd','center','normal');
+ txt('Xでシェアして友達に挑戦させよう',W/2,392,13,'#94a3b8','center','normal');
  ctx.fillStyle='#1d9bf0';rr(SHARE_BTN.x,SHARE_BTN.y,SHARE_BTN.w,SHARE_BTN.h,14);ctx.fill();
  txt('Xでシェア',W/2,SHARE_BTN.y+34,22,'#fff','center');
  ctx.fillStyle='#16a34a';rr(RETRY_BTN.x,RETRY_BTN.y,RETRY_BTN.w,RETRY_BTN.h,14);ctx.fill();
  txt('もう一回',W/2,RETRY_BTN.y+34,22,'#fff','center');
+ if(RANK_ON()){ctx.fillStyle='#d97706';rr(RANK_BTN.x,RANK_BTN.y,RANK_BTN.w,RANK_BTN.h,14);ctx.fill();txt('ランキング',W/2,RANK_BTN.y+31,20,'#fff','center','bold');}
+ if(RK.open)drawRank();
+}
+function drawPauseUI(){
+ if(!canPause())return;
+ if(!S.paused){
+  ctx.fillStyle='rgba(0,0,0,.45)';rr(PAUSE_BTN.x,PAUSE_BTN.y,PAUSE_BTN.w,PAUSE_BTN.h,12);ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=1.5;rr(PAUSE_BTN.x,PAUSE_BTN.y,PAUSE_BTN.w,PAUSE_BTN.h,12);ctx.stroke();
+  ctx.fillStyle='#fff';ctx.fillRect(PAUSE_BTN.x+15,PAUSE_BTN.y+11,5,16);ctx.fillRect(PAUSE_BTN.x+26,PAUSE_BTN.y+11,5,16);
+  txt('タイム',PAUSE_BTN.x+PAUSE_BTN.w/2,PAUSE_BTN.y+41,9,'#e5e7eb','center','bold');
+  return;
+ }
+ ctx.fillStyle='rgba(5,12,20,.94)';ctx.fillRect(0,0,W,H);
+ txt('TIME',W/2,190,56,'#fde047','center','bold',{w:7,c:'#7c2d12'});
+ txt('一時停止中',W/2,226,18,'#fff','center');
+ ctx.fillStyle='#d97706';rr(RESUME_BTN.x,RESUME_BTN.y,RESUME_BTN.w,RESUME_BTN.h,18);ctx.fill();
+ ctx.strokeStyle='#fff';ctx.lineWidth=3;rr(RESUME_BTN.x,RESUME_BTN.y,RESUME_BTN.w,RESUME_BTN.h,18);ctx.stroke();
+ txt('再開',W/2,RESUME_BTN.y+45,30,'#fff','center','bold');
+ txt('脚が上がったらタップ / 牽制は押さない / 見送りはアウト',W/2,430,13,'#cbd5e1','center','normal');
+ txt('(キーボード: P または Esc で停止・再開)',W/2,456,11,'#94a3b8','center','normal');
 }
 function draw(){
  ctx.setTransform(DPR,0,0,DPR,0,0);ctx.clearRect(0,0,W,H);
  if(VIEW==='fp')drawFP();else{drawBG();drawActors();drawBall();drawPitcherCam();}
  if(S.phase==='title'){drawTitle();return;}
- drawHUD();drawControls();drawBanner();
+ drawHUD();drawControls();drawBanner();drawPauseUI();
  if(S.phase==='over')drawOver();
 }
 
@@ -1164,7 +1293,7 @@ function draw(){
 let last=0;
 function frame(ts){
  const dt=Math.min(.033,Math.max(0,(ts-last)/1000||0));last=ts;
- S.time+=dt;update(dt);updatePose(dt);updatePoseFP(dt);draw();requestAnimationFrame(frame);
+ S.time+=dt;if(!S.paused){update(dt);updatePose(dt);updatePoseFP(dt);}draw();requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);
 })();
