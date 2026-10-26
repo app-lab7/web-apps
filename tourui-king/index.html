@@ -50,9 +50,10 @@ const MSG={
  pick:['アウト!','牽制に刺された…'],
  pickgo:['アウト!','牽制に釣られた!!'],
  caught:['アウト!','スタートが遅かった…'],
- read:['アウト!','投球前にスタート!読まれた…']
+ read:['アウト!','投球前にスタート!読まれた…'],
+ pass:['アウト!','見送りはアウト!投球なら走れ!']
 };
-const CAUSE={pick:'牽制死',pickgo:'牽制に釣られた',caught:'盗塁死',read:'フライング'};
+const CAUSE={pick:'牽制死',pickgo:'牽制に釣られた',caught:'盗塁死',read:'フライング',pass:'見送り'};
 
 /* ---------- 状態 ---------- */
 const S={phase:'title',time:0,steals:0,outs:0,lv:0,introLv:-1,intro:false,L:0,picks:0,ab:0,
@@ -143,7 +144,7 @@ function updatePitch(dt){
  const tc=p.deliv+p.flight,ballAt=tc+p.pop;
  if(S.goT===null){
   moveLead(dt,holding());
-  if(S.t>=tc)passPitch();
+  if(S.t>=tc){S.resolved=true;resolveOut('pass',0,S.L);}
  }else if(!S.resolved){
   if(S.willSafe){if(S.t>=S.eta){S.resolved=true;resolveSafe(ballAt-S.eta);}}
   else if(S.t>=ballAt){S.resolved=true;resolveOut('caught',S.eta-ballAt,Math.min(BASE_FT-1,runS(S.runL,S.t-S.goT)));}
@@ -184,7 +185,7 @@ function resolveOut(cause,extra,s){
  if(cause==='caught'&&extra>0)sub+=' (あと'+extra.toFixed(2)+'秒)';
  S.banner={t:m[0],s:sub,c:'#f87171'};
  S.resS=(s==null?S.L:s);S.slideDir=(cause==='pick')?-1:1;
- S.resBall=(cause==='pick'||cause==='pickgo')?FBG:TG;
+ S.resBall=(cause==='pick'||cause==='pickgo')?FBG:(cause==='pass'?CGL:TG);
  tone(320,.5,'sawtooth',.06,70);vib([60,40,90]);
 }
 function afterResult(){
@@ -329,7 +330,7 @@ function makeLook(first){
 }
 /* 投手は毎回ランダム生成。盗塁数に応じて少しずつ難しくなる
    E=最初(やさしい) → M=30盗塁(標準的に上手い人) → X=48盗塁以上(超高難度) */
-const DE={dir:.10,lift:.45,ambig:0,pickRel:.50,deliv:.86,flight:.44,pop:1.18,habit:1,fake:0,tellLead:.55,amp:1.1,pBase:.13,h0:.6,h1:1.6};
+const DE={dir:.10,lift:.45,ambig:0,pickRel:.50,deliv:.85,flight:.44,pop:1.16,habit:1,fake:0,tellLead:.55,amp:1.1,pBase:.13,h0:.6,h1:1.6};
 const DM={dir:.16,lift:.30,ambig:.35,pickRel:.36,deliv:.67,flight:.38,pop:.95,habit:.5,fake:.2,tellLead:.34,amp:.7,pBase:.32,h0:.6,h1:1.6};
 const DX={dir:.19,lift:.20,ambig:.55,pickRel:.28,deliv:.60,flight:.35,pop:.90,habit:.3,fake:.3,tellLead:.28,amp:.6,pBase:.4,h0:.6,h1:1.5};
 const SURN=['氷室','火野','牧野','東雲','荒川','朝倉','神谷','岩崎','白石','黒田','九条','雷田','風間','鉄','早乙女'];
@@ -1113,7 +1114,7 @@ function btn(x,y,w,h,col,label,sub,on){
 }
 function drawControls(){
  const go=goEnabled();
- btn(12,492,336,130,S.goFlash>0?'#fbbf24':(go?'#d97706':'#5a3f10'),'GO!','脚が上がったらタップ(牽制のときは押さない)',S.goFlash>0);
+ btn(12,492,336,130,S.goFlash>0?'#fbbf24':(go?'#d97706':'#5a3f10'),'GO!','脚が上がったらタップ(牽制は押さない・見送りはアウト)',S.goFlash>0);
 }
 function drawBanner(){
  let big=null,sub='',col='#fff';
@@ -1131,8 +1132,8 @@ function drawTitle(){
  ctx.fillStyle='rgba(5,12,20,.78)';ctx.fillRect(0,0,W,H);
  txt('盗塁王',W/2,150,68,'#fde047','center','bold',{w:8,c:'#7c2d12'});
  txt('牽制をかいくぐれ!',W/2,190,20,'#fff','center');
- const r=['投手が脚を上げたら','タップで盗塁!','牽制のときは押すな!','3アウトで終了'];
- r.forEach((s,i)=>txt(s,W/2,262+i*38,i<3?22:15,i==2?'#fca5a5':(i<3?'#e5e7eb':'#94a3b8'),'center',i<3?'bold':'normal'));
+ const r=['投手が脚を上げたら','タップで盗塁!','牽制のときは押すな!','投球を見送るとアウト!'];
+ r.forEach((s,i)=>txt(s,W/2,262+i*38,i<3?22:16,i==2?'#fca5a5':(i<3?'#e5e7eb':'#fbbf24'),'center',i<3?'bold':'normal'));
  const a=.55+.45*Math.sin(S.time*4);
  ctx.globalAlpha=a;txt('TAP TO START',W/2,452,26,'#fff','center');ctx.globalAlpha=1;
  if(S.best>0)txt('ベスト '+S.best+' 盗塁',W/2,490,15,'#93c5fd','center');
