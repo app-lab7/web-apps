@@ -88,13 +88,13 @@ textarea{resize:none;line-height:1.7}
 .ln{position:relative;font-size:var(--fs);line-height:1.5;padding-top:.2em;margin-top:.1em;word-break:break-all;overflow-wrap:anywhere}
 .ln.hs{padding-top:.78em}
 .nosym .ln.hs{padding-top:.2em}
-.rb{position:absolute;left:0;width:calc(var(--n,1)*1em);text-align:center;white-space:nowrap;font-size:.46em;line-height:1;pointer-events:none;letter-spacing:0;font-weight:500}
+.rb{position:absolute;left:0;width:calc(var(--n,1)*2.174em);text-align:center;white-space:nowrap;font-size:.46em;line-height:1;pointer-events:none;letter-spacing:0;font-weight:500}
 .rbf{bottom:100%;margin-bottom:.15em;color:var(--fg,inherit)}
 .rbc{top:100%;margin-top:-.05em;color:#ff9f43;font-weight:700;font-size:.46em}
 .ln.hrbf{padding-top:.9em}.ln.hrbf.hs{padding-top:1.45em}.ln.hrbf.hs2{padding-top:1.8em}
 .ln.hrbc{padding-bottom:.35em}
 .c.hrf .sy{bottom:calc(100% + .45em)}
-.nohl .ln .rb{color:inherit}
+.nohl .ln .rb{color:inherit}.rb.hl1,.rb.hl2,.rb.hl3,.rb.hl4{border-radius:.25em}.rs-b{font-weight:900}.rs-u{text-decoration:underline;text-underline-offset:.15em;text-decoration-thickness:.1em}.rs-o{box-shadow:0 0 0 .08em currentColor;border-radius:999px}
 .rb-row{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}.rb-row input{flex:1;min-width:8em;font-size:16px;padding:8px 10px;border-radius:10px;border:1px solid var(--bd,#43516b);background:transparent;color:inherit}
 .rb-row button{padding:8px 12px;border-radius:10px}.rb-row button[aria-pressed=true]{background:#3a4bd6;color:#fff}
 .c{position:relative;display:inline;border-radius:3px}
@@ -907,7 +907,7 @@ function symOn(l,id){var a=S.sel.a,b=S.sel.b;
   if(a<b&&SPANK[id])return (l.sp||[]).some(function(s){return s.k===id&&s.a===a&&s.b===b});
   return csvHas(l.m,SYM[id].pos==="a"?a:b,id)}
 function rbCover(l,i,p){return (l.rb||[]).some(function(q){return i>=q.a&&i<=q.b&&(p==='c'?q.p==='c':q.p!=='c')})}
-function rbHTML(l,i){var h="";(l.rb||[]).forEach(function(q){if(q.a!==i)return;var n=Math.max(1,Math.min(q.b,l.t.length-1)-q.a+1);h+='<span class="rb '+(q.p==='c'?'rbc':'rbf')+'" style="--n:'+n+'">'+esc(q.t)+'</span>'});return h}
+function rbHTML(l,i){var h="";(l.rb||[]).forEach(function(q){if(q.a!==i)return;var n=Math.max(1,Math.min(q.b,l.t.length-1)-q.a+1);h+='<span class="rb '+(q.p==='c'?'rbc':'rbf')+(q.h?' '+q.h:'')+(q.s?' rs-'+q.s.split(',').join(' rs-'):'')+'" style="--n:'+n+'">'+esc(q.t)+'</span>'});return h}
 function rbSel(l){var a=S.sel.a,b=S.sel.b;return (l.rb||[]).filter(function(q){return q.a===a&&q.b===b})}
 function lineHTML(l,mark){
   var t=l.t,h="",lo=-1,hi=-2,selOn=S.sel&&S.sel.line===l.id;
@@ -1028,6 +1028,7 @@ function markDock(){
   var cur0=rbSel(l)[0],pos0=cur0?cur0.p:(S.rbPos||'f');
   h+='<div class="rb-row"><button data-act="rb-pos" data-v="f" aria-pressed="'+(pos0!=='c')+'">上：ふりがな</button><button data-act="rb-pos" data-v="c" aria-pressed="'+(pos0==='c')+'">下：子音など</button></div>'+
    '<div class="rb-row"><input id="rbIn" maxlength="20" value="'+esc(cur0?cur0.t:'')+'" placeholder="'+(pos0==='c'?'例: k':'例: きみ')+'" aria-label="書き込む文字"><button class="btn pri" data-act="rb-set">付ける</button><button class="btn" data-act="rb-del">消す</button></div>'+
+   '<div class="rb-row"><span class="selinfo">印・色：</span>'+RANGES.slice(0,4).map(function(r){return '<button data-act="rb-hl" data-v="'+r[0]+'" aria-pressed="'+((cur0?cur0.h:S.rbHl)===r[0])+'"><span class="sw" style="display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;background:'+r[3]+'"></span> '+r[1]+'</button>'}).join('')+[['b','太字'],['u','下線'],['o','丸']].map(function(x){return '<button data-act="rb-st" data-v="'+x[0]+'" aria-pressed="'+(((cur0?cur0.s:S.rbSt)||'').split(',').indexOf(x[0])>=0)+'">'+x[1]+'</button>'}).join('')+'</div>'+
    '<div class="rb-row">'+['k','s','t','n','h','m','y','r','w','g','z','d','b','p','sh','ch','ts','j','f'].map(function(c){return '<button data-act="rb-q" data-v="'+c+'">'+c+'</button>'}).join('')+'</div><div class="selinfo">子音のボタンは、選んだ文字の下にすぐ付きます。ふりがなは文字を入れて「付ける」。</div>';
  }else if(S.tab==='sym'){
   h+='<div class="grid">'+symPalette(S.allSymbols).map(function(d){return gridBtn('sym',d[0],symOn(l,d[0]),'<span class="k-'+d[2]+'">'+d[4]+'</span>',d[1])}).join('')+'</div><div class="symbol-row-label"><a href="'+esc(learnURL('symbols'))+'">記号の意味を調べる</a><button data-act="symbols-toggle">'+(S.allSymbols?'よく使う8種類':'すべての記号')+'</button></div>';
@@ -1099,7 +1100,7 @@ function normSong(s){
       Object.keys(l.m||{}).forEach(function(k){if(/^\d+$/.test(k))m[k]=String(l.m[k])});
       Object.keys(l.r||{}).forEach(function(k){if(/^\d+$/.test(k))r[k]=String(l.r[k])});
       var sp=(Array.isArray(l.sp)?l.sp:[]).filter(function(q){return q&&Number.isInteger(q.a)&&Number.isInteger(q.b)&&SYM[q.k]}).map(function(q){return {a:q.a,b:q.b,k:q.k}});
-      var lineId=uid();liveIds[String(l.id)]=lineId;var rb=(Array.isArray(l.rb)?l.rb:[]).filter(function(q){return q&&Number.isInteger(q.a)&&Number.isInteger(q.b)&&q.a>=0&&q.b>=q.a&&typeof q.t==='string'&&q.t}).slice(0,200).map(function(q){return {a:q.a,b:q.b,t:q.t.slice(0,20),p:q.p==='c'?'c':'f'}});sec.lines.push({id:lineId,t:l.t,m:m,r:r,sp:sp,rb:rb,n:String(l.n||"")});
+      var lineId=uid();liveIds[String(l.id)]=lineId;var rb=(Array.isArray(l.rb)?l.rb:[]).filter(function(q){return q&&Number.isInteger(q.a)&&Number.isInteger(q.b)&&q.a>=0&&q.b>=q.a&&typeof q.t==='string'&&q.t}).slice(0,200).map(function(q){return {a:q.a,b:q.b,t:q.t.slice(0,20),p:q.p==='c'?'c':'f',h:/^hl[1-4]$/.test(q.h)?q.h:'',s:String(q.s||'').split(',').filter(function(x){return x==='b'||x==='u'||x==='o'}).join(',')}});sec.lines.push({id:lineId,t:l.t,m:m,r:r,sp:sp,rb:rb,n:String(l.n||"")});
     });
     if(!sec.lines.length)sec.lines=[newLine("")];out.secs.push(sec);
   });
@@ -1277,7 +1278,7 @@ function videoDrawRange(ctx,k,x,y,w,h,t0,t1,first,last){
 function videoDrawLyric(ctx,line,layout,x,y,assets){
  var fs=layout.fs;layout.lyric.rows.forEach(function(row){var baseline=y+row.offset+row.ascent;
  (line.sp||[]).forEach(function(sp){if(!SYM[sp.k])return;var chars=row.tokens.filter(function(c){return c.index>=sp.a&&c.index<=sp.b});if(!chars.length)return;var first=chars[0],last=chars[chars.length-1],n=sp.b-sp.a+1;videoDrawRange(ctx,sp.k,x+first.x,baseline-fs*1.4,last.x+last.glyph-first.x,fs*.4,(first.index-sp.a)/n,Math.min(1,(last.index+last.t.length-sp.a)/n),first.index<=sp.a,last.index+last.t.length>sp.b)});
- (line.rb||[]).forEach(function(q){var cs=row.tokens.filter(function(c){return c.index>=q.a&&c.index<=q.b});if(!cs.length)return;var f0=cs[0],l0=cs[cs.length-1],cx=x+(f0.x+l0.x+l0.glyph)/2,isC=q.p==='c';ctx.save();ctx.textAlign='center';ctx.fillStyle=isC?'#ff9f43':'#dfe6f5';videoFont(ctx,fs*(isC?.4:.38),true);ctx.fillText(q.t,cx,isC?baseline+fs*.5:baseline-fs*1.0);ctx.restore()});
+ (line.rb||[]).forEach(function(q){var cs=row.tokens.filter(function(c){return c.index>=q.a&&c.index<=q.b});if(!cs.length)return;var f0=cs[0],l0=cs[cs.length-1],cx=x+(f0.x+l0.x+l0.glyph)/2,isC=q.p==='c';ctx.save();ctx.textAlign='center';var ss=(q.s||'').split(','),fsz=fs*(isC?.4:.38),ty=isC?baseline+fs*.5:baseline-fs*1.0,hcol={hl1:'#ffd633',hl2:'#ff7eb8',hl3:'#5aaeff',hl4:'#4fd673'}[q.h];videoFont(ctx,fsz,true||ss.indexOf('b')>=0);var tw=ctx.measureText(q.t).width,bw=Math.max(tw,(l0.x+l0.glyph-f0.x));if(hcol){ctx.fillStyle=hcol;ctx.fillRect(cx-bw/2,ty-fsz*.95,bw,fsz*1.2)}ctx.fillStyle=hcol?'#141a24':isC?'#ff9f43':'#dfe6f5';ctx.fillText(q.t,cx,ty);if(ss.indexOf('u')>=0){ctx.fillRect(cx-tw/2,ty+fsz*.15,tw,Math.max(1.5,fsz*.1))}if(ss.indexOf('o')>=0){ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=Math.max(1.5,fsz*.08);ctx.beginPath();ctx.ellipse(cx,ty-fsz*.3,tw/2+fsz*.3,fsz*.7,0,0,Math.PI*2);ctx.stroke()}ctx.restore()});
  row.tokens.forEach(function(c){var px=x+c.x,high=c.ranges.filter(function(k){return /^hl[1-4]$/.test(k)})[0],colors={hl1:'#ffd633',hl2:'#ff7eb8',hl3:'#5aaeff',hl4:'#4fd673'};if(high){ctx.fillStyle=colors[high];ctx.fillRect(px,baseline-fs*.88,c.glyph,fs*1.1)}videoFont(ctx,fs,c.ranges.indexOf('bold')>=0);ctx.fillStyle=high?'#141a24':c.ranges.indexOf('soft')>=0?'#b4bfce':'#f5f7ff';ctx.fillText(c.t,px,baseline);
  var top=c.ids.filter(function(k){return SYM[k].pos==='a'}),after=c.ids.filter(function(k){return SYM[k].pos==='f'});top.forEach(function(k,j){videoDrawSymbol(ctx,k,px+c.glyph/2+(j-(top.length-1)/2)*fs*.45-fs*.23,baseline-fs*1.95-(row.rbf&&(line.rb||[]).some(function(q){return q.p!=='c'&&c.index>=q.a&&c.index<=q.b})?fs*.4:0),fs*.46,assets)});var ax=c.blank?px+(c.glyph-after.length*fs*.48)/2:px+c.glyph;after.forEach(function(k,j){videoDrawSymbol(ctx,k,ax+j*fs*.48,baseline-fs*.7,fs*.46,assets)});
  if(c.ranges.indexOf('long')>=0){ctx.fillStyle='#7fdec9';ctx.fillRect(px,baseline+fs*.2,c.glyph,Math.max(2,fs*.05))}if(c.ranges.indexOf('wave')>=0){ctx.beginPath();ctx.strokeStyle='#a8d9ff';ctx.lineWidth=2;for(var j=0;j<=12;j++){var xx=px+c.glyph*j/12,yy=baseline+fs*.24+Math.sin(j/12*Math.PI*4)*fs*.04;if(j)ctx.lineTo(xx,yy);else ctx.moveTo(xx,yy)}ctx.stroke()}
@@ -1470,11 +1471,15 @@ function act(a,el){
   case "tmemo":S.show.memo=S.show.memo%3+1;savePrefs();render();break;
   case "play":setPlay(!S.play);render();break;
   case "spd":S.speed=Math.max(1,Math.min(10,S.speed+(+v)));savePrefs();render();break;
+  case "rb-hl":case "rb-st":l=selLine();if(!l||S.sel.lineOnly)break;var rc2=rbSel(l)[0];
+    if(a==="rb-hl"){if(rc2){rc2.h=rc2.h===v?"":v;S.rbHl=rc2.h;touch()}else S.rbHl=S.rbHl===v?"":v}
+    else{var sl=((rc2?rc2.s:S.rbSt)||"").split(",").filter(Boolean),si=sl.indexOf(v);if(si>=0)sl.splice(si,1);else sl.push(v);var sj=sl.join(",");if(rc2){rc2.s=sj;touch()}S.rbSt=sj}
+    render();break;
   case "rb-pos":S.rbPos=v;var rl=selLine();if(rl&&!S.sel.lineOnly){var rc=rbSel(rl)[0];if(rc){rc.p=v;touch()}}render();break;
   case "rb-set":case "rb-q":case "rb-del":l=selLine();if(!l||S.sel.lineOnly)break;
     var rin=$("#rbIn"),rtx=a==="rb-q"?v:(rin?rin.value.trim():""),rpos=a==="rb-q"?"c":(S.rbPos||(rbSel(l)[0]||{}).p||"f"),ra=S.sel.a,rbb=Math.min(S.sel.b,Math.max(ra,l.t.length-1));
     if(ra>=l.t.length)break;l.rb=(l.rb||[]).filter(function(q){return !(q.a<=rbb&&q.b>=ra&&(q.p==='c')===(rpos==='c'))});
-    if(a!=="rb-del"&&rtx)l.rb.push({a:ra,b:rbb,t:rtx.slice(0,20),p:rpos==='c'?'c':'f'});
+    if(a!=="rb-del"&&rtx)l.rb.push({a:ra,b:rbb,t:rtx.slice(0,20),p:rpos==='c'?'c':'f',h:S.rbHl||'',s:S.rbSt||''});
     touch();render();break;
   case "tab":S.tab=v;render();if(v==="memo")focusMemo();break;
   case "sym":l=selLine();if(!l||S.sel.lineOnly)break;
