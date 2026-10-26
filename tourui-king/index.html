@@ -45,12 +45,12 @@ const TG={x:B2.x-8,y:B2.y-14};                  // 二塁でのタッチ位置
 const INSET={x:12,y:62,w:200,h:130};
 const FOOT={x:218,y:62,w:130,h:130};            // 足元アップ(脚上げ=GOの合図を見る窓)            // 投手アップ(クセを見る窓)
 /* ---------- ランキング(Supabase / 未設定ならボタンごと非表示) ---------- */
-const RANK_CFG={url:'',key:''}; // ← Supabaseの Project URL と anon key を入れると有効化
+const RANK_CFG={url:'https://sqtgtzouaodytpkapmqn.supabase.co',key:'sb_publishable_nJIR_zrTyJArCVLRjlrQfQ__wvnmUag'}; // ← Supabaseの Project URL と anon key を入れると有効化
 const RANK_ON=()=>!!(RANK_CFG.url&&RANK_CFG.key);
 const RANK_BTN={x:30,y:536,w:300,h:48};
 const RK={open:false,tab:'score',rows:null,loading:false,err:'',submitted:false,sending:false,name:''};
 try{RK.name=localStorage.getItem('tourui_name')||'';}catch(e){}
-function rkHeaders(extra){return Object.assign({apikey:RANK_CFG.key,Authorization:'Bearer '+RANK_CFG.key},extra||{});}
+function rkHeaders(extra){const h={apikey:RANK_CFG.key};if(RANK_CFG.key.indexOf('sb_')!==0)h.Authorization='Bearer '+RANK_CFG.key;return Object.assign(h,extra||{});}
 function rkFetch(tab){
  RK.tab=tab;RK.loading=true;RK.err='';RK.rows=null;
  const ord=tab==='score'?'score.desc,steals.desc':'steals.desc,score.desc';
@@ -1097,7 +1097,7 @@ function drawFP(){
  // 二塁・遊撃・三塁
  fpPerson(262,270,fpSc(270),'#c0392b','#8e2118',{glove:[13,-22]}); // 遊撃
  fpPerson(166,268,fpSc(268),'#c0392b','#8e2118',{glove:[13,-22]}); // 三塁
- fpPerson(238,238,fpSc(238),'#c0392b','#8e2118',{glove:[13,-22]}); // 左翼
+ fpPerson(274,222,fpSc(222),'#c0392b','#8e2118',{glove:[13,-22]}); // 左翼
  // 投手
  if(fpCam){const PS=.34*(P().look.fs||1);ctx.save();ctx.translate(FPX,FPG);ctx.scale(PS,PS);ctx.translate(-FPX,-FPG);drawPitcherFP(fpCam,ballInHand());ctx.restore();
   fpHandNow={x:FPX+(fpHandNow.x-FPX)*PS,y:FPG+(fpHandNow.y-FPG)*PS};}
