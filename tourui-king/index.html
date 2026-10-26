@@ -48,7 +48,7 @@ const FOOT={x:218,y:62,w:130,h:130};            // 足元アップ(脚上げ=GO�
 const RANK_CFG={url:'https://sqtgtzouaodytpkapmqn.supabase.co',key:'sb_publishable_nJIR_zrTyJArCVLRjlrQfQ__wvnmUag'}; // ← Supabaseの Project URL と anon key を入れると有効化
 const RANK_ON=()=>!!(RANK_CFG.url&&RANK_CFG.key);
 const RANK_BTN={x:30,y:536,w:300,h:48};
-const RK={open:false,tab:'score',rows:null,loading:false,err:'',submitted:false,sending:false,name:''};
+const RK={my:null,open:false,tab:'score',rows:null,loading:false,err:'',submitted:false,sending:false,name:''};
 try{RK.name=localStorage.getItem('tourui_name')||'';}catch(e){}
 function rkHeaders(extra){const h={apikey:RANK_CFG.key};if(RANK_CFG.key.indexOf('sb_')!==0)h.Authorization='Bearer '+RANK_CFG.key;return Object.assign(h,extra||{});}
 function rkFetch(tab){
@@ -59,6 +59,16 @@ function rkFetch(tab){
   .then(r=>{if(!r.ok)throw 0;return r.json();}).then(j=>{if(RK.tab===tab){RK.rows=j;RK.loading=false;}})
   .catch(()=>{RK.err='ランキングを取得できません';RK.loading=false;}).finally(()=>clearTimeout(to));
 }
+function rkCount(q){
+ return fetch(RANK_CFG.url+'/rest/v1/tourui_scores?select=id&'+q,{headers:rkHeaders({Prefer:'count=exact',Range:'0-0'})})
+  .then(r=>{const m=(r.headers.get('content-range')||'').match(/\/(\d+)/);if(!m)throw 0;return +m[1];});
+}
+// 今回のスコアが全国で何位になるか(登録済みの記録との比較)
+function rkMyRank(){
+ if(!RANK_ON()||S.score<=0){RK.my=null;return;}
+ const sc=S.score,id=++RK.myId||(RK.myId=1);RK.my={loading:true};
+ Promise.all([rkCount('score=gt.'+sc),rkCount('score=gte.0')]).then(a=>{if(RK.myId===id)RK.my={rank:a[0]+1,total:a[1]};}).catch(()=>{if(RK.myId===id)RK.my=null;});
+}
 function rkSubmit(){
  if(RK.sending||RK.submitted||S.score<=0)return;
  let nm=RK.name;
@@ -68,13 +78,14 @@ function rkSubmit(){
  RK.name=nm;try{localStorage.setItem('tourui_name',nm);}catch(e){}
  RK.sending=true;RK.err='';
  fetch(RANK_CFG.url+'/rest/v1/tourui_scores',{method:'POST',headers:rkHeaders({'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({name:nm,steals:S.steals,score:S.score})})
-  .then(r=>{if(!r.ok)throw 0;RK.submitted=true;rkFetch(RK.tab);}).catch(()=>{RK.err='送信できませんでした';}).finally(()=>{RK.sending=false;});
+  .then(r=>{if(!r.ok)throw 0;RK.submitted=true;rkFetch(RK.tab);rkMyRank();}).catch(()=>{RK.err='送信できませんでした';}).finally(()=>{RK.sending=false;});
 }
 const RK_TAB1={x:20,y:66,w:155,h:36},RK_TAB2={x:185,y:66,w:155,h:36},RK_SUB={x:30,y:508,w:300,h:48},RK_CLOSE={x:30,y:566,w:300,h:46};
 function drawRank(){
  ctx.fillStyle='#050c14';ctx.fillRect(0,0,W,H);
  txt('ランキング',W/2,48,26,'#fde047','center','bold');
  [[RK_TAB1,'スコア順','score'],[RK_TAB2,'盗塁数順','steals']].forEach(([b,l,k])=>{ctx.fillStyle=RK.tab===k?'#d97706':'rgba(255,255,255,.1)';rr(b.x,b.y,b.w,b.h,10);ctx.fill();txt(l,b.x+b.w/2,b.y+24,16,'#fff','center','bold');});
+ if(RK.my&&RK.my.rank)txt('今回のスコアは全国 '+RK.my.rank+'位',W/2,122,13,'#fde047','center','bold');
  if(RK.loading)txt('読み込み中…',W/2,300,16,'#cbd5e1','center');
  else if(RK.rows&&RK.rows.length===0)txt('まだ記録がありません',W/2,300,16,'#cbd5e1','center');
  else if(RK.rows)RK.rows.forEach((r,i)=>{
@@ -251,7 +262,7 @@ function afterResult(){
  enterReady(S.tierUp?1.8:1.3);
 }
 function gameOver(){
- S.phase='over';S.overAt=S.time;S.newBest=false;S.newBestScore=false;
+ S.phase='over';S.overAt=S.time;S.newBest=false;S.newBestScore=false;rkMyRank();
  if(S.steals>S.best){S.best=S.steals;S.newBest=true;}
  if(S.score>S.bestScore){S.bestScore=S.score;S.newBestScore=true;}
  saveBest();
@@ -1030,28 +1041,32 @@ function drawFPBG(){
  // ウォーニングトラック
  g=ctx.createLinearGradient(0,HZ+4,0,HZ+18);g.addColorStop(0,'#7a5c38');g.addColorStop(1,'#8e6c42');
  ctx.fillStyle=g;strip(HZ+4,HZ+22);ctx.fill();
- // 芝(放射状の刈り模様+奥行きの縞)
+ // 芝: ファウルゾーン(暗い・横縞) → フェア外野(明るい・放射状の刈り模様) → 内野の土 → 内野の芝
  const gy0=HZ+18;
- g=ctx.createLinearGradient(0,gy0,0,480);g.addColorStop(0,'#17502d');g.addColorStop(1,'#26753f');
- ctx.fillStyle=g;ctx.beginPath();ctx.moveTo(0,gy0+off(0)*.8);for(let x=0;x<=W;x+=10)ctx.lineTo(x,gy0+off(x)*.8);ctx.lineTo(W,480);ctx.lineTo(0,480);ctx.closePath();ctx.fill();
- const V={x:250,y:20};
- for(let i=-10;i<14;i++){
-  if(i%2)continue;
-  const x0=i*50,x1=x0+50,k=(480-V.y)/(gy0-V.y);
-  ctx.fillStyle='rgba(255,255,255,.05)';ctx.beginPath();ctx.moveTo(x0,gy0);ctx.lineTo(x1,gy0);ctx.lineTo(V.x+(x1-V.x)*k,480);ctx.lineTo(V.x+(x0-V.x)*k,480);ctx.closePath();ctx.fill();
- }
- for(let y=gy0+8,i=0,h=9;y<480;i++){ctx.fillStyle=i%2?'rgba(0,0,0,.05)':'rgba(255,255,255,.025)';ctx.fillRect(0,y,W,h);y+=h;h+=3;}
- // 内野の土(外周)はフェアゾーンだけ(ファウルゾーンは芝)
+ const wallTop=()=>{ctx.moveTo(0,gy0+off(0)*.8);for(let x=0;x<=W;x+=10)ctx.lineTo(x,gy0+off(x)*.8);};
+ g=ctx.createLinearGradient(0,gy0,0,480);g.addColorStop(0,'#123a22');g.addColorStop(1,'#1b5530');
+ ctx.fillStyle=g;ctx.beginPath();wallTop();ctx.lineTo(W,480);ctx.lineTo(0,480);ctx.closePath();ctx.fill();
+ for(let y=gy0+8,i=0,h=9;y<480;i++){ctx.fillStyle=i%2?'rgba(0,0,0,.07)':'rgba(255,255,255,.03)';ctx.fillRect(0,y,W,h);y+=h;h+=3;}
  const FAIR=()=>{ctx.beginPath();ctx.moveTo(H0.x,H0.y);ctx.lineTo(282,gy0);ctx.lineTo(420,gy0);ctx.lineTo(420,520);ctx.lineTo(330,520);ctx.closePath();};
  ctx.save();FAIR();ctx.clip();
- ctx.fillStyle='#86643b';ctx.beginPath();ctx.ellipse(186,384,262,106,0,0,7);ctx.fill();
- ctx.fillStyle='#9c7646';ctx.beginPath();ctx.ellipse(186,384,250,98,0,0,7);ctx.fill();
- // 内野の芝(ダイヤ)
- const cx=(H0.x+B1.x+B2.x+B3.x)/4,cy=(H0.y+B1.y+B2.y+B3.y)/4,ins=.2;
- const pp=[H0,B1,B2,B3].map(p=>[p.x+(cx-p.x)*ins,p.y+(cy-p.y)*ins]);
- ctx.fillStyle='#1f6a3a';ctx.strokeStyle='#1f6a3a';ctx.lineWidth=14;ctx.lineJoin='round';
- ctx.beginPath();pp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();ctx.fill();ctx.stroke();
- ctx.save();ctx.clip();ctx.fillStyle='rgba(255,255,255,.05)';for(let i=0;i<8;i++)if(i%2)ctx.fillRect(0,pp[3][1]+i*24,W,24);ctx.restore();
+ g=ctx.createLinearGradient(0,gy0,0,480);g.addColorStop(0,'#1c6a38');g.addColorStop(1,'#2e8d4b');
+ ctx.fillStyle=g;ctx.fillRect(0,gy0,W+80,480-gy0);
+ const V={x:H0.x,y:H0.y};
+ for(let i=-14;i<16;i++){
+  if(i%2)continue;
+  const a0=i*.055,a1=a0+.055,R=700;
+  ctx.fillStyle='rgba(255,255,255,.06)';ctx.beginPath();ctx.moveTo(V.x,V.y);ctx.lineTo(V.x+Math.cos(a0-.35)*R,V.y+Math.sin(a0-.35)*R*.62);ctx.lineTo(V.x+Math.cos(a1-.35)*R,V.y+Math.sin(a1-.35)*R*.62);ctx.closePath();ctx.fill();
+ }
+ // 内野の土(ダイヤを太くなぞった丸い帯) + 内野の芝
+ const cx=(H0.x+B1.x+B2.x+B3.x)/4,cy=(H0.y+B1.y+B2.y+B3.y)/4;
+ const inset=k=>[H0,B1,B2,B3].map(p=>[p.x+(cx-p.x)*k,p.y+(cy-p.y)*k]);
+ const poly=pp=>{ctx.beginPath();pp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();};
+ ctx.lineJoin='round';
+ ctx.fillStyle=ctx.strokeStyle='#8f6d40';ctx.lineWidth=52;poly(inset(0));ctx.fill();ctx.stroke();
+ ctx.fillStyle=ctx.strokeStyle='#a58050';ctx.lineWidth=46;poly(inset(0));ctx.fill();ctx.stroke();
+ const gp=inset(.22);
+ ctx.fillStyle=ctx.strokeStyle='#2f9150';ctx.lineWidth=10;poly(gp);ctx.fill();ctx.stroke();
+ ctx.save();poly(gp);ctx.clip();ctx.fillStyle='rgba(255,255,255,.07)';for(let i=0;i<10;i++)if(i%2)ctx.fillRect(0,gp[3][1]-20+i*20,W,20);ctx.restore();
  ctx.restore();
  // 本塁まわり・塁まわりの土
  ctx.fillStyle='#9c7646';[[H0.x,H0.y,42,16],[B1.x,B1.y,34,14],[B2.x,B2.y,28,9],[B3.x,B3.y,26,8]].forEach(a=>{ctx.beginPath();ctx.ellipse(a[0],a[1],a[2],a[3],0,0,7);ctx.fill();});
@@ -1059,7 +1074,7 @@ function drawFPBG(){
  g=ctx.createLinearGradient(0,420,0,480);g.addColorStop(0,'rgba(120,90,52,0)');g.addColorStop(1,'rgba(96,70,40,.9)');
  ctx.save();FAIR();ctx.clip();ctx.fillStyle=g;ctx.fillRect(0,420,W,60);ctx.restore();
  // ファウルゾーンはやや暗い芝
- ctx.save();ctx.beginPath();ctx.rect(0,gy0,W,480-gy0);FAIR();ctx.clip('evenodd');ctx.fillStyle='rgba(0,20,10,.16)';ctx.fillRect(0,gy0,W,480-gy0);ctx.restore();
+ 
  // ファウルライン(本塁→一塁、本塁→三塁→フェンス)
  const line=(x0,y0,x1,y1,w0,w1)=>{const dx=x1-x0,dy=y1-y0,n=Math.hypot(dx,dy),nx=-dy/n,ny=dx/n;ctx.fillStyle='rgba(255,255,255,.88)';ctx.beginPath();ctx.moveTo(x0+nx*w0,y0+ny*w0);ctx.lineTo(x1+nx*w1,y1+ny*w1);ctx.lineTo(x1-nx*w1,y1-ny*w1);ctx.lineTo(x0-nx*w0,y0-ny*w0);ctx.closePath();ctx.fill();};
  line(H0.x,H0.y,282,484,2.2,3.4);
@@ -1291,7 +1306,9 @@ function drawOver(){
  txt('死因:'+(CAUSE[S.cause]||'-')+'  /  牽制回避 '+S.dodges+'回',W/2,316,14,'#fca5a5','center');
  txt('ベスト 盗塁 '+S.best+(S.newBest?' NEW!':'')+'  スコア '+S.bestScore+(S.newBestScore?' NEW!':''),W/2,342,14,(S.newBest||S.newBestScore)?'#fde047':'#93c5fd','center');
  if(S.bestTime>0)txt('最速の二塁到達 '+S.bestTime.toFixed(2)+'秒',W/2,364,13,'#93c5fd','center','normal');
- txt('Xでシェアして友達に挑戦させよう',W/2,392,13,'#94a3b8','center','normal');
+ if(RK.my&&RK.my.rank)txt('全国 '+RK.my.rank+'位 / '+(RK.my.total+(RK.submitted?0:1))+'件中'+(RK.submitted?'':'(登録で反映)'),W/2,392,15,'#fde047','center','bold');
+ else if(RK.my&&RK.my.loading)txt('全国順位を確認中…',W/2,392,13,'#94a3b8','center','normal');
+ else txt('Xでシェアして友達に挑戦させよう',W/2,392,13,'#94a3b8','center','normal');
  ctx.fillStyle='#1d9bf0';rr(SHARE_BTN.x,SHARE_BTN.y,SHARE_BTN.w,SHARE_BTN.h,14);ctx.fill();
  txt('Xでシェア',W/2,SHARE_BTN.y+34,22,'#fff','center');
  ctx.fillStyle='#16a34a';rr(RETRY_BTN.x,RETRY_BTN.y,RETRY_BTN.w,RETRY_BTN.h,14);ctx.fill();
