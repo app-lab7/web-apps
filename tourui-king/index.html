@@ -71,14 +71,44 @@ function rkMyRank(){
 }
 function rkSubmit(){
  if(RK.sending||RK.submitted||S.score<=0)return;
- let nm=RK.name;
- try{nm=window.prompt('ランキングに載せる名前(12文字まで)',RK.name||'');}catch(e){}
- if(nm===null||nm===undefined)return;
- nm=String(nm).trim().slice(0,12);if(!nm)return;
+ rkAsk(function(nm){
  RK.name=nm;try{localStorage.setItem('tourui_name',nm);}catch(e){}
  RK.sending=true;RK.err='';
  fetch(RANK_CFG.url+'/rest/v1/tourui_scores',{method:'POST',headers:rkHeaders({'Content-Type':'application/json',Prefer:'return=minimal'}),body:JSON.stringify({name:nm,steals:S.steals,score:S.score})})
   .then(r=>{if(!r.ok)throw 0;RK.submitted=true;rkFetch(RK.tab);rkMyRank();}).catch(()=>{RK.err='送信できませんでした';}).finally(()=>{RK.sending=false;});
+ });
+}
+// NGワード(下ネタ・暴言・差別・個人情報っぽいもの)。ひらがな/全角半角/記号を揃えてから部分一致で判定
+const NG_WORDS=['ちんこ','ちんぽ','ちんちん','まんこ','おまんこ','うんこ','うんち','おっぱい','ぱいぱい','せっくす','せつくす','えっち','ふぇら','おなに','しこしこ','ちくび','きんたま','ちんぴ','やりまん','ぶっかけ','ちかん','れいぷ','れいぱー','しね','しんで','ころす','ころせ','きえろ','うざい','きもい','でぶ','はげ','ぶす','ちょん','きちがい','つんぼ','めくら','かたわ','ガイジ','がいじ','ちょうせんじん','ちゃんころ','しなちく','せいかつほご','sex','fuck','shit','dick','cock','pussy','porn','rape','nazi','suck','bitch','tits','cum','anal','nude','4545','0721','1919','114514'];
+function ngNorm(t){
+ return String(t).normalize('NFKC').toLowerCase()
+  .replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-96))
+  .replace(/[\s\u3000_\-.,・、。!?！？*＊●○◯■□★☆~〜ー=+/\\|'"`´^]/g,'');
+}
+function isNG(name){
+ const n=ngNorm(name);
+ if(/(https?:|www\.|@|\d{2,4}-\d{2,4}-\d{3,4}|\d{10,})/.test(String(name).toLowerCase()))return true; // URL・メール・電話番号
+ return NG_WORDS.some(w=>n.indexOf(ngNorm(w))>=0);
+}
+// ゲーム内の名前入力(ブラウザ標準のダイアログは分かりにくいので自前で作る)
+function rkAsk(done){
+ const old=document.getElementById('rkAsk');if(old)old.remove();
+ const bg=document.createElement('div');bg.id='rkAsk';
+ bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;z-index:99;font-family:sans-serif';
+ bg.innerHTML='<div style="background:#0f1b2b;border:2px solid #d97706;border-radius:16px;padding:20px 18px;width:min(86vw,320px);text-align:center;color:#fff">'
+  +'<div style="font-size:18px;font-weight:bold;color:#fde047">ランキングに名前を登録</div>'
+  +'<div style="font-size:13px;color:#cbd5e1;margin:8px 0 12px">全国の人に見える名前です(12文字まで)</div>'
+  +'<div id="rkMsg" style="font-size:13px;color:#fca5a5;min-height:0;margin-bottom:6px"></div>'
+  +'<input id="rkName" maxlength="12" placeholder="例: ヒロ" style="width:100%;box-sizing:border-box;font-size:18px;padding:10px;border-radius:10px;border:0;text-align:center">'
+  +'<button id="rkOk" style="margin-top:14px;width:100%;font-size:18px;font-weight:bold;padding:12px;border:0;border-radius:12px;background:#16a34a;color:#fff">この名前で登録する</button>'
+  +'<button id="rkNo" style="margin-top:8px;width:100%;font-size:15px;padding:10px;border:0;border-radius:12px;background:#334155;color:#fff">やめる</button></div>';
+ document.body.appendChild(bg);
+ const inp=bg.querySelector('#rkName');inp.value=RK.name||'';
+ const msg=bg.querySelector('#rkMsg'),close=()=>bg.remove();
+ const ok=()=>{const nm=inp.value.trim().slice(0,12);if(!nm){inp.focus();return;}if(isNG(nm)){msg.textContent='この名前は使えません。別の名前にしてください';inp.focus();return;}close();done(nm);};
+ bg.querySelector('#rkOk').onclick=ok;bg.querySelector('#rkNo').onclick=close;
+ inp.onkeydown=e=>{if(e.key==='Enter')ok();};
+ setTimeout(()=>inp.focus(),50);
 }
 const RK_TAB1={x:20,y:66,w:155,h:36},RK_TAB2={x:185,y:66,w:155,h:36},RK_SUB={x:30,y:508,w:300,h:48},RK_CLOSE={x:30,y:566,w:300,h:46};
 function drawRank(){
@@ -118,7 +148,7 @@ const S={phase:'title',paused:false,time:0,steals:0,outs:0,lv:0,introLv:-1,intro
  setT:0,holdTime:1,planned:false,action:'pitch',tellOn:false,tellKind:null,tellStart:0,tellEnd:0,
  t:0,goT:null,runL:0,runTe:0,eta:0,willSafe:false,resolved:false,timer:0,banner:null,after:'',cause:'',
  resS:0,resT:0,tagT:99,bannerAt:0,arr:0,u0:0,tagDone:false,resBall:{x:0,y:0},slideDir:1,toast:'',toastT:0,pops:[],disp:0,waitNext:false,waitT:0,tier:0,tierUp:false,overAt:0,best:0,bestScore:0,bestTime:0,score:0,gain:0,dodges:0,lastTime:0,newBest:false,newBestScore:false,goFlash:0};
-if(location.search.indexOf('debug')>=0)window.__stealGame={S:S,RK:RK,makePitcher:function(n){return makePitcher(n);}}; // テスト用(?debug の時だけ公開)
+if(location.search.indexOf('debug')>=0)window.__stealGame={S:S,RK:RK,isNG:function(t){return isNG(t);},rkAsk:function(f){rkAsk(f);},makePitcher:function(n){return makePitcher(n);}}; // テスト用(?debug の時だけ公開)
 try{S.best=parseInt(localStorage.getItem('tourui_best')||'0',10)||0;}catch(e){}
 try{S.bestScore=parseInt(localStorage.getItem('tourui_best_score')||'0',10)||0;S.bestTime=parseFloat(localStorage.getItem('tourui_best_time')||'0')||0;}catch(e){}
 function saveBest(){try{localStorage.setItem('tourui_best',String(S.best));localStorage.setItem('tourui_best_score',String(S.bestScore));localStorage.setItem('tourui_best_time',String(S.bestTime));}catch(e){}}
@@ -1062,8 +1092,8 @@ function drawFPBG(){
  const inset=k=>[H0,B1,B2,B3].map(p=>[p.x+(cx-p.x)*k,p.y+(cy-p.y)*k]);
  const poly=pp=>{ctx.beginPath();pp.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.closePath();};
  ctx.lineJoin='round';
- ctx.fillStyle=ctx.strokeStyle='#8f6d40';ctx.lineWidth=52;poly(inset(0));ctx.fill();ctx.stroke();
- ctx.fillStyle=ctx.strokeStyle='#a58050';ctx.lineWidth=46;poly(inset(0));ctx.fill();ctx.stroke();
+ ctx.fillStyle='#8f6d40';ctx.beginPath();ctx.ellipse(200,352,204,138,0,0,7);ctx.fill();
+ ctx.fillStyle='#a58050';ctx.beginPath();ctx.ellipse(200,352,198,132,0,0,7);ctx.fill();
  const gp=inset(.22);
  ctx.fillStyle=ctx.strokeStyle='#2f9150';ctx.lineWidth=10;poly(gp);ctx.fill();ctx.stroke();
  ctx.save();poly(gp);ctx.clip();ctx.fillStyle='rgba(255,255,255,.07)';for(let i=0;i<10;i++)if(i%2)ctx.fillRect(0,gp[3][1]-20+i*20,W,20);ctx.restore();
