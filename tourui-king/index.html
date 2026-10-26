@@ -1022,7 +1022,7 @@ function fpSc(y){return .32+Math.pow(clamp01((y-200)/252),1.2)*1.4;}
 function hs(i,m){return ((i*7919+13)*104729%m)/m;}
 function drawFPBG(){
  const HZ=168,WT=150; // 地平線・外野フェンス上端
- const H0={x:44,y:312},B1={x:250,y:462},B2={x:336,y:302},B3={x:126,y:268};
+ const H0={x:44,y:312},B1={x:250,y:462},B2={x:336,y:302},B3={x:134,y:271};
  let g=ctx.createLinearGradient(0,0,0,HZ);g.addColorStop(0,'#060d1c');g.addColorStop(.55,'#12233b');g.addColorStop(1,'#2b4262');
  ctx.fillStyle=g;ctx.fillRect(0,0,W,HZ);
  // スタンド(左が手前で高く、右は遠くて低い)
@@ -1099,7 +1099,8 @@ function drawFPBG(){
  ctx.save();poly(gp);ctx.clip();ctx.fillStyle='rgba(255,255,255,.07)';for(let i=0;i<10;i++)if(i%2)ctx.fillRect(0,gp[3][1]-20+i*20,W,20);ctx.restore();
  ctx.restore();
  // 本塁まわり・塁まわりの土
- ctx.fillStyle='#9c7646';[[H0.x,H0.y,42,16],[B1.x,B1.y,34,14],[B2.x,B2.y,28,9],[B3.x,B3.y,26,8]].forEach(a=>{ctx.beginPath();ctx.ellipse(a[0],a[1],a[2],a[3],0,0,7);ctx.fill();});
+ ctx.fillStyle='#9c7646';ctx.beginPath();ctx.ellipse(H0.x,H0.y,42,16,0,0,7);ctx.fill();
+ ctx.save();FAIR();ctx.clip();[[B1.x,B1.y,34,14],[B2.x,B2.y,28,9],[B3.x,B3.y,26,8]].forEach(a=>{ctx.beginPath();ctx.ellipse(a[0],a[1],a[2],a[3],0,0,7);ctx.fill();});ctx.restore();
  // 手前を暗く(砂のグラデ)
  g=ctx.createLinearGradient(0,420,0,480);g.addColorStop(0,'rgba(120,90,52,0)');g.addColorStop(1,'rgba(96,70,40,.9)');
  ctx.save();FAIR();ctx.clip();ctx.fillStyle=g;ctx.fillRect(0,420,W,60);ctx.restore();
