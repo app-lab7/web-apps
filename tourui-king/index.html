@@ -118,7 +118,7 @@ const S={phase:'title',paused:false,time:0,steals:0,outs:0,lv:0,introLv:-1,intro
  setT:0,holdTime:1,planned:false,action:'pitch',tellOn:false,tellKind:null,tellStart:0,tellEnd:0,
  t:0,goT:null,runL:0,runTe:0,eta:0,willSafe:false,resolved:false,timer:0,banner:null,after:'',cause:'',
  resS:0,resT:0,tagT:99,bannerAt:0,arr:0,u0:0,tagDone:false,resBall:{x:0,y:0},slideDir:1,toast:'',toastT:0,pops:[],disp:0,waitNext:false,waitT:0,tier:0,tierUp:false,overAt:0,best:0,bestScore:0,bestTime:0,score:0,gain:0,dodges:0,lastTime:0,newBest:false,newBestScore:false,goFlash:0};
-if(location.search.indexOf('debug')>=0)window.__stealGame={S:S,makePitcher:function(n){return makePitcher(n);}}; // テスト用(?debug の時だけ公開)
+if(location.search.indexOf('debug')>=0)window.__stealGame={S:S,RK:RK,makePitcher:function(n){return makePitcher(n);}}; // テスト用(?debug の時だけ公開)
 try{S.best=parseInt(localStorage.getItem('tourui_best')||'0',10)||0;}catch(e){}
 try{S.bestScore=parseInt(localStorage.getItem('tourui_best_score')||'0',10)||0;S.bestTime=parseFloat(localStorage.getItem('tourui_best_time')||'0')||0;}catch(e){}
 function saveBest(){try{localStorage.setItem('tourui_best',String(S.best));localStorage.setItem('tourui_best_score',String(S.bestScore));localStorage.setItem('tourui_best_time',String(S.bestTime));}catch(e){}}
