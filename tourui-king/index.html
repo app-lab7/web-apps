@@ -1119,7 +1119,8 @@ function drawFP(){
  if(sliding){
   const sl=sc*1.15;
   ctx.save();ctx.translate(rx,ry+3);ctx.scale(sl,sl);
-  for(let i=0;i<7;i++){const ph=(S.time*5+i*.37)%1;ctx.globalAlpha=.5*(1-ph);ctx.fillStyle='#d8bf94';ctx.beginPath();ctx.arc(12+i*3.5+ph*8,-2-ph*9,3+ph*5,0,7);ctx.fill();}
+  const dk=S.phase==='result'?clamp01(1-(S.resT-(S.arr||0)-.15)/.7):1;
+  if(dk>0)for(let i=0;i<7;i++){const ph=(S.time*5+i*.37)%1;ctx.globalAlpha=.5*(1-ph)*dk;ctx.fillStyle='#d8bf94';ctx.beginPath();ctx.arc(12+i*3.5+ph*8,-2-ph*9,3+ph*5,0,7);ctx.fill();}
   ctx.globalAlpha=1;slideFig(0,0,1);ctx.restore();
  }else person(rx,ry,sc,'#2563eb','#1e3a8a',{run:running&&S.phase!=='result',flip:true});
  if(tagType&&S.resT>=S.bannerAt-.1)fpUmp(284,324,fpSc(324)*.9,S.after==='safe'?'safe':'out');
