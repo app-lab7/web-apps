@@ -271,7 +271,6 @@ input[type=range]{width:100%}
 }
 .brand{grid-column:1/-1;grid-row:1}
   .home-action{justify-content:center}
-}
 @media(max-width:760px){
   .type-grid{grid-template-columns:1fr 1fr}
 }
@@ -530,6 +529,34 @@ input[type=range]{width:100%}
       <button id="share" class="btn" style="width:100%;margin-top:8px">共有（AirDropなど）</button>
       <div id="shareStatus" class="note" aria-live="polite"></div>
       <div class="note">コンビニ印刷では、店舗のコピー機が対応している用紙サイズを選んでください。</div>
+    </div>
+
+    <div class="section" id="sevenSection">
+      <h2>セブンで両面プリント</h2>
+      <div class="note">表面は「1. 画像と編集」で登録してください。裏面を追加すると、表→裏のA4縦2ページPDFを作れます。</div>
+      <label for="sevenBack" style="margin-top:10px">裏面の画像</label>
+      <input id="sevenBack" type="file" accept="image/*">
+      <div id="sevenBackStatus" class="note" role="status">裏面：未登録</div>
+      <button id="sevenPreset" class="btn" style="width:100%;margin-top:10px">A4縦の両面用に配置する</button>
+      <div class="note">現在のカードサイズを使用。カード回転なし・外側余白7mm以上・間隔0mm。91×55mmの名刺なら1シート10枚です。</div>
+      <button id="sevenBuild" class="btn primary" style="width:100%;margin-top:10px">表裏を確認・両面PDFを作成</button>
+      <div id="sevenStatus" class="note" role="status" aria-live="polite"></div>
+      <div id="sevenPreview" hidden style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+        <div><label>1ページ目：表</label><img id="sevenFrontPreview" alt="A4の表面印刷プレビュー" style="width:100%;border:1px solid #ddd"></div>
+        <div><label>2ページ目：裏</label><img id="sevenBackPreview" alt="A4の裏面印刷プレビュー" style="width:100%;border:1px solid #ddd"></div>
+      </div>
+      <a id="sevenDownload" class="btn" hidden style="display:block;text-align:center;margin-top:10px">両面PDFを保存</a>
+      <button id="sevenShare" class="btn" hidden style="width:100%;margin-top:8px">PDFを共有する</button>
+      <div class="summary" style="margin-top:12px;font-size:12px">
+        <b>セブンでの印刷手順</b><br>
+        ① PDFを保存して「かんたんnetprint」に登録<br>
+        ② 店頭で予約番号またはQRコードを使う<br>
+        ③ A4・カラー・両面「長辺とじ」<br>
+        ④「2枚を1枚」は使わず、サイズ変更なしで印刷<br>
+        「ちょっと小さめ」はOFF。まず1部で大きさと表裏の位置を確認してください。
+      </div>
+      <div class="note">普通紙の両面印刷です。名刺用の厚紙・写真紙には対応しません。機械による表裏の位置ずれは残る場合があります。画像はこの端末内で処理します。</div>
+      <a class="note" href="https://faq.printing.ne.jp/両面印刷はできますか？-67fc90acb243c84ce85b68b0" target="_blank" rel="noopener">セブンの両面印刷について（公式）</a>
     </div>
   </aside>
 
@@ -1095,7 +1122,8 @@ function choose(){
   const portrait=calc(base.w,base.h,w,h,m,g,r,target);
   const landscape=calc(base.h,base.w,w,h,m,g,r,target);
 
-  return landscape.count>portrait.count
+  if(!portrait&&!landscape)return {l:null,p:{w:base.w,h:base.h,label:base.label},m,g};
+  return landscape&&(!portrait||landscape.count>portrait.count)
     ?{l:landscape,p:{w:base.h,h:base.w,label:base.label+'横'},m,g}
     :{l:portrait,p:{w:base.w,h:base.h,label:base.label+'縦'},m,g};
 }
@@ -1212,14 +1240,13 @@ function drawImageFit(ctx,img,x,y,w,h,fit,rotated){
   ctx.restore();
 }
 
-async function createSharePng(){
-  const result=choose();
+async function createSharePng({urlOverride,back=false,dpi=150,resultOverride}={}){
+  const result=resultOverride||choose();
   if(!result||!result.l||result.l.count<1){
     throw new Error('共有するレイアウトを作成できません');
   }
 
   const {l,p,m,g}=result;
-  const dpi=150;
   const pxPerMm=dpi/25.4;
   const canvasOut=document.createElement('canvas');
   canvasOut.width=Math.max(1,Math.round(p.w*pxPerMm));
@@ -1229,14 +1256,15 @@ async function createSharePng(){
   out.fillStyle='#ffffff';
   out.fillRect(0,0,canvasOut.width,canvasOut.height);
 
-  const url=state.edited||state.source;
+  const url=urlOverride===undefined ? (state.edited||state.source) : urlOverride;
   const img=await loadShareImage(url);
   const ox=m+(p.w-m*2-l.usedW)/2;
   const oy=m+(p.h-m*2-l.usedH)/2;
 
   for(let i=0;i<l.count;i++){
     const col=i%l.cols,row=Math.floor(i/l.cols);
-    const x=(ox+col*(l.w+g))*pxPerMm;
+    const frontX=ox+col*(l.w+g);
+    const x=(back ? p.w-frontX-l.w : frontX)*pxPerMm;
     const y=(oy+row*(l.h+g))*pxPerMm;
     const w=l.w*pxPerMm;
     const h=l.h*pxPerMm;
@@ -1413,8 +1441,93 @@ window.addEventListener('afterprint',()=>{
   const root=$('printRoot');
   if(root)root.innerHTML='';
 });
+// One PDF, two A4 portrait pages. Mirror positions, never the card artwork.
+let sevenBack='',sevenFile=null,sevenPdfUrl='',sevenPreviewUrls=[],sevenReadVersion=0;
+function clearSevenOutput(){
+  sevenFile=null;
+  if(sevenPdfUrl)URL.revokeObjectURL(sevenPdfUrl);
+  sevenPdfUrl='';sevenPreviewUrls.forEach(URL.revokeObjectURL);sevenPreviewUrls=[];
+  $('sevenDownload').hidden=true;$('sevenShare').hidden=true;$('sevenPreview').hidden=true;
+}
+$('sevenBack').onchange=async()=>{
+  const version=++sevenReadVersion;sevenBack='';clearSevenOutput();
+  const file=$('sevenBack').files[0];
+  if(!file){$('sevenBackStatus').textContent='裏面：未登録';return;}
+  try{
+    const url=await new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=()=>reject(Error('画像を読み込めません'));r.readAsDataURL(file);});
+    await loadShareImage(url);
+    if(version!==sevenReadVersion)return;
+    sevenBack=url;$('sevenBackStatus').textContent='裏面：'+file.name;
+  }catch(e){if(version===sevenReadVersion)$('sevenBackStatus').textContent='裏面を読み込めません。別のPNGやJPEGを選んでください。';}
+};
+$('sevenPreset').onclick=()=>{
+  clearSevenOutput();
+  $('paperSize').value='A4';$('customPaperFields').hidden=true;$('ori').value='portrait';
+  $('rotate').checked=false;$('pageMargin').value=7;$('cardGap').value=0;$('copyCount').value='auto';
+  state.mode='safe';document.querySelectorAll('.mode').forEach(b=>b.classList.toggle('active',b.dataset.mode==='safe'));
+  renderPage();$('sevenStatus').textContent='A4縦に配置しました。表面と裏面を登録し、PDFを作成してください。';
+};
+function sevenLayout(){
+  if($('paperSize').value!=='A4'||$('ori').value!=='portrait'||$('rotate').checked||Number($('pageMargin').value)<7)
+    throw Error('先に「A4縦の両面用に配置する」を押してください。');
+  const r=choose();
+  if(!r?.l?.count)throw Error('このカードサイズはA4に入りません。サイズを小さくしてください。');
+  if(!(state.edited||state.source))throw Error('「1. 画像と編集」で表面の画像を登録してください。');
+  if(!sevenBack)throw Error('裏面の画像を登録してください。');
+  return r;
+}
+function jpegFromPng(blob){
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(blob),im=new Image();
+    im.onload=()=>{try{const c=document.createElement('canvas');c.width=im.width;c.height=im.height;const ctx=c.getContext('2d');ctx.fillStyle='white';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(im,0,0);const raw=atob(c.toDataURL('image/jpeg',.96).split(',')[1]);resolve({bytes:Uint8Array.from(raw,x=>x.charCodeAt(0)),w:c.width,h:c.height});}catch(e){reject(e);}finally{URL.revokeObjectURL(url);}};
+    im.onerror=()=>{URL.revokeObjectURL(url);reject(Error('印刷画像の変換に失敗しました'));};im.src=url;
+  });
+}
+function sevenPdf(images){
+  const enc=new TextEncoder(),parts=[],offsets=[0];let length=0;
+  const add=x=>{const b=typeof x==='string'?enc.encode(x):x;parts.push(b);length+=b.length;};
+  const obj=(id,body)=>{offsets[id]=length;add(`${id} 0 obj\n`);add(body);add('\nendobj\n');};
+  add('%PDF-1.4\n');
+  obj(1,'<< /Type /Catalog /Pages 2 0 R >>');obj(2,'<< /Type /Pages /Kids [3 0 R 6 0 R] /Count 2 >>');
+  images.forEach((im,i)=>{
+    const id=3+i*3,W=210*72/25.4,H=297*72/25.4;
+    obj(id,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${W} ${H}] /Resources << /XObject << /Im0 ${id+2} 0 R >> >> /Contents ${id+1} 0 R >>`);
+    const cmd=`q ${W} 0 0 ${H} 0 0 cm /Im0 Do Q\n`;
+    obj(id+1,`<< /Length ${enc.encode(cmd).length} >>\nstream\n${cmd}endstream`);
+    offsets[id+2]=length;add(`${id+2} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${im.w} /Height ${im.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${im.bytes.length} >>\nstream\n`);add(im.bytes);add('\nendstream\nendobj\n');
+  });
+  const start=length;add('xref\n0 9\n0000000000 65535 f \n');for(let i=1;i<=8;i++)add(String(offsets[i]).padStart(10,'0')+' 00000 n \n');
+  add(`trailer\n<< /Size 9 /Root 1 0 R >>\nstartxref\n${start}\n%%EOF\n`);
+  return new Blob(parts,{type:'application/pdf'});
+}
+$('sevenBuild').onclick=async()=>{
+  const b=$('sevenBuild');b.disabled=true;clearSevenOutput();$('sevenStatus').textContent='表裏のPDFを作成中…';
+  try{
+    const result=sevenLayout(),front=state.edited||state.source,back=sevenBack;
+    const blobs=[];
+    for(const [url,isBack] of [[front,false],[back,true]])blobs.push(await createSharePng({urlOverride:url,back:isBack,dpi:300,resultOverride:result}));
+    const images=[];for(const blob of blobs)images.push(await jpegFromPng(blob));
+    const pdf=sevenPdf(images);
+    if(pdf.size>10*1024*1024)throw Error('PDFが10MBを超えました。元画像のサイズを下げて再作成してください。');
+    sevenFile=new File([pdf],'Cardly_A4_duplex_long-edge.pdf',{type:'application/pdf'});
+    sevenPdfUrl=URL.createObjectURL(pdf);$('sevenDownload').href=sevenPdfUrl;$('sevenDownload').download=sevenFile.name;$('sevenDownload').hidden=false;
+    $('sevenShare').hidden=!(navigator.share&&navigator.canShare&&navigator.canShare({files:[sevenFile]}));
+    sevenPreviewUrls=blobs.map(x=>URL.createObjectURL(x));$('sevenFrontPreview').src=sevenPreviewUrls[0];$('sevenBackPreview').src=sevenPreviewUrls[1];$('sevenPreview').hidden=false;
+    $('sevenStatus').textContent=`完成：A4縦・表裏2ページ・${result.l.count}枚分（${(pdf.size/1024/1024).toFixed(1)}MB）。PDFを保存して登録してください。店頭では長辺とじを選びます。`;
+  }catch(e){$('sevenStatus').textContent=e.message||'PDFの作成に失敗しました。';}finally{b.disabled=false;}
+};
+$('sevenShare').onclick=async()=>{if(!sevenFile)return;try{await navigator.share({files:[sevenFile],title:'Cardly 両面印刷PDF'});}catch(e){if(e.name!=='AbortError')$('sevenStatus').textContent='共有できませんでした。「両面PDFを保存」を使ってください。';}};
+// A generated PDF is a snapshot; hide it whenever the design/settings change.
+document.querySelector('.sidebar').addEventListener('input',e=>{if(e.target.id!=='sevenBack')clearSevenOutput();});
+document.querySelector('.sidebar').addEventListener('change',e=>{if(e.target.id!=='sevenBack')clearSevenOutput();});
+['tightLayout','safeLayout','cardLandscape','cardPortrait'].forEach(id=>$(id).addEventListener('click',clearSevenOutput));
+document.querySelectorAll('.mode,.type-card').forEach(b=>b.addEventListener('click',clearSevenOutput));
+$('applyEdit').addEventListener('click',clearSevenOutput);
+$('reset').addEventListener('click',()=>{sevenBack='';$('sevenBack').value='';$('sevenBackStatus').textContent='裏面：未登録';clearSevenOutput();});
+
 updateOrientationButtons();
 })();
 </script>
 </body>
 </html>
+
