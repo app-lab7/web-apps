@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>11問でプロ野球選手当て</title>
+<meta name="description" content="あなたが思い浮かべたプロ野球選手を、最大11回の質問で当てます。2026年シーズンの支配下登録選手835人が対象。">
+<meta property="og:title" content="11問でプロ野球選手当て">
+<meta property="og:description" content="思い浮かべたプロ野球選手を、最大11回の質問で当てます。推しは出るかな？">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='18' fill='%23fffdf6' stroke='%231c3b2e' stroke-width='2.5'/%3E%3Cpath d='M9 8c4 4 4 20 0 24M31 8c-4 4-4 20 0 24' fill='none' stroke='%23c8452d' stroke-width='2.4'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f6f1e7; --card:#fffdf6; --ink:#1c3b2e; --green:#1d5e3f; --green-d:#154630; --line:#d9d2bf;
+  --red:#c8452d; --mute:#7a8077; --ok:#1d7a4a; --ng:#c8452d;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;line-height:1.6}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:2px solid var(--ink);margin-bottom:18px}
+.ball{width:38px;height:38px;flex:none}
+h1{margin:0;font-size:26px;line-height:1.15;letter-spacing:.01em}
+h1 b{color:var(--red)}
+.sub{margin:2px 0 0;font-size:12px;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 20px;
+  box-shadow:0 2px 0 var(--line),0 12px 24px -14px rgba(28,59,46,.35)}
+.center{text-align:center}
+.lead{font-size:17px;font-weight:700;margin:6px 0 18px}
+.note{font-size:12px;color:var(--mute);margin:14px 0 0}
+button{font:inherit;cursor:pointer}
+.btn{display:block;width:100%;border:2px solid var(--green);border-radius:12px;padding:14px 16px;font-weight:800;font-size:17px;
+  background:var(--green);color:#fff;transition:transform .05s}
+.btn:active{transform:scale(.98)}
+.btn.sec{background:#f1f6ef;color:var(--green)}
+.btn.red{background:var(--red);border-color:var(--red)}
+.btn.small{font-size:14px;padding:10px 14px;font-weight:700}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
+.linkbtn{background:none;border:none;color:var(--mute);font-size:13px;text-decoration:underline;padding:6px 2px}
+.linkbtn:disabled{opacity:.35;text-decoration:none;cursor:default}
+.qno{font-size:13px;font-weight:700}
+td.ok,td.ng{white-space:nowrap}
+.qno strong{font-size:20px}
+.bar{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin:8px 0 26px}
+.bar i{height:6px;border-radius:3px;background:#e4dfcd}
+.bar i.on{background:var(--red)}
+.q{font-size:25px;font-weight:800;line-height:1.4;margin:0 0 26px;min-height:70px}
+.q small{display:block;font-size:12px;font-weight:500;color:var(--mute);margin-top:4px}
+.under{display:flex;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:4px}
+.skip{display:block;width:100%;margin-top:10px;background:none;border:1px dashed var(--line);border-radius:10px;padding:9px;color:var(--mute);font-size:13px}
+details{border-top:1px solid var(--line);padding:11px 2px;font-size:14px}
+details summary{cursor:pointer;font-weight:800;list-style:none}
+details summary::before{content:"▶";font-size:9px;margin-right:6px;color:var(--mute);display:inline-block;transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details summary span{font-weight:500;color:var(--mute);margin-left:6px}
+.more{margin-top:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{background:#ece6d2;border-radius:99px;padding:3px 10px;font-size:12px}
+.pl{font-size:34px;font-weight:900;margin:2px 0 6px;line-height:1.2}
+.meta{color:var(--mute);font-size:14px;margin-bottom:22px}
+.big{font-size:20px;font-weight:900;margin:0 0 6px}
+.big.hit{color:var(--ok)} .big.miss{color:var(--ng)}
+.share{margin-top:10px}
+input[type=search]{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.list{margin-top:10px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.list button{display:flex;justify-content:space-between;gap:8px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid #eee;padding:10px 12px}
+.list button:last-child{border-bottom:none}
+.list .t{color:var(--mute);font-size:12px;white-space:nowrap}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:11px;color:var(--mute);font-weight:700}
+tr.bad td{background:#fdeae5}
+.ng{color:var(--ng);font-weight:800}.ok{color:var(--ok);font-weight:800}
+footer{margin-top:26px;font-size:11px;color:var(--mute);line-height:1.7}
+.hidden{display:none!important}
+.pill{display:inline-block;background:var(--red);color:#fff;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:800;margin-bottom:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg class="ball" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#fffdf6" stroke="#1c3b2e" stroke-width="2.2"/><path d="M9 8c4 4 4 20 0 24M31 8c-4 4-4 20 0 24" fill="none" stroke="#c8452d" stroke-width="2"/><path d="M8 13l4 1M7.5 19l4.5 0M8 25l4-1M32 13l-4 1M32.5 19l-4.5 0M32 25l-4-1" stroke="#c8452d" stroke-width="1.6" stroke-linecap="round"/></svg>
+    <div>
+      <h1><b>11問</b>でプロ野球選手当て</h1>
+      <p class="sub">あなたが思い浮かべた選手を最大11回の質問で当てます</p>
+    </div>
+  </header>
+
+  <main id="main"><div class="card center"><p class="lead">読み込み中…</p></div></main>
+
+  <div class="more" id="more"></div>
+
+  <footer>
+    プロ野球の非公式ファンサイトです。球団・NPBとは関係ありません。<br>
+    対象は2026年シーズン終了時点の支配下登録選手（育成選手・引退したOBは含みません）。登録名・球団は当時のものです。<br>
+    データに誤りを見つけたら、お手数ですが作者までご連絡ください。
+  </footer>
+</div>
+
+<script src="engine.js"></script>
+<script>
+(function(){
+'use strict';
+var E = window.NpbEngine;
+var MAXQ = 11;
+var now = new Date();
+var players = [], qsAll = [], qById = {};
+var G = null;           // 進行中のゲーム
+var LAST_KEY = 'npb11:last';
+
+var $main = document.getElementById('main');
+var $more = document.getElementById('more');
+
+function el(html){ var d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function pinfo(p){ return E.team(p.t)+' ・ '+E.POS[p.p]+' ・ 背番号'+p.no; }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+function saveLast(){
+  try{
+    if(!G) return;
+    localStorage.setItem(LAST_KEY, JSON.stringify({hist:G.hist.map(function(h){return {id:h.q.id,text:h.q.text,ans:h.ans};}), at:Date.now()}));
+  }catch(e){}
+}
+function loadLast(){
+  try{
+    var s = localStorage.getItem(LAST_KEY); if(!s) return null;
+    var o = JSON.parse(s);
+    return o.hist.map(function(h){ return {q:getQ(h.id,h.text), ans:h.ans}; }).filter(function(h){return h.q;});
+  }catch(e){ return null; }
+}
+function getQ(id,text){
+  if(id.indexOf('bait:')===0){
+    var nm = id.slice(5);
+    return {id:id,text:text,fn:function(p){return p.n===nm;},group:'bait'};
+  }
+  return qById[id] || null;
+}
+
+/* ---------- ゲーム ---------- */
+function newGame(){
+  var cands = E.BAIT.filter(function(n){ return players.some(function(p){return p.n===n;}); });
+  var name = cands[Math.floor(Math.random()*cands.length)];
+  var p = players.filter(function(x){return x.n===name;})[0];
+  var bq = {id:'bait:'+name, text: name+'（'+E.team(p.t)+'）ですか？', fn:function(x){return x.n===name;}, group:'bait', bait:p};
+  G = {hist:[], skipped:{}, current:bq, guess:null, gi:0};
+  renderQuestion();
+}
+function cands(){
+  return players.filter(function(p){
+    return G.hist.every(function(h){ return !!h.q.fn(p)===h.ans; });
+  });
+}
+function answer(ans){
+  var q = G.current;
+  G.hist.push({q:q, ans:ans});
+  saveLast();
+  if(q.bait && ans){ return finish(true, [q.bait], true); }
+  next();
+}
+function skip(){
+  G.skipped[G.current.id]=1;
+  next(true);
+}
+function next(isSkip){
+  var c = cands();
+  if(c.length===0) return finish(false, [], false, true);
+  if(c.length===1 || G.hist.length>=MAXQ) return startGuess(c);
+  var used = {};
+  G.hist.forEach(function(h){used[h.q.id]=1;});
+  Object.keys(G.skipped).forEach(function(k){used[k]=1;});
+  var q = E.pickQuestion(c, qsAll, used);
+  if(!q) return startGuess(c);
+  G.current = q;
+  renderQuestion();
+}
+function back(){
+  if(!G.hist.length) return;
+  var last = G.hist.pop();   // 直前に答えた質問をもう一度出す
+  saveLast();
+  G.current = last.q;
+  renderQuestion();
+}
+function startGuess(c){
+  G.guess = shuffle(c).slice(0,8);
+  G.gi = 0;
+  G.guessTotal = c.length;
+  renderGuess();
+}
+function finish(hit, list, lucky, contradiction){
+  G.result = {hit:hit, lucky:!!lucky, contradiction:!!contradiction, n:G.hist.length, player:list[0]||null};
+  renderResult();
+}
+
+/* ---------- 画面 ---------- */
+function setMain(node){ $main.innerHTML=''; $main.appendChild(node); window.scrollTo(0,0); }
+
+function renderStart(){
+  location.hash='';
+  setMain(el(
+    '<div class="card center">'+
+      '<p class="lead">プロ野球選手を1人思い浮かべてください</p>'+
+      '<p style="margin:-8px 0 20px;font-size:14px">12球団・'+players.length+'人の支配下選手から、はい／いいえで当てます。<br>二軍の選手もいます。</p>'+
+      '<button class="btn" id="go">スタート</button>'+
+      '<p class="note">名前を思い浮かべるだけでOK。球団・ポジション・年齢などを聞いていきます。</p>'+
+    '</div>'));
+  document.getElementById('go').onclick=newGame;
+  renderMore();
+}
+
+function renderQuestion(){
+  var c = cands();
+  var n = G.hist.length+1;
+  var bar='';
+  for(var i=1;i<=MAXQ;i++) bar+='<i class="'+(i<=n?'on':'')+'"></i>';
+  var q = G.current;
+  var node = el(
+    '<div class="card">'+
+      '<div class="qno">第<strong>'+n+'</strong>問 <span style="color:var(--mute);font-weight:500">／ 最大'+MAXQ+'問</span></div>'+
+      '<div class="bar">'+bar+'</div>'+
+      '<p class="q">'+esc(q.text)+'</p>'+
+      '<div class="row"><button class="btn" id="y">はい</button><button class="btn sec" id="n">いいえ</button></div>'+
+      (q.bait?'':'<button class="skip" id="s">わからない（別の質問にする）</button>')+
+      '<div class="under"><button class="linkbtn" id="b"'+(G.hist.length?'':' disabled')+'>← 1問戻る</button><button class="linkbtn" id="r">最初からやり直す</button></div>'+
+    '</div>');
+  setMain(node);
+  document.getElementById('y').onclick=function(){answer(true);};
+  document.getElementById('n').onclick=function(){answer(false);};
+  var s=document.getElementById('s'); if(s) s.onclick=skip;
+  document.getElementById('b').onclick=back;
+  document.getElementById('r').onclick=function(){ if(confirm('最初からやり直しますか？')) renderStart(); };
+  renderMore(c);
+}
+
+function renderGuess(){
+  var p = G.guess[G.gi];
+  var left = G.guess.length - G.gi - 1;
+  setMain(el(
+    '<div class="card center">'+
+      '<span class="pill">'+G.hist.length+'問で絞り込みました</span>'+
+      '<p class="lead" style="margin-bottom:8px">あなたが思い浮かべた選手は…</p>'+
+      '<div class="pl">'+esc(p.n)+'</div>'+
+      '<div class="meta">'+esc(pinfo(p))+'</div>'+
+      '<div class="row"><button class="btn" id="y">そうです！</button><button class="btn sec" id="n">違います</button></div>'+
+      (G.guessTotal>1?'<p class="note">候補はあと'+(G.guessTotal-G.gi)+'人です（'+(left>0?'違えば次の候補を出します':'これが最後の候補です')+'）</p>':'')+
+    '</div>'));
+  document.getElementById('y').onclick=function(){ finish(true,[p]); };
+  document.getElementById('n').onclick=function(){
+    G.gi++;
+    if(G.gi>=G.guess.length) finish(false,[]); else renderGuess();
+  };
+  $more.innerHTML='';
+}
+
+function shareUrl(){ return location.origin+location.pathname; }
+function shareLink(text){
+  return 'https://x.com/intent/post?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(shareUrl());
+}
+
+function renderResult(){
+  var r = G.result;
+  var html='<div class="card center">';
+  var text;
+  if(r.hit){
+    if(r.lucky){
+      html+='<p class="big hit">1問目で当たりました！？</p><div class="pl">'+esc(r.player.n)+'</div><div class="meta">'+esc(pinfo(r.player))+'</div>'+
+        '<p style="font-size:14px">奇跡です。実は最初の質問は、ほぼ当たらない前提のダミーでした。</p>';
+      text='思い浮かべたプロ野球選手を、最初の質問で当てられてしまった…（確率 約1/'+players.length+'）';
+    }else{
+      html+='<p class="big hit">'+r.n+'問で当てました！</p><div class="pl">'+esc(r.player.n)+'</div><div class="meta">'+esc(pinfo(r.player))+'</div>';
+      text='思い浮かべたプロ野球選手を、'+r.n+'問で当てられた！';
+    }
+  }else if(r.contradiction){
+    html+='<p class="big miss">該当する選手がいなくなりました</p><p style="font-size:14px">どこかの答えが名簿と食い違っているか、選手が名簿にいない（育成選手・OB・移籍など）可能性があります。「答え合わせ」で確認できます。</p>';
+    text='思い浮かべたプロ野球選手を当ててもらえなかった… あなたは当てられる？';
+  }else{
+    html+='<p class="big miss">当てられませんでした…</p><p style="font-size:14px">思い浮かべた選手は誰でしたか？「答え合わせ」でどこで分かれたか確認できます。</p>';
+    text='思い浮かべたプロ野球選手を、'+G.hist.length+'問でも当てられなかった… あなたの推しは出る？';
+  }
+  html+='<div class="share"><a class="btn red" style="text-decoration:none" target="_blank" rel="noopener" href="'+shareLink(text+' #11問でプロ野球選手当て')+'">Xでシェアする</a></div>'+
+    '<div class="row" style="margin-top:10px">'+
+      (r.hit&&!r.contradiction?'':'<button class="btn small sec" id="chk">答え合わせ</button>')+
+      '<button class="btn small sec" id="again">もう1回遊ぶ</button></div>';
+  html+='<div class="row" style="margin-top:10px">'+(r.hit&&!r.contradiction?'<button class="btn small sec" id="chk2">質問のおさらい</button>':'')+'</div>';
+  html+='</div>';
+  setMain(el(html));
+  var a=document.getElementById('again'); if(a) a.onclick=renderStart;
+  var c1=document.getElementById('chk'); if(c1) c1.onclick=function(){renderCheck(G.hist, r.player);};
+  var c2=document.getElementById('chk2'); if(c2) c2.onclick=function(){renderCheck(G.hist, r.player);};
+  $more.innerHTML='';
+  saveLast();
+}
+
+function ansLabel(b){ return b?'はい':'いいえ'; }
+
+function renderCheck(hist, preset){
+  location.hash='check';
+  var node = el(
+    '<div class="card">'+
+      '<p class="big" style="margin-bottom:4px">答え合わせ</p>'+
+      '<p style="font-size:13px;color:var(--mute);margin:0 0 12px">思い浮かべていた選手を選ぶと、各質問の正しい答えと、あなたの答えを見比べられます。</p>'+
+      '<input type="search" id="q" placeholder="選手名で検索（例：柳田、佐藤輝）" autocomplete="off">'+
+      '<div class="list" id="lst"></div>'+
+      '<div id="res"></div>'+
+      '<div style="margin-top:16px"><button class="btn small sec" id="top">トップへ戻る</button></div>'+
+    '</div>');
+  setMain(node);
+  $more.innerHTML='';
+  var $q=document.getElementById('q'), $l=document.getElementById('lst'), $r=document.getElementById('res');
+  document.getElementById('top').onclick=renderStart;
+  if(!hist || !hist.length){
+    $r.innerHTML='<p style="font-size:13px;color:var(--mute)">まだ遊んだ履歴がありません。先に1回遊んでからお試しください。</p>';
+    $l.classList.add('hidden'); $q.classList.add('hidden'); return;
+  }
+  function show(p){
+    var bad=[];
+    var rows = hist.map(function(h,i){
+      var t = !!h.q.fn(p);
+      var okk = t===h.ans;
+      if(!okk) bad.push(i+1);
+      return '<tr class="'+(okk?'':'bad')+'"><td>'+(i+1)+'</td><td>'+esc(h.q.text)+'</td><td>'+ansLabel(h.ans)+'</td><td class="'+(okk?'ok':'ng')+'">'+ansLabel(t)+(okk?' ✓':' ✗')+'</td></tr>';
+    }).join('');
+    var msg;
+    if(bad.length){
+      msg='<p style="font-size:14px"><span class="ng">'+bad.join('・')+'問目</span>で、この選手の正解と答えが食い違っています。ここで候補から外れてしまった可能性があります。</p>';
+    }else{
+      var wasHit = G && G.result && G.result.hit && G.result.player && G.result.player.i===p.i && hist===G.hist;
+      msg = wasHit
+        ? '<p style="font-size:14px"><span class="ok">答えはすべて正しいです。</span>質問のおさらいです。</p>'
+        : '<p style="font-size:14px"><span class="ok">答えはすべて正しいです。</span>この選手が当たらなかったのは、候補が絞りきれなかったためかもしれません。</p>';
+    }
+    $r.innerHTML='<div style="margin-top:14px"><div class="pl" style="font-size:24px;margin:0">'+esc(p.n)+'</div><div class="meta" style="margin-bottom:4px">'+esc(pinfo(p))+' ・ '+p.y+'年'+p.m+'月'+p.d+'日生 ・ '+p.h+'cm ・ '+p.th+'投'+p.bt+'打</div>'+msg+
+      '<table><tr><th>#</th><th>質問</th><th>あなたの答え</th><th>正解</th></tr>'+rows+'</table></div>';
+  }
+  function list(){
+    var s=$q.value.replace(/\s/g,'');
+    var m = s? players.filter(function(p){return p.n.replace(/\s/g,'').indexOf(s)>=0;}) : [];
+    if(!s){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">名前を入力してください。</div>'; return; }
+    if(!m.length){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">見つかりません。育成選手・引退したOB・登録名の違いなどで名簿にいない可能性があります。</div>'; return; }
+    $l.innerHTML='';
+    m.slice(0,60).forEach(function(p){
+      var b=document.createElement('button');
+      b.innerHTML='<span>'+esc(p.n)+'</span><span class="t">'+esc(E.team(p.t))+' ・ '+esc(E.POS[p.p])+'</span>';
+      b.onclick=function(){ show(p); $r.scrollIntoView({behavior:'smooth',block:'start'}); };
+      $l.appendChild(b);
+    });
+  }
+  $q.oninput=list; list();
+  if(preset){ $q.value=preset.n.replace(/\s/g,''); list(); show(preset); }
+}
+
+/* ---------- 下部の折りたたみ ---------- */
+function renderMore(c){
+  var html='';
+  if(c){
+    var names = c.length<=150 ? c.map(function(p){return '<span class="chip">'+esc(p.n)+'</span>';}).join('') : '<span style="color:var(--mute)">150人以下になると名前が表示されます。</span>';
+    html+='<details><summary>残っている候補<span>'+c.length+'人</span></summary><div class="chips">'+names+'</div></details>';
+  }
+  html+='<details><summary>遊び方・判定ルール</summary><div style="margin-top:8px;font-size:13px">'+
+    '<p>思い浮かべた選手を、はい／いいえの質問で絞り込みます。最大11問で、それでも決まらなければ有力な候補を順に挙げます。</p>'+
+    '<ul style="padding-left:18px;margin:6px 0"><li>1問目は、ほぼ当たらないダミーの質問です。</li>'+
+    '<li>年齢は「今日時点」です。誕生日・身長・背番号などが分からないときは「わからない」で別の質問に変えられます。</li>'+
+    '<li>両打ちの選手は「右打ち」「左打ち」の質問には「いいえ」です。</li>'+
+    '<li>登録名は球団公式の登録名です（例：「Ｅ．ラミレス」）。</li>'+
+    '<li>対象は2026年シーズン終了時点の支配下選手です。育成選手・引退したOBはいません。</li></ul></div></details>';
+  html+='<details id="srch"><summary>名簿で調べる<span>自分の推しがいるか確認</span></summary><div style="margin-top:8px">'+
+    '<input type="search" id="sq" placeholder="選手名（例：近本、今宮）" autocomplete="off"><div class="list hidden" id="sl"></div></div></details>';
+  $more.innerHTML=html;
+  var $sq=document.getElementById('sq'), $sl=document.getElementById('sl');
+  if($sq) $sq.oninput=function(){
+    var s=$sq.value.replace(/\s/g,'');
+    if(!s){ $sl.classList.add('hidden'); return; }
+    var m=players.filter(function(p){return p.n.replace(/\s/g,'').indexOf(s)>=0;});
+    $sl.classList.remove('hidden');
+    if(!m.length){ $sl.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">名簿にいません（育成選手・OBなど）。</div>'; return; }
+    $sl.innerHTML=m.slice(0,60).map(function(p){return '<div style="display:flex;justify-content:space-between;padding:9px 12px;border-bottom:1px solid #eee;font-size:14px"><span>'+esc(p.n)+'</span><span class="t" style="color:var(--mute);font-size:12px">'+esc(E.team(p.t))+' ・ '+esc(E.POS[p.p])+' ・ '+esc(p.no)+'</span></div>';}).join('');
+  };
+}
+
+/* ---------- 起動 ---------- */
+function boot(){
+  fetch('players.json').then(function(r){
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return r.json();
+  }).then(function(raw){
+    players = E.prepare(raw);
+    qsAll = E.buildQuestions(players, now);
+    qsAll.forEach(function(q){ qById[q.id]=q; });
+    if(location.hash==='#check'){
+      var h = loadLast();
+      renderCheck(h||[], null);
+    }else{
+      renderStart();
+    }
+  }).catch(function(e){
+    $main.innerHTML='<div class="card center"><p class="lead">データを読み込めませんでした</p><p style="font-size:13px">ファイルを直接開かず、GitHub Pagesなどのサーバー経由で開いてください。<br>('+esc(e.message)+')</p></div>';
+  });
+}
+window.addEventListener('hashchange',function(){
+  if(!players.length) return;
+  if(location.hash!=='#check' && $main.querySelector('#q')) renderStart();
+});
+boot();
+})();
+</script>
+</body>
+</html>
