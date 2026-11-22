@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ボカロ曲当て｜最大15問で思い浮かべた曲を当てます</title>
-<meta name="description" content="あなたが思い浮かべたボカロ曲を、最大15回の質問で当てます。ニコニコ動画で100万再生を超えた1,013曲が対象。">
+<meta name="description" content="あなたが思い浮かべたボカロ曲を、最大15回の質問で当てます。ニコニコ動画で50万再生を超えた1,826曲が対象。">
 <meta property="og:title" content="ボカロ曲当て">
 <meta property="og:description" content="ボカロ曲を1曲思い浮かべてください。最大15回の質問で当てます。">
 <meta property="og:type" content="website">
@@ -94,7 +94,7 @@ footer{margin-top:26px;font-size:11px;color:var(--mute);line-height:1.7}
   <div class="more" id="more"></div>
 
   <footer>
-    対象は、ニコニコ動画で再生数100万回以上のボカロ曲（VOCALOID・UTAU・CeVIO・SynthesizerVなど）から選んだ1,013曲です。2026年11月時点のスナップショットで、再生数・投稿年はおおよその値です。<br>
+    対象は、ニコニコ動画で再生数50万回以上のボカロ曲（VOCALOID・CeVIO・SynthesizerVなど）から選んだ1,826曲です。2026年11月時点のスナップショットで、再生数・投稿年はおおよその値です。<br>
     「作者」はニコニコ動画の投稿者名をもとにしているため、カバーや再投稿では実際の作曲者と異なることがあります。曲の雰囲気（ロック・和風・夏曲など）はニコニコ動画のタグをもとにした目安です。<br>
     非公式のファンアプリです。データ出典：<a href="https://site.nicovideo.jp/search-api-docs/snapshot" target="_blank" rel="noopener">ニコニコ動画 スナップショット検索API v2</a>
   </footer>
@@ -246,7 +246,7 @@ function renderResult(){
       text='思い浮かべたボカロ曲（'+items.length+'曲）を、'+r.n+'問で当てられた！';
     }
   }else if(r.contradiction){
-    html+='<p class="big miss">該当する曲がなくなりました</p><p style="font-size:14px">どこかの答えが食い違っているか、このリストに入っていない曲（100万再生未満など）かもしれません。「答え合わせ」で確認できます。</p>';
+    html+='<p class="big miss">該当する曲がなくなりました</p><p style="font-size:14px">どこかの答えが食い違っているか、このリストに入っていない曲（50万再生未満など）かもしれません。「答え合わせ」で確認できます。</p>';
     text='思い浮かべたボカロ曲を当ててもらえなかった… あなたは当てられる？';
   }else{
     html+='<p class="big miss">当てられませんでした…</p><p style="font-size:14px">思い浮かべた曲は何でしたか？「答え合わせ」でどこで分かれたか確認できます。</p>';
@@ -300,7 +300,7 @@ function renderCheck(hist,preset){
     var s=$q.value.replace(/\s/g,'');
     if(!s){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">曲名または作者名を入力してください。</div>'; return; }
     var m=findSongs(s);
-    if(!m.length){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">見つかりません。100万再生未満の曲などはリストに入っていません。</div>'; return; }
+    if(!m.length){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">見つかりません。50万再生未満の曲などはリストに入っていません。</div>'; return; }
     $l.innerHTML='';
     m.slice(0,60).forEach(function(p){
       var b=document.createElement('button');
@@ -337,7 +337,7 @@ function renderMore(c){
     if(!s){ $sl.classList.add('hidden'); return; }
     var m=findSongs(s);
     $sl.classList.remove('hidden');
-    if(!m.length){ $sl.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">対象外です（100万再生未満など）。</div>'; return; }
+    if(!m.length){ $sl.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">対象外です（50万再生未満など）。</div>'; return; }
     $sl.innerHTML=m.slice(0,60).map(function(p){return '<div style="padding:8px 12px;border-bottom:1px solid #eee"><b style="font-size:15px">'+esc(p.t)+'</b><br><span style="font-size:12px;color:var(--mute)">'+esc(p.p||'不明')+' ・ '+p.y+'年 ・ 約'+p.m+'万再生</span></div>';}).join('');
   };
 }
