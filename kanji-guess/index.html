@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>11問で漢字当て</title>
+<meta name="description" content="あなたが思い浮かべた漢字を、最大11回の質問で当てます。小学校で習う漢字1,026字が対象。">
+<meta property="og:title" content="11問で漢字当て">
+<meta property="og:description" content="小学校で習う漢字を1つ思い浮かべてください。最大11回の質問で当てます。">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%231c3b2e'/%3E%3Ctext x='20' y='30' font-size='28' text-anchor='middle' fill='%23fffdf6' font-family='serif'%3E字%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f6f1e7; --card:#fffdf6; --ink:#1c3b2e; --green:#1d5e3f; --line:#d9d2bf;
+  --red:#c8452d; --mute:#7a8077; --ok:#1d7a4a; --ng:#c8452d;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,system-ui,sans-serif;line-height:1.6}
+.wrap{max-width:640px;margin:0 auto;padding:20px 16px calc(40px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:2px solid var(--ink);margin-bottom:18px}
+.logo{width:40px;height:40px;flex:none;background:var(--ink);color:#fffdf6;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:26px}
+h1{margin:0;font-size:26px;line-height:1.15;letter-spacing:.01em}
+h1 b{color:var(--red)}
+.sub{margin:2px 0 0;font-size:12px;color:var(--mute)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px 20px;
+  box-shadow:0 2px 0 var(--line),0 12px 24px -14px rgba(28,59,46,.35)}
+.center{text-align:center}
+.lead{font-size:17px;font-weight:700;margin:6px 0 18px}
+.note{font-size:12px;color:var(--mute);margin:14px 0 0}
+button{font:inherit;cursor:pointer}
+.btn{display:block;width:100%;border:2px solid var(--green);border-radius:12px;padding:14px 16px;font-weight:800;font-size:17px;
+  background:var(--green);color:#fff;transition:transform .05s}
+.btn:active{transform:scale(.98)}
+.btn.sec{background:#f1f6ef;color:var(--green)}
+.btn.red{background:var(--red);border-color:var(--red)}
+.btn.small{font-size:14px;padding:10px 14px;font-weight:700}
+.row{display:flex;gap:10px}
+.row .btn{flex:1}
+.linkbtn{background:none;border:none;color:var(--mute);font-size:13px;text-decoration:underline;padding:6px 2px}
+.linkbtn:disabled{opacity:.35;text-decoration:none;cursor:default}
+.qno{font-size:13px;font-weight:700}
+.qno strong{font-size:20px}
+.bar{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin:8px 0 26px}
+.bar i{height:6px;border-radius:3px;background:#e4dfcd}
+.bar i.on{background:var(--red)}
+.q{font-size:23px;font-weight:800;line-height:1.45;margin:0 0 26px;min-height:70px}
+.q small{display:block;font-size:12px;font-weight:500;color:var(--mute);margin-top:6px;line-height:1.5}
+.under{display:flex;justify-content:space-between;margin-top:14px;flex-wrap:wrap;gap:4px}
+.skip{display:block;width:100%;margin-top:10px;background:none;border:1px dashed var(--line);border-radius:10px;padding:9px;color:var(--mute);font-size:13px}
+details{border-top:1px solid var(--line);padding:11px 2px;font-size:14px}
+details summary{cursor:pointer;font-weight:800;list-style:none}
+details summary::before{content:"▶";font-size:9px;margin-right:6px;color:var(--mute);display:inline-block;transition:transform .15s}
+details[open] summary::before{transform:rotate(90deg)}
+details summary span{font-weight:500;color:var(--mute);margin-left:6px}
+.more{margin-top:18px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.chip{background:#ece6d2;border-radius:8px;padding:2px 9px;font-size:20px;font-family:"Hiragino Mincho ProN","Yu Mincho",serif}
+.kj{font-family:"Hiragino Mincho ProN","Yu Mincho","UD Digi Kyokasho N-R",serif;font-size:112px;line-height:1.15;font-weight:600;margin:0 0 4px}
+.meta{color:var(--mute);font-size:14px;margin-bottom:22px;line-height:1.7}
+.big{font-size:20px;font-weight:900;margin:0 0 6px}
+.big.hit{color:var(--ok)} .big.miss{color:var(--ng)}
+.share{margin-top:10px}
+.pill{display:inline-block;background:var(--red);color:#fff;border-radius:99px;padding:2px 10px;font-size:12px;font-weight:800;margin-bottom:8px}
+input[type=search]{width:100%;padding:12px 14px;border:2px solid var(--line);border-radius:10px;font:inherit;background:#fff}
+.list{margin-top:10px;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.list button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;border-bottom:1px solid #eee;padding:8px 12px}
+.list button:last-child{border-bottom:none}
+.list .g{font-family:"Hiragino Mincho ProN","Yu Mincho",serif;font-size:26px;width:36px;text-align:center}
+.list .t{color:var(--mute);font-size:12px}
+table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px}
+th,td{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:11px;color:var(--mute);font-weight:700}
+tr.bad td{background:#fdeae5}
+td.ok,td.ng{white-space:nowrap}
+.ng{color:var(--ng);font-weight:800}.ok{color:var(--ok);font-weight:800}
+footer{margin-top:26px;font-size:11px;color:var(--mute);line-height:1.7}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo" aria-hidden="true">字</div>
+    <div>
+      <h1><b>11問</b>で漢字当て</h1>
+      <p class="sub">あなたが思い浮かべた漢字を最大11回の質問で当てます</p>
+    </div>
+  </header>
+
+  <main id="main"><div class="card center"><p class="lead">読み込み中…</p></div></main>
+  <div class="more" id="more"></div>
+
+  <footer>
+    対象は、小学校で習う漢字1,026字（2020年度からの学年別漢字配当表）です。中学以上で習う漢字や、旧字体・異体字は含みません。<br>
+    形（へん・つくり）の分け方は、文字の構成データをもとにした目安で、教科書や辞書の分類と少し違うことがあります。<br>
+    データ出典：<a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" target="_blank" rel="noopener">KANJIDIC</a>（EDRDG, CC BY-SA 4.0）、<a href="https://github.com/cjkvi/cjkvi-ids" target="_blank" rel="noopener">CJKVI IDS</a>（CHISE IDS, GPLv2）、学年別漢字配当表（文部科学省）
+  </footer>
+</div>
+
+<script src="engine.js"></script>
+<script>
+(function(){
+'use strict';
+var E = window.KanjiEngine;
+var MAXQ = 11;
+var items = [], qsAll = [], qById = {};
+var YN = [{k:'y',label:'はい'},{k:'n',label:'いいえ'}];
+var G = null;
+var LAST_KEY = 'kanji11:last';
+
+var $main = document.getElementById('main');
+var $more = document.getElementById('more');
+
+function el(html){ var d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function kata(s){ return s.replace(/[ぁ-ん]/g,function(c){return String.fromCharCode(c.charCodeAt(0)+96);}); }
+function kunView(k){ var s=k.replace(/-/g,''); var i=s.indexOf('.'); return i<0?s:s.slice(0,i)+'('+s.slice(i+1)+')'; }
+function readings(p){
+  var a=[];
+  if(p.on.length) a.push('音：'+p.on.map(kata).join('・'));
+  if(p.kun.length) a.push('訓：'+p.kun.map(kunView).join('・'));
+  return a.join('　');
+}
+function pinfo(p){ return '小学'+p.g+'年生 ・ '+p.s+'画<br>'+esc(readings(p)); }
+function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
+
+function saveLast(){
+  try{ if(!G) return; localStorage.setItem(LAST_KEY, JSON.stringify({hist:G.hist.map(function(h){return {id:h.q.id,text:h.q.text,ans:h.ans};})})); }catch(e){}
+}
+function getQ(id,text){
+  if(id.indexOf('bait:')===0){ var ch=id.slice(5); return {id:id,text:text,choices:YN,cat:function(p){return p.k===ch?'y':'n';},group:'bait'}; }
+  return qById[id]||null;
+}
+function loadLast(){
+  try{
+    var s=localStorage.getItem(LAST_KEY); if(!s) return null;
+    return JSON.parse(s).hist.map(function(h){return {q:getQ(h.id,h.text),ans:h.ans};}).filter(function(h){return h.q;});
+  }catch(e){ return null; }
+}
+
+/* ---------- ゲーム ---------- */
+function newGame(){
+  var pool=E.BAIT.filter(function(c){return items.some(function(p){return p.k===c;});});
+  var ch=pool[Math.floor(Math.random()*pool.length)];
+  var p=items.filter(function(x){return x.k===ch;})[0];
+  var bq={id:'bait:'+ch,text:'「'+ch+'」ですか？',sub:null,choices:YN,cat:function(x){return x.k===ch?'y':'n';},group:'bait',bait:p};
+  G={hist:[],skipped:{},current:bq,guess:null,gi:0};
+  renderQuestion();
+}
+function cands(){ return items.filter(function(p){ return G.hist.every(function(h){return h.q.cat(p)===h.ans;}); }); }
+function answer(key){
+  var q=G.current;
+  G.hist.push({q:q,ans:key});
+  saveLast();
+  if(q.bait && key==='y') return finish(true,[q.bait],true);
+  next();
+}
+function skip(){ G.skipped[G.current.id]=1; next(); }
+function next(){
+  var c=cands();
+  if(c.length===0) return finish(false,[],false,true);
+  if(c.length===1 || G.hist.length>=MAXQ) return startGuess(c);
+  var used={};
+  G.hist.forEach(function(h){used[h.q.id]=1;});
+  Object.keys(G.skipped).forEach(function(k){used[k]=1;});
+  var q=E.pickQuestion(c,qsAll,used);
+  if(!q) return startGuess(c);
+  G.current=q; renderQuestion();
+}
+function back(){
+  if(!G.hist.length) return;
+  var last=G.hist.pop(); saveLast();
+  G.current=last.q; renderQuestion();
+}
+function startGuess(c){ G.guess=shuffle(c).slice(0,8); G.gi=0; G.guessTotal=c.length; renderGuess(); }
+function finish(hit,list,lucky,contradiction){
+  G.result={hit:hit,lucky:!!lucky,contradiction:!!contradiction,n:G.hist.length,item:list[0]||null};
+  renderResult();
+}
+
+/* ---------- 画面 ---------- */
+function setMain(node){ $main.innerHTML=''; $main.appendChild(node); window.scrollTo(0,0); }
+
+function renderStart(){
+  location.hash='';
+  setMain(el(
+    '<div class="card center">'+
+      '<p class="lead">小学校で習った漢字を1つ思い浮かべてください</p>'+
+      '<div class="kj" style="font-size:64px;letter-spacing:.1em;color:var(--mute);opacity:.55">？</div>'+
+      '<p style="margin:0 0 20px;font-size:14px">'+items.length+'字の中から、はい／いいえで当てます。<br>画数・読み・形（へんやつくり）などを聞きます。</p>'+
+      '<button class="btn" id="go">スタート</button>'+
+      '<p class="note">頭の中で字の形を思い浮かべると、答えやすくなります。</p>'+
+    '</div>'));
+  document.getElementById('go').onclick=newGame;
+  renderMore();
+}
+
+function renderQuestion(){
+  var c=cands(), n=G.hist.length+1, bar='';
+  for(var i=1;i<=MAXQ;i++) bar+='<i class="'+(i<=n?'on':'')+'"></i>';
+  var q=G.current;
+  var node=el(
+    '<div class="card">'+
+      '<div class="qno">第<strong>'+n+'</strong>問 <span style="color:var(--mute);font-weight:500">／ 最大'+MAXQ+'問</span></div>'+
+      '<div class="bar">'+bar+'</div>'+
+      '<p class="q">'+esc(q.text)+(q.sub?'<small>'+esc(q.sub)+'</small>':'')+'</p>'+
+      '<div class="row">'+q.choices.slice(0,2).map(function(c,i){return '<button class="btn'+(i?' sec':'')+'" data-k="'+c.k+'">'+esc(c.label)+'</button>';}).join('')+'</div>'+
+      (q.choices[2]?'<button class="btn sec small" style="margin-top:10px" data-k="'+q.choices[2].k+'">'+esc(q.choices[2].label)+'</button>':'')+
+      (q.bait?'':'<button class="skip" id="s">わからない（別の質問にする）</button>')+
+      '<div class="under"><button class="linkbtn" id="b"'+(G.hist.length?'':' disabled')+'>← 1問戻る</button><button class="linkbtn" id="r">最初からやり直す</button></div>'+
+    '</div>');
+  setMain(node);
+  Array.prototype.forEach.call(node.querySelectorAll('button[data-k]'),function(b){ b.onclick=function(){ answer(b.getAttribute('data-k')); }; });
+  var s=document.getElementById('s'); if(s) s.onclick=skip;
+  document.getElementById('b').onclick=back;
+  document.getElementById('r').onclick=function(){ if(confirm('最初からやり直しますか？')) renderStart(); };
+  renderMore(c);
+}
+
+function renderGuess(){
+  var p=G.guess[G.gi], left=G.guess.length-G.gi-1;
+  setMain(el(
+    '<div class="card center">'+
+      '<span class="pill">'+G.hist.length+'問で絞り込みました</span>'+
+      '<p class="lead" style="margin-bottom:4px">あなたが思い浮かべた漢字は…</p>'+
+      '<div class="kj">'+esc(p.k)+'</div>'+
+      '<div class="meta">'+pinfo(p)+'</div>'+
+      '<div class="row"><button class="btn" id="y">そうです！</button><button class="btn sec" id="n">違います</button></div>'+
+      (G.guessTotal>1?'<p class="note">候補はあと'+(G.guessTotal-G.gi)+'字です（'+(left>0?'違えば次の候補を出します':'これが最後の候補です')+'）</p>':'')+
+    '</div>'));
+  document.getElementById('y').onclick=function(){ finish(true,[p]); };
+  document.getElementById('n').onclick=function(){ G.gi++; if(G.gi>=G.guess.length) finish(false,[]); else renderGuess(); };
+  $more.innerHTML='';
+}
+
+function shareUrl(){ return location.origin+location.pathname; }
+function shareLink(text){ return 'https://x.com/intent/post?text='+encodeURIComponent(text)+'&url='+encodeURIComponent(shareUrl()); }
+
+function renderResult(){
+  var r=G.result, html='<div class="card center">', text;
+  if(r.hit){
+    if(r.lucky){
+      html+='<p class="big hit">1問目で当たりました！？</p><div class="kj">'+esc(r.item.k)+'</div><div class="meta">'+pinfo(r.item)+'</div>'+
+        '<p style="font-size:14px">奇跡です。実は最初の質問は、ほぼ当たらない前提のダミーでした。</p>';
+      text='思い浮かべた漢字を、最初の質問で当てられてしまった…（確率 約1/'+items.length+'）';
+    }else{
+      html+='<p class="big hit">'+r.n+'問で当てました！</p><div class="kj">'+esc(r.item.k)+'</div><div class="meta">'+pinfo(r.item)+'</div>';
+      text='思い浮かべた漢字（小学校で習う'+items.length+'字）を、'+r.n+'問で当てられた！';
+    }
+  }else if(r.contradiction){
+    html+='<p class="big miss">該当する漢字がなくなりました</p><p style="font-size:14px">どこかの答えが食い違っているか、小学校で習わない漢字かもしれません。「答え合わせ」で確認できます。</p>';
+    text='思い浮かべた漢字を当ててもらえなかった… あなたは当てられる？';
+  }else{
+    html+='<p class="big miss">当てられませんでした…</p><p style="font-size:14px">思い浮かべた漢字は何でしたか？「答え合わせ」でどこで分かれたか確認できます。</p>';
+    text='思い浮かべた漢字を、'+G.hist.length+'問でも当てられなかった… あなたの漢字は出る？';
+  }
+  var showCheck = !(r.hit&&!r.contradiction);
+  html+='<div class="share"><a class="btn red" style="text-decoration:none" target="_blank" rel="noopener" href="'+shareLink(text+' #11問で漢字当て')+'">Xでシェアする</a></div>'+
+    '<div class="row" style="margin-top:10px">'+
+      '<button class="btn small sec" id="chk">'+(showCheck?'答え合わせ':'質問のおさらい')+'</button>'+
+      '<button class="btn small sec" id="again">もう1回遊ぶ</button></div></div>';
+  setMain(el(html));
+  document.getElementById('again').onclick=renderStart;
+  document.getElementById('chk').onclick=function(){ renderCheck(G.hist,r.item); };
+  $more.innerHTML='';
+  saveLast();
+}
+
+function renderCheck(hist,preset){
+  location.hash='check';
+  var node=el(
+    '<div class="card">'+
+      '<p class="big" style="margin-bottom:4px">答え合わせ</p>'+
+      '<p style="font-size:13px;color:var(--mute);margin:0 0 12px">思い浮かべていた漢字を入力すると、各質問の正しい答えと、あなたの答えを見比べられます。</p>'+
+      '<input type="search" id="q" placeholder="漢字、または読み（例：学、まなぶ）" autocomplete="off">'+
+      '<div class="list" id="lst"></div><div id="res"></div>'+
+      '<div style="margin-top:16px"><button class="btn small sec" id="top">トップへ戻る</button></div>'+
+    '</div>');
+  setMain(node); $more.innerHTML='';
+  var $q=document.getElementById('q'), $l=document.getElementById('lst'), $r=document.getElementById('res');
+  document.getElementById('top').onclick=renderStart;
+  if(!hist||!hist.length){
+    $r.innerHTML='<p style="font-size:13px;color:var(--mute)">まだ遊んだ履歴がありません。先に1回遊んでからお試しください。</p>';
+    $l.classList.add('hidden'); $q.classList.add('hidden'); return;
+  }
+  function lab(q,k){ var c=q.choices.filter(function(x){return x.k===k;})[0]; return c?c.label:k; }
+  function show(p){
+    var bad=[];
+    var rows=hist.map(function(h,i){
+      var t=h.q.cat(p), okk=t===h.ans; if(!okk) bad.push(i+1);
+      return '<tr class="'+(okk?'':'bad')+'"><td>'+(i+1)+'</td><td>'+esc(h.q.text)+'</td><td>'+esc(lab(h.q,h.ans))+'</td><td class="'+(okk?'ok':'ng')+'">'+esc(lab(h.q,t))+(okk?' ✓':' ✗')+'</td></tr>';
+    }).join('');
+    var wasHit=G&&G.result&&G.result.hit&&G.result.item&&G.result.item.i===p.i&&hist===G.hist;
+    var msg=bad.length
+      ? '<p style="font-size:14px"><span class="ng">'+bad.join('・')+'問目</span>で、この漢字の正解と答えが食い違っています。ここで候補から外れてしまった可能性があります。</p>'
+      : (wasHit?'<p style="font-size:14px"><span class="ok">答えはすべて正しいです。</span>質問のおさらいです。</p>'
+               :'<p style="font-size:14px"><span class="ok">答えはすべて正しいです。</span>当たらなかったのは、候補が絞りきれなかったためかもしれません。</p>');
+    $r.innerHTML='<div style="margin-top:14px"><div class="kj" style="font-size:64px;margin:0">'+esc(p.k)+'</div><div class="meta" style="margin-bottom:4px">'+pinfo(p)+'</div>'+msg+
+      '<table><tr><th>#</th><th>質問</th><th>あなたの答え</th><th>正解</th></tr>'+rows+'</table></div>';
+  }
+  function list(){
+    var s=$q.value.replace(/\s/g,'');
+    if(!s){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">漢字か読みを入力してください。</div>'; return; }
+    var m=items.filter(function(p){
+      if(p.k===s) return true;
+      return p.on.concat(p.kun.map(function(k){return k.replace(/[-.]/g,'');})).some(function(r){ return kata(r)===kata(s) || r===s; });
+    });
+    if(!m.length){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">見つかりません。小学校で習わない漢字の可能性があります。</div>'; return; }
+    $l.innerHTML='';
+    m.slice(0,60).forEach(function(p){
+      var b=document.createElement('button');
+      b.innerHTML='<span class="g">'+esc(p.k)+'</span><span><span class="t">小'+p.g+' ・ '+p.s+'画</span><br>'+esc(readings(p))+'</span>';
+      b.onclick=function(){ show(p); $r.scrollIntoView({behavior:'smooth',block:'start'}); };
+      $l.appendChild(b);
+    });
+  }
+  $q.oninput=list; list();
+  if(preset){ $q.value=preset.k; list(); show(preset); }
+}
+
+/* ---------- 下部の折りたたみ ---------- */
+function renderMore(c){
+  var html='';
+  if(c){
+    var names=c.length<=150?c.map(function(p){return '<span class="chip">'+esc(p.k)+'</span>';}).join(''):'<span style="color:var(--mute)">150字以下になると漢字が表示されます。</span>';
+    html+='<details><summary>残っている候補<span>'+c.length+'字</span></summary><div class="chips">'+names+'</div></details>';
+  }
+  html+='<details><summary>遊び方・判定ルール</summary><div style="margin-top:8px;font-size:13px">'+
+    '<p>思い浮かべた漢字を、はい／いいえなどの質問で絞り込みます。最大11問で決まらなければ、有力な候補を順に挙げます。</p>'+
+    '<ul style="padding-left:18px;margin:6px 0">'+
+    '<li>1問目は、ほぼ当たらないダミーの質問です。</li>'+
+    '<li>画数や学年は「◯◯より大きい？小さい？」で聞きます。ぴったり同じなら「同じ」を選びます。</li>'+
+    '<li>音読みはカタカナ、訓読みはひらがなで書く読み方です。送りがなは数えません。</li>'+
+    '<li>分からない質問は「わからない」で別の質問に変えられます。</li>'+
+    '<li>形の分け方は目安です。違和感があれば「答え合わせ」で確認できます。</li></ul></div></details>';
+  html+='<details><summary>漢字を調べる<span>対象に入っているか確認</span></summary><div style="margin-top:8px">'+
+    '<input type="search" id="sq" placeholder="漢字または読み（例：森、もり）" autocomplete="off"><div class="list hidden" id="sl"></div></div></details>';
+  $more.innerHTML=html;
+  var $sq=document.getElementById('sq'), $sl=document.getElementById('sl');
+  if($sq) $sq.oninput=function(){
+    var s=$sq.value.replace(/\s/g,'');
+    if(!s){ $sl.classList.add('hidden'); return; }
+    var m=items.filter(function(p){ return p.k===s || p.on.concat(p.kun.map(function(k){return k.replace(/[-.]/g,'');})).some(function(r){return kata(r)===kata(s);}); });
+    $sl.classList.remove('hidden');
+    if(!m.length){ $sl.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">対象外です（小学校で習わない漢字）。</div>'; return; }
+    $sl.innerHTML=m.slice(0,60).map(function(p){return '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #eee"><span style="font-family:\'Hiragino Mincho ProN\',\'Yu Mincho\',serif;font-size:26px;width:36px;text-align:center">'+esc(p.k)+'</span><span style="font-size:12px;color:var(--mute)">小'+p.g+' ・ '+p.s+'画<br>'+esc(readings(p))+'</span></div>';}).join('');
+  };
+}
+
+/* ---------- 起動 ---------- */
+function boot(){
+  fetch('kanji.json').then(function(r){ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(function(raw){
+    items=E.prepare(raw); qsAll=E.buildQuestions(items);
+    qsAll.forEach(function(q){qById[q.id]=q;});
+    if(location.hash==='#check'){ renderCheck(loadLast()||[],null); } else { renderStart(); }
+  }).catch(function(e){
+    $main.innerHTML='<div class="card center"><p class="lead">データを読み込めませんでした</p><p style="font-size:13px">ファイルを直接開かず、GitHub Pagesなどのサーバー経由で開いてください。<br>('+esc(e.message)+')</p></div>';
+  });
+}
+window.addEventListener('hashchange',function(){
+  if(!items.length) return;
+  if(location.hash!=='#check' && $main.querySelector('#q')) renderStart();
+});
+boot();
+})();
+</script>
+</body>
+</html>
