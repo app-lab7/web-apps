@@ -95,7 +95,7 @@ footer{margin-top:26px;font-size:11px;color:var(--mute);line-height:1.7}
 
   <footer>
     対象は、ニコニコ動画で再生数30万回以上のボカロ曲（VOCALOID・CeVIO・SynthesizerVなど）から選んだ2,794曲です。2026年11月時点のスナップショットで、再生数・投稿年はおおよその値です。<br>
-    「作者」はニコニコ動画の投稿者名をもとにしているため、カバーや再投稿では実際の作曲者と異なることがあります。曲の雰囲気（ロック・和風・夏曲など）はニコニコ動画のタグをもとにした目安です。<br>
+    「投稿者」はニコニコ動画の動画投稿者名です。作曲者本人とは限りません（カバーや再投稿、別名義など）。曲の雰囲気（ロック・和風・夏曲など）はニコニコ動画のタグをもとにした目安です。<br>
     非公式のファンアプリです。データ出典：<a href="https://site.nicovideo.jp/search-api-docs/snapshot" target="_blank" rel="noopener">ニコニコ動画 スナップショット検索API v2</a>
   </footer>
 </div>
@@ -117,7 +117,7 @@ var $more = document.getElementById('more');
 function el(html){ var d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function vn(p){ return p.v.length?p.v.map(function(v){return E.VOCAL_NAME[v]||v;}).join('・'):'（ボーカル情報なし）'; }
-function pinfo(p){ return '作者（投稿者）：'+esc(p.p||'不明')+'<br>'+esc(vn(p))+'<br>'+p.y+'年 ・ 約'+p.m+'万再生'+(p.myth?' ・ 神話入り':''); }
+function pinfo(p){ return '投稿者：'+esc(p.p||'不明')+'<br>'+esc(vn(p))+'<br>'+p.y+'年 ・ 約'+p.m+'万再生'+(p.myth?' ・ 神話入り':''); }
 function nrm(s){ return s.toLowerCase().replace(/\s/g,''); }
 function findSongs(s){ s=nrm(s); return items.filter(function(p){ return nrm(p.t).indexOf(s)>=0 || nrm(p.p).indexOf(s)>=0; }); }
 function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
@@ -185,7 +185,7 @@ function renderStart(){
     '<div class="card center">'+
       '<p class="lead">ボカロ曲を1曲思い浮かべてください</p>'+
       '<div class="kj" style="font-size:64px;color:var(--mute);opacity:.55">♪？</div>'+
-      '<p style="margin:0 0 20px;font-size:14px">'+items.length+'曲の中から、はい／いいえで当てます。<br>ボーカル・作者・投稿年・曲名の文字などを聞きます。</p>'+
+      '<p style="margin:0 0 20px;font-size:14px">'+items.length+'曲の中から、はい／いいえで当てます。<br>ボーカル・投稿者・投稿年・曲名の文字などを聞きます。</p>'+
       '<button class="btn" id="go">スタート</button>'+
       '<p class="note">曲名を頭の中で思い浮かべると、答えやすくなります。</p>'+
     '</div>'));
@@ -270,7 +270,7 @@ function renderCheck(hist,preset){
     '<div class="card">'+
       '<p class="big" style="margin-bottom:4px">答え合わせ</p>'+
       '<p style="font-size:13px;color:var(--mute);margin:0 0 12px">思い浮かべていた曲名を入力すると、各質問の正しい答えと、あなたの答えを見比べられます。</p>'+
-      '<input type="search" id="q" placeholder="曲名または作者名（例：千本桜、DECO*27）" autocomplete="off">'+
+      '<input type="search" id="q" placeholder="曲名または投稿者名（例：千本桜、DECO*27）" autocomplete="off">'+
       '<div class="list" id="lst"></div><div id="res"></div>'+
       '<div style="margin-top:16px"><button class="btn small sec" id="top">トップへ戻る</button></div>'+
     '</div>');
@@ -298,7 +298,7 @@ function renderCheck(hist,preset){
   }
   function list(){
     var s=$q.value.replace(/\s/g,'');
-    if(!s){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">曲名または作者名を入力してください。</div>'; return; }
+    if(!s){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">曲名または投稿者名を入力してください。</div>'; return; }
     var m=findSongs(s);
     if(!m.length){ $l.innerHTML='<div style="padding:12px;font-size:13px;color:var(--mute)">見つかりません。30万再生未満の曲などはリストに入っていません。</div>'; return; }
     $l.innerHTML='';
@@ -329,7 +329,7 @@ function renderMore(c){
     '<li>分からない質問は「わからない」で別の質問に変えられます。</li>'+
     '<li>雰囲気（ロック・和風など）は目安です。違和感があれば「答え合わせ」で確認できます。</li></ul></div></details>';
   html+='<details><summary>曲を調べる<span>対象に入っているか確認</span></summary><div style="margin-top:8px">'+
-    '<input type="search" id="sq" placeholder="曲名または作者名（例：メルト）" autocomplete="off"><div class="list hidden" id="sl"></div></div></details>';
+    '<input type="search" id="sq" placeholder="曲名または投稿者名（例：メルト）" autocomplete="off"><div class="list hidden" id="sl"></div></div></details>';
   $more.innerHTML=html;
   var $sq=document.getElementById('sq'), $sl=document.getElementById('sl');
   if($sq) $sq.oninput=function(){
