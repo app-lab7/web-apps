@@ -107,6 +107,7 @@ var E = window.NpbEngine;
 var MAXQ = 11;
 var now = new Date();
 var players = [], qsAll = [], qById = {};
+var YN = [{k:'y',label:'はい'},{k:'n',label:'いいえ'}];
 var G = null;           // 進行中のゲーム
 var LAST_KEY = 'npb11:last';
 
@@ -127,13 +128,13 @@ function loadLast(){
   try{
     var s = localStorage.getItem(LAST_KEY); if(!s) return null;
     var o = JSON.parse(s);
-    return o.hist.map(function(h){ return {q:getQ(h.id,h.text), ans:h.ans}; }).filter(function(h){return h.q;});
+    return o.hist.map(function(h){ return {q:getQ(h.id,h.text), ans:(h.ans===true?'y':h.ans===false?'n':h.ans)}; }).filter(function(h){return h.q;});
   }catch(e){ return null; }
 }
 function getQ(id,text){
   if(id.indexOf('bait:')===0){
     var nm = id.slice(5);
-    return {id:id,text:text,fn:function(p){return p.n===nm;},group:'bait'};
+    return {id:id,text:text,choices:YN,cat:function(p){return p.n===nm?'y':'n';},group:'bait'};
   }
   return qById[id] || null;
 }
@@ -143,20 +144,20 @@ function newGame(){
   var cands = E.BAIT.filter(function(n){ return players.some(function(p){return p.n===n;}); });
   var name = cands[Math.floor(Math.random()*cands.length)];
   var p = players.filter(function(x){return x.n===name;})[0];
-  var bq = {id:'bait:'+name, text: name+'（'+E.team(p.t)+'）ですか？', fn:function(x){return x.n===name;}, group:'bait', bait:p};
+  var bq = {id:'bait:'+name, text: name+'（'+E.team(p.t)+'）ですか？', choices:YN, cat:function(x){return x.n===name?'y':'n';}, group:'bait', bait:p};
   G = {hist:[], skipped:{}, current:bq, guess:null, gi:0};
   renderQuestion();
 }
 function cands(){
   return players.filter(function(p){
-    return G.hist.every(function(h){ return !!h.q.fn(p)===h.ans; });
+    return G.hist.every(function(h){ return h.q.cat(p)===h.ans; });
   });
 }
 function answer(ans){
   var q = G.current;
   G.hist.push({q:q, ans:ans});
   saveLast();
-  if(q.bait && ans){ return finish(true, [q.bait], true); }
+  if(q.bait && ans==='y'){ return finish(true, [q.bait], true); }
   next();
 }
 function skip(){
@@ -219,14 +220,14 @@ function renderQuestion(){
     '<div class="card">'+
       '<div class="qno">第<strong>'+n+'</strong>問 <span style="color:var(--mute);font-weight:500">／ 最大'+MAXQ+'問</span></div>'+
       '<div class="bar">'+bar+'</div>'+
-      '<p class="q">'+esc(q.text)+'</p>'+
-      '<div class="row"><button class="btn" id="y">はい</button><button class="btn sec" id="n">いいえ</button></div>'+
+      '<p class="q">'+esc(q.text)+(q.sub?'<small>'+esc(q.sub)+'</small>':'')+'</p>'+
+      '<div class="row">'+q.choices.slice(0,2).map(function(c,i){return '<button class="btn'+(i?' sec':'')+'" data-k="'+c.k+'">'+esc(c.label)+'</button>';}).join('')+'</div>'+
+      (q.choices[2]?'<button class="btn sec small" style="margin-top:10px" data-k="'+q.choices[2].k+'">'+esc(q.choices[2].label)+'</button>':'')+
       (q.bait?'':'<button class="skip" id="s">わからない（別の質問にする）</button>')+
       '<div class="under"><button class="linkbtn" id="b"'+(G.hist.length?'':' disabled')+'>← 1問戻る</button><button class="linkbtn" id="r">最初からやり直す</button></div>'+
     '</div>');
   setMain(node);
-  document.getElementById('y').onclick=function(){answer(true);};
-  document.getElementById('n').onclick=function(){answer(false);};
+  Array.prototype.forEach.call(node.querySelectorAll('button[data-k]'),function(b){ b.onclick=function(){ answer(b.getAttribute('data-k')); }; });
   var s=document.getElementById('s'); if(s) s.onclick=skip;
   document.getElementById('b').onclick=back;
   document.getElementById('r').onclick=function(){ if(confirm('最初からやり直しますか？')) renderStart(); };
@@ -292,7 +293,7 @@ function renderResult(){
   saveLast();
 }
 
-function ansLabel(b){ return b?'はい':'いいえ'; }
+function ansLabel(q,k){ var c=q.choices.filter(function(x){return x.k===k;})[0]; return c?c.label:k; }
 
 function renderCheck(hist, preset){
   location.hash='check';
@@ -316,10 +317,10 @@ function renderCheck(hist, preset){
   function show(p){
     var bad=[];
     var rows = hist.map(function(h,i){
-      var t = !!h.q.fn(p);
+      var t = h.q.cat(p);
       var okk = t===h.ans;
       if(!okk) bad.push(i+1);
-      return '<tr class="'+(okk?'':'bad')+'"><td>'+(i+1)+'</td><td>'+esc(h.q.text)+'</td><td>'+ansLabel(h.ans)+'</td><td class="'+(okk?'ok':'ng')+'">'+ansLabel(t)+(okk?' ✓':' ✗')+'</td></tr>';
+      return '<tr class="'+(okk?'':'bad')+'"><td>'+(i+1)+'</td><td>'+esc(h.q.text)+'</td><td>'+ansLabel(h.q,h.ans)+'</td><td class="'+(okk?'ok':'ng')+'">'+ansLabel(h.q,t)+(okk?' ✓':' ✗')+'</td></tr>';
     }).join('');
     var msg;
     if(bad.length){
@@ -360,7 +361,7 @@ function renderMore(c){
   html+='<details><summary>遊び方・判定ルール</summary><div style="margin-top:8px;font-size:13px">'+
     '<p>思い浮かべた選手を、はい／いいえの質問で絞り込みます。最大11問で、それでも決まらなければ有力な候補を順に挙げます。</p>'+
     '<ul style="padding-left:18px;margin:6px 0"><li>1問目は、ほぼ当たらないダミーの質問です。</li>'+
-    '<li>年齢は「今日時点」です。誕生日・身長・背番号などが分からないときは「わからない」で別の質問に変えられます。</li>'+
+    '<li>背番号は「◯◯より大きい？小さい？」で聞きます。ぴったり同じなら「同じ」を選びます。</li><li>年齢は「今日時点」です。誕生日・身長・背番号などが分からないときは「わからない」で別の質問に変えられます。</li>'+
     '<li>両打ちの選手は「右打ち」「左打ち」の質問には「いいえ」です。</li>'+
     '<li>登録名は球団公式の登録名です（例：「Ｅ．ラミレス」）。</li>'+
     '<li>対象は2026年シーズン終了時点の支配下選手です。育成選手・引退したOBはいません。</li></ul></div></details>';

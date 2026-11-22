@@ -53,7 +53,17 @@
   // 質問一覧を作る。w は「ユーザーが答えやすい度」の重み（小さいほど先に選ばれる）
   function buildQuestions(players, now) {
     var qs = [];
-    function add(id, text, w, fn, group) { qs.push({ id: id, text: text, w: w, fn: fn, group: group }); }
+    var YN = [{ k: 'y', label: 'はい' }, { k: 'n', label: 'いいえ' }];
+    function add(id, text, w, fn, group) {
+      qs.push({ id: id, text: text, w: w, fn: fn, group: group, choices: YN,
+        cat: function (p) { return fn(p) ? 'y' : 'n'; } });
+    }
+    // 「Nより大きいですか？小さいですか？」型（大きい／小さい／同じ の3択）
+    function addCmp(id, text, sub, w, val, n, group) {
+      qs.push({ id: id, text: text, sub: sub, w: w, group: group,
+        choices: [{ k: 'gt', label: '大きい' }, { k: 'lt', label: '小さい' }, { k: 'eq', label: '同じ（' + n + '番）' }],
+        cat: function (p) { var v = val(p); return v > n ? 'gt' : v < n ? 'lt' : 'eq'; } });
+    }
 
     // 球団・リーグ
     Object.keys(TEAMS).forEach(function (k) {
@@ -110,13 +120,11 @@
       })(h);
     }
 
-    // 背番号
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 35, 38, 40, 42, 45, 48, 50, 53, 56, 60, 63, 66, 70, 80, 90, 95].forEach(function (n) {
-      add('no:' + n, '背番号は' + n + '以下ですか？', 0.04, function (p) { return p.num <= n; }, 'number');
+    // 背番号（「Nより大きい？小さい？」形式）
+    [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 80, 90].forEach(function (n) {
+      addCmp('no:' + n, '背番号は' + n + 'より大きいですか？小さいですか？', 'ぴったり' + n + '番なら「同じ」。0・00は0として数えます',
+        0.04, function (p) { return p.num; }, n, 'number');
     });
-    add('no:even', '背番号は偶数ですか？（0や00は偶数）', 0.04, function (p) { return p.num % 2 === 0; }, 'number');
-    add('no:1d', '背番号は一桁ですか？（0・00も一桁）', 0.04, function (p) { return p.num <= 9; }, 'number');
-    add('no:3d', '背番号の一の位は5以上ですか？（例：15番ならはい、12番ならいいえ）', 0.05, function (p) { return p.num % 10 >= 5; }, 'number');
 
     // 名前
     add('kata', '登録名にカタカナが入っていますか？', 0.02, function (p) { return p.kata; }, 'name');
@@ -139,11 +147,7 @@
   }
 
   // 質問に対する、選手ごとの正解（true/false/null=判定不能）
-  function truth(q, p) {
-    var v = q.fn(p);
-    if (v === null || v === undefined) return null;
-    return !!v;
-  }
+  function truth(q, p) { return q.cat(p); }
 
   function applicable(q, cands) {
     for (var i = 0; i < cands.length; i++) {
@@ -161,10 +165,11 @@
       var q = questions[k];
       if (usedIds[q.id]) continue;
       if (!applicable(q, cands)) continue;
-      var yes = 0;
-      for (var i = 0; i < n; i++) if (q.fn(cands[i])) yes++;
-      if (yes === 0 || yes === n) continue;
-      var imbalance = Math.abs(yes - n / 2) / n; // 0(完全に半分)〜0.5
+      var cnt = {}, kinds = 0;
+      for (var i = 0; i < n; i++) { var kk = q.cat(cands[i]); if (!cnt[kk]) { cnt[kk] = 0; kinds++; } cnt[kk]++; }
+      if (kinds < 2) continue;
+      var mx = 0; for (var key in cnt) if (cnt[key] > mx) mx = cnt[key];
+      var imbalance = Math.max(0, mx / n - 0.5); // 0(完全に半分)〜0.5
       var score = imbalance + q.w * (n > 8 ? 1 : 0.3);
       if (score < bestScore - 1e-9) { bestScore = score; best = [q]; }
       else if (Math.abs(score - bestScore) < 0.004) best.push(q);
