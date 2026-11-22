@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ボカロ曲当て｜最大15問で思い浮かべた曲を当てます</title>
-<meta name="description" content="あなたが思い浮かべたボカロ曲を、最大15回の質問で当てます。ニコニコ動画で30万再生を超えた2,793曲が対象。">
+<meta name="description" content="あなたが思い浮かべたボカロ曲を、最大15回の質問で当てます。ニコニコ動画で30万再生を超えた2,794曲が対象。">
 <meta property="og:title" content="ボカロ曲当て">
 <meta property="og:description" content="ボカロ曲を1曲思い浮かべてください。最大15回の質問で当てます。">
 <meta property="og:type" content="website">
@@ -94,7 +94,7 @@ footer{margin-top:26px;font-size:11px;color:var(--mute);line-height:1.7}
   <div class="more" id="more"></div>
 
   <footer>
-    対象は、ニコニコ動画で再生数30万回以上のボカロ曲（VOCALOID・CeVIO・SynthesizerVなど）から選んだ2,793曲です。2026年11月時点のスナップショットで、再生数・投稿年はおおよその値です。<br>
+    対象は、ニコニコ動画で再生数30万回以上のボカロ曲（VOCALOID・CeVIO・SynthesizerVなど）から選んだ2,794曲です。2026年11月時点のスナップショットで、再生数・投稿年はおおよその値です。<br>
     「作者」はニコニコ動画の投稿者名を、ボカロ曲データベース VocaDB の登録情報と照合したものです。名義の違いや登録の誤りで、実際と異なる場合があります。曲の雰囲気（ロック・和風・夏曲など）はニコニコ動画のタグをもとにした目安です。<br>
     非公式のファンアプリです。データ出典：<a href="https://site.nicovideo.jp/search-api-docs/snapshot" target="_blank" rel="noopener">ニコニコ動画 スナップショット検索API v2</a>
   </footer>
@@ -117,7 +117,7 @@ var $more = document.getElementById('more');
 function el(html){ var d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function vn(p){ return p.v.length?p.v.map(function(v){return E.VOCAL_NAME[v]||v;}).join('・'):'（ボーカル情報なし）'; }
-function pinfo(p){ return '作者：'+esc(p.p||'不明')+'<br>'+esc(vn(p))+'<br>'+p.y+'年 ・ 約'+p.m+'万再生'+(p.myth?' ・ 神話入り':'')+'<br><a href="https://www.nicovideo.jp/watch/'+esc(p.i)+'" target="_blank" rel="noopener" style="color:var(--pink,#e0568c)">ニコニコで動画を確認する</a>'; }
+function pinfo(p){ return '作者：'+esc(p.p||'不明')+'<br>'+esc(vn(p))+'<br>'+p.y+'年 ・ 約'+p.m+'万再生'+(p.myth?' ・ 神話入り':'')+'<br><a href="https://www.nicovideo.jp/watch/'+esc(p.id)+'" target="_blank" rel="noopener" style="color:var(--pink,#e0568c)">ニコニコで動画を確認する</a>'; }
 function nrm(s){ return s.toLowerCase().replace(/\s/g,''); }
 function findSongs(s){ s=nrm(s); return items.filter(function(p){ return nrm(p.t).indexOf(s)>=0 || nrm(p.p).indexOf(s)>=0; }); }
 function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
