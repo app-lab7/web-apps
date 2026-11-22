@@ -117,7 +117,7 @@ var $more = document.getElementById('more');
 function el(html){ var d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
 function esc(s){ return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function vn(p){ return p.v.length?p.v.map(function(v){return E.VOCAL_NAME[v]||v;}).join('・'):'（ボーカル情報なし）'; }
-function pinfo(p){ return '投稿者：'+esc(p.p||'不明')+'<br>'+esc(vn(p))+'<br>'+p.y+'年 ・ 約'+p.m+'万再生'+(p.myth?' ・ 神話入り':''); }
+function pinfo(p){ return '投稿者：'+esc(p.p||'不明')+'<br>'+esc(vn(p))+'<br>'+p.y+'年 ・ 約'+p.m+'万再生'+(p.myth?' ・ 神話入り':'')+'<br><a href="https://www.nicovideo.jp/watch/'+esc(p.i)+'" target="_blank" rel="noopener" style="color:var(--pink,#e0568c)">ニコニコで動画を確認する</a>'; }
 function nrm(s){ return s.toLowerCase().replace(/\s/g,''); }
 function findSongs(s){ s=nrm(s); return items.filter(function(p){ return nrm(p.t).indexOf(s)>=0 || nrm(p.p).indexOf(s)>=0; }); }
 function shuffle(a){ a=a.slice(); for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;} return a; }
