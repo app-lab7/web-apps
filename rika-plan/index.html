@@ -6,72 +6,109 @@
 @media(prefers-color-scheme:dark){:root{--bg:#14181f;--c:#1e242e;--b:#333c4b;--t:#e8ecf2;--n:#9db8e6}}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--t);line-height:1.5}
 header{position:sticky;top:0;z-index:5;background:var(--c);border-bottom:1px solid var(--b);padding:12px 16px}
-h1{font-size:17px;margin:0 0 2px;color:var(--n)}.sub{font-size:12px;opacity:.7}
+h1{font-size:17px;margin:0 0 2px;color:var(--n)}.sub{font-size:12px;opacity:.7;display:flex;justify-content:space-between;gap:8px}
 .bar{height:10px;background:var(--b);border-radius:6px;overflow:hidden;margin:10px 0 4px}.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
 .stats{display:flex;gap:12px;flex-wrap:wrap;font-size:13px}.late{color:var(--warn);font-weight:600}
+.big{text-align:center;background:var(--n);color:#fff;border-radius:12px;padding:10px 12px;margin:8px 0}.big .l{font-size:13px;opacity:.9}.big .n{font-size:46px;font-weight:800;line-height:1.1}.big .n small{font-size:18px;font-weight:600;margin-left:4px}.big .dt{font-size:12px;opacity:.85}
+@media(prefers-color-scheme:dark){.big{color:#14181f}}
+.cds{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 2px}
+.cd{border:1px solid var(--b);border-radius:8px;padding:4px 10px;font-size:12px;background:var(--bg)}.cd b{font-size:15px;color:var(--n)}.cd .x{border:0;background:none;color:var(--t);opacity:.5;font-size:14px;padding:0 0 0 6px}
+.cd.add{background:none;color:var(--n);cursor:pointer}
+.cdform{display:none;gap:6px;flex-wrap:wrap;margin:6px 0}.cdform.on{display:flex}.cdform input{padding:6px;border:1px solid var(--b);border-radius:6px;background:var(--bg);color:var(--t);font:inherit;font-size:13px}.cdform input[type=text]{flex:1;min-width:140px}.cdform button{padding:6px 12px;border:0;border-radius:6px;background:var(--n);color:#fff}
+@media(prefers-color-scheme:dark){.cdform button{color:#14181f}}
 .tabs{display:flex;gap:6px;margin-top:8px}.tabs button{flex:1;padding:7px;border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:8px;font-size:13px}.tabs button.on{background:var(--n);color:#fff;border-color:var(--n)}
 @media(prefers-color-scheme:dark){.tabs button.on{color:#14181f}}
 main{max-width:720px;margin:0 auto;padding:8px 12px 80px}
 .ph{margin:18px 4px 6px;font-size:13px;font-weight:700;color:var(--n)}
 .row{display:flex;gap:10px;align-items:flex-start;background:var(--c);border:1px solid var(--b);border-radius:10px;padding:10px 12px;margin:6px 0}
 .row.today{border:2px solid var(--n)}.row.rest{opacity:.75}.row.done{opacity:.55}.row.done .t{text-decoration:line-through}
-.row input{width:22px;height:22px;margin-top:2px;flex:none}
+.row input[type=checkbox]{width:22px;height:22px;margin-top:2px;flex:none}
 .d{font-weight:700;font-size:14px}.tag{font-size:11px;background:var(--n);color:#fff;border-radius:4px;padding:1px 6px;margin-left:6px}
 @media(prefers-color-scheme:dark){.tag{color:#14181f}}
 .t{font-size:14px}.m{font-size:12px;opacity:.7}.lt{border-left:4px solid var(--warn)}
-.memo{width:100%;margin-top:6px;min-height:70px;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--bg);color:var(--t);font:inherit;font-size:14px}.mb{margin-top:6px;border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:6px;padding:3px 10px;font-size:12px}.mb.has{background:var(--warn);color:#fff;border-color:var(--warn)}.mi{background:var(--c);border:1px solid var(--b);border-radius:10px;padding:10px 12px;margin:6px 0}.mi b{color:var(--n)}.mi div{white-space:pre-wrap;font-size:14px;margin-top:4px}.empty{text-align:center;opacity:.6;padding:30px}
+.memo{width:100%;margin-top:6px;min-height:70px;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--bg);color:var(--t);font:inherit;font-size:14px}
+.mb{margin-top:6px;border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:6px;padding:3px 10px;font-size:12px}.mb.has{background:var(--warn);color:#fff;border-color:var(--warn)}
+.mi{background:var(--c);border:1px solid var(--b);border-radius:10px;padding:10px 12px;margin:6px 0}.mi b{color:var(--n)}.mi div{white-space:pre-wrap;font-size:14px;margin-top:4px}
+.empty{text-align:center;opacity:.6;padding:30px}
 footer{font-size:11px;opacity:.6;text-align:center;padding:0 16px 30px}
 </style></head><body>
-<header><h1>理科 日割り学習アプリ</h1><div class="sub">2027/2/24 学力検査まで・マイペース順</div>
+<header><h1>理科 日割り学習アプリ</h1><div class="sub"><span>愛知県公立高校入試・マイペース順</span><span id="sync"></span></div>
+<div class="big" id="big"></div>
+<div class="cds" id="cds"></div>
+<div class="cdform" id="cdform"><input type="text" id="cdl" placeholder="例:私立 ○○高校"><input type="date" id="cdd"><button id="cda">追加</button></div>
 <div class="bar"><i id="bar"></i></div>
-<div class="stats"><span id="s1"></span><span id="s2"></span><span id="s3" class="late"></span></div>
+<div class="stats"><span id="s1"></span><span id="s3" class="late"></span></div>
 <div class="tabs"><button data-v="today">今日</button><button data-v="week">今週</button><button data-v="all">すべて</button><button data-v="memo">メモ</button></div></header>
 <main id="list"></main>
-<footer>チェックとメモはこの端末のブラウザに保存されます(端末ごと・消去すると消えます)。</footer>
+<footer id="foot"></footer>
 <script>
 const ITEMS=[{"d": "2026-11-23", "w": "月", "p": "p.2〜5", "t": "確認編 1回「観察・実験の基本操作、分類の基礎」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-24", "w": "火", "p": "p.2〜5", "t": "確認編 1回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-25", "w": "水", "p": "p.6〜9", "t": "確認編 2回「植物のなかま」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-26", "w": "木", "p": "p.6〜9", "t": "確認編 2回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-27", "w": "金", "p": "p.10〜13", "t": "確認編 3回「動物のなかま」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-28", "w": "土", "p": "p.10〜13", "t": "確認編 3回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-29", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-11-30", "w": "月", "p": "p.14〜17", "t": "確認編 4回「物質の区別、気体の性質」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-01", "w": "火", "p": "p.14〜17", "t": "確認編 4回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-02", "w": "水", "p": "p.18〜21", "t": "確認編 5回「水溶液の性質」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-03", "w": "木", "p": "p.18〜21", "t": "確認編 5回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-04", "w": "金", "p": "p.22〜25", "t": "確認編 6回「物質の状態変化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-05", "w": "土", "p": "p.22〜25", "t": "確認編 6回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-06", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-07", "w": "月", "p": "p.26〜29", "t": "確認編 7回「光と音」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-08", "w": "火", "p": "p.26〜29", "t": "確認編 7回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-09", "w": "水", "p": "p.30〜33", "t": "確認編 8回「力のはたらき」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-10", "w": "木", "p": "p.30〜33", "t": "確認編 8回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-11", "w": "金", "p": "p.34〜37", "t": "確認編 9回「火山と地震」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-12", "w": "土", "p": "p.34〜37", "t": "確認編 9回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-13", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-14", "w": "月", "p": "p.38〜41", "t": "確認編 10回「地層、大地の変化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-15", "w": "火", "p": "p.38〜41", "t": "確認編 10回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-16", "w": "水", "p": "p.42〜45", "t": "確認編 11回「物質の成り立ち」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-17", "w": "木", "p": "p.42〜45", "t": "確認編 11回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-18", "w": "金", "p": "p.46〜49", "t": "確認編 12回「いろいろな化学変化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-19", "w": "土", "p": "p.46〜49", "t": "確認編 12回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-20", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-21", "w": "月", "p": "p.50〜53", "t": "確認編 13回「化学変化と物質の質量、化学変化と熱」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-22", "w": "火", "p": "p.50〜53", "t": "確認編 13回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-23", "w": "水", "p": "p.54〜57", "t": "確認編 14回「生物をつくる細胞、植物の体のつくりとはたらき」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-24", "w": "木", "p": "p.54〜57", "t": "確認編 14回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-25", "w": "金", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-26", "w": "土", "p": "p.58〜61", "t": "確認編 15回「消化と吸収、呼吸」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-27", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-28", "w": "月", "p": "p.62〜65", "t": "確認編 16回「血液とその循環、行動のしくみ」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-29", "w": "火", "p": "p.66〜69", "t": "確認編 17回「気象観測と空気中の水蒸気」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-30", "w": "水", "p": "p.70〜73", "t": "確認編 18回「天気の変化、日本の気象」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-31", "w": "木", "p": "—", "t": "年末年始のお休み", "m": "—", "ph": "確認編"}, {"d": "2027-01-01", "w": "金", "p": "—", "t": "年末年始のお休み", "m": "—", "ph": "確認編"}, {"d": "2027-01-02", "w": "土", "p": "—", "t": "年末年始のお休み", "m": "—", "ph": "確認編"}, {"d": "2027-01-03", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-04", "w": "月", "p": "p.74〜77", "t": "確認編 19回「回路と電流」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2027-01-05", "w": "火", "p": "p.78〜81", "t": "確認編 20回「電流のはたらき」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2027-01-06", "w": "水", "p": "p.82〜85", "t": "確認編 21回「水溶液とイオン、電池」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-07", "w": "木", "p": "p.82〜85", "t": "確認編 21回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-08", "w": "金", "p": "p.86〜89", "t": "確認編 22回「酸・アルカリとイオン」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-09", "w": "土", "p": "p.86〜89", "t": "確認編 22回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-10", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-11", "w": "月", "p": "p.90〜93", "t": "確認編 23回「生物の成長とふえ方、進化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-12", "w": "火", "p": "p.90〜93", "t": "確認編 23回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-13", "w": "水", "p": "p.94〜97", "t": "確認編 24回「力と運動」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-14", "w": "木", "p": "p.94〜97", "t": "確認編 24回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-15", "w": "金", "p": "p.98〜101", "t": "確認編 25回「仕事とエネルギー」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-16", "w": "土", "p": "p.98〜101", "t": "確認編 25回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-17", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-18", "w": "月", "p": "p.102〜105", "t": "確認編 26回「天体の動き」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-19", "w": "火", "p": "p.102〜105", "t": "確認編 26回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-20", "w": "水", "p": "p.106〜109", "t": "確認編 27回「太陽系と恒星」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-21", "w": "木", "p": "p.106〜109", "t": "確認編 27回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-22", "w": "金", "p": "p.110〜113", "t": "確認編 28回「自然環境・科学技術と人間」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-23", "w": "土", "p": "p.110〜113", "t": "確認編 28回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-24", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-25", "w": "月", "p": "—", "t": "塾のプリント:光の進み方と像の作図(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-26", "w": "火", "p": "—", "t": "塾のプリント:地層の広がり(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-27", "w": "水", "p": "—", "t": "塾のプリント:化学変化と物質の質量の計算(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-28", "w": "木", "p": "—", "t": "塾のプリント:天体の見え方(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-29", "w": "金", "p": "—", "t": "塾のプリント:分野別まとめ「生物の分類・物質」", "m": "60分", "ph": "対策編"}, {"d": "2027-01-30", "w": "土", "p": "—", "t": "塾のプリント:分野別まとめ「光・音・力、火山・地震・地層」", "m": "60分", "ph": "対策編"}, {"d": "2027-01-31", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-01", "w": "月", "p": "—", "t": "塾のプリント:分野別まとめ「化学変化、生物の体のつくり」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-02", "w": "火", "p": "—", "t": "塾のプリント:分野別まとめ「天気、電気」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-03", "w": "水", "p": "—", "t": "塾のプリント:分野別まとめ「イオン、遺伝」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-04", "w": "木", "p": "—", "t": "塾のプリント:分野別まとめ「力と運動、天体」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-05", "w": "金", "p": "過去問・塾のプリント", "t": "入試問題(1・2年内容中心) 通し", "m": "60分", "ph": "対策編"}, {"d": "2027-02-06", "w": "土", "p": "過去問・塾のプリント", "t": "入試問題(1・2年内容中心) 解き直し(×印)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-07", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-08", "w": "月", "p": "過去問・塾のプリント", "t": "入試問題(3年・全範囲) 通し", "m": "60分", "ph": "対策編"}, {"d": "2027-02-09", "w": "火", "p": "過去問・塾のプリント", "t": "入試問題(3年・全範囲) 解き直し(×印)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-10", "w": "水", "p": "過去問", "t": "令和8年度 理科 通し(50分)", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-11", "w": "木", "p": "過去問", "t": "令和8年度 解き直し・間違いノート", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-12", "w": "金", "p": "過去問", "t": "令和7年度 理科 通し(50分)", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-13", "w": "土", "p": "過去問", "t": "令和7年度 解き直し・間違いノート", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-14", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-15", "w": "月", "p": "塾のプリント", "t": "思考力・表現力が問われる問題①(取れる問題だけ)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-16", "w": "火", "p": "塾のプリント", "t": "思考力・表現力が問われる問題②(取れる問題だけ)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-17", "w": "水", "p": "過去問・塾の模試", "t": "入試模擬 通し(50分)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-18", "w": "木", "p": "過去問・塾の模試", "t": "入試模擬 解き直し(×印)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-19", "w": "金", "p": "過去問", "t": "令和6年度 理科 通し(50分)", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-20", "w": "土", "p": "過去問", "t": "令和6年度 解き直し・間違いノート", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-21", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-22", "w": "月", "p": "塾のプリント", "t": "用語の総確認(前半)+間違いノート確認", "m": "30分", "ph": "直前チェック"}, {"d": "2027-02-23", "w": "火", "p": "塾のプリント", "t": "用語の総確認(後半)/持ち物・会場の確認/早く寝る", "m": "30分", "ph": "直前チェック"}];
-const EXAM="2027-02-24",KEY="rika-plan-v1";
-let done={};try{done=JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){}
-let view="today";try{view=localStorage.getItem(KEY+"-view")||"today"}catch(e){}
-let memo={};try{memo=JSON.parse(localStorage.getItem(KEY+'-memo')||'{}')}catch(e){}
-const saveMemo=()=>{try{localStorage.setItem(KEY+'-memo',JSON.stringify(memo))}catch(e){}};
-const mkey=x=>x.p&&x.p.startsWith('p.')?x.p:x.d;
-const mlabel=x=>x.p&&x.p.startsWith('p.')?x.p+'('+x.t.replace(/^確認編 /,'').split(' ')[0]+')':(x.d.slice(5).replace('-','/')+' '+x.t);
-const open={};
-const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(done))}catch(e){}};
+const SB="https://sqtgtzouaodytpkapmqn.supabase.co",SK="sb_publishable_nJIR_zrTyJArCVLRjlrQfQ__wvnmUag";
+const KEY="rika-plan-v1",EXAM="2027-02-24";
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const J=(k,d)=>{try{return JSON.parse(ls.get(k)||"")||d}catch(e){return d}};
+let code="";try{code=new URLSearchParams(location.search).get("k")||""}catch(e){}
+if(code.length>=16)ls.set(KEY+"-code",code);else code=ls.get(KEY+"-code")||"";
+if(code.length<16)code="";
+const DEF=[{id:"koritsu",label:"愛知県公立高校入試",date:EXAM,fixed:true}];
+let done=J(KEY,{}),memo=J(KEY+"-memo",{}),cds=J(KEY+"-cd",DEF),ts=+(ls.get(KEY+"-ts")||0);
+if(!cds.some(c=>c.fixed))cds=DEF.concat(cds);
+let view=ls.get(KEY+"-view")||"today";
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const today=iso(new Date());
-const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const isStudy=x=>x.m!=="—";
+const mkey=x=>x.p&&x.p.startsWith("p.")?x.p:x.d;
+const mlabel=x=>x.p&&x.p.startsWith("p.")?x.p+"("+x.t.replace(/^確認編 /,"").split(" ")[0]+")":(x.d.slice(5).replace("-","/")+" "+x.t);
+const open={};
 const PH={"確認編":"マイペース 確認編(1〜28回)","補強編":"差がつく単元(塾のプリント)","対策編":"入試対策(過去問・塾のプリント)","愛知県過去問":"愛知県入試 過去問","直前チェック":"直前チェック","予備日":"予備日"};
+/* ---- 保存・同期 ---- */
+function setSync(t){sync.textContent=t}
+function saveLocal(){ls.set(KEY,JSON.stringify(done));ls.set(KEY+"-memo",JSON.stringify(memo));ls.set(KEY+"-cd",JSON.stringify(cds));ls.set(KEY+"-ts",String(ts))}
+async function rpc(fn,body){const r=await fetch(SB+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SK,"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
+let timer=null,pushing=false,dirty=false;
+function touch(){ts=Date.now();saveLocal();if(!code)return;dirty=true;setSync("保存中…");clearTimeout(timer);timer=setTimeout(push,800)}
+async function push(){if(!code||pushing)return;pushing=true;dirty=false;try{const t=await rpc("rika_save",{p_code:code,p_checks:done,p_memo:memo,p_countdowns:cds});ts=Date.parse(t)||ts;saveLocal();setSync(dirty?"保存中…":"同期済み")}catch(e){dirty=true;setSync("同期できません(あとで再試行)");clearTimeout(timer);timer=setTimeout(push,15000)}pushing=false;if(dirty&&!timer)timer=setTimeout(push,800)}
+async function pull(){if(!code)return;if(dirty||pushing)return;try{const a=await rpc("rika_get",{p_code:code});if(a.length){const r=a[0],rts=Date.parse(r.updated_at);if(rts>ts){if(document.activeElement&&document.activeElement.tagName==="TEXTAREA")return;done=r.checks||{};memo=r.memo||{};cds=(r.countdowns&&r.countdowns.length)?r.countdowns:DEF;if(!cds.some(c=>c.fixed))cds=DEF.concat(cds);ts=rts;saveLocal();render();}else if(ts>rts){await push();return}}else{await push();return}setSync("同期済み")}catch(e){setSync("同期できません(オフライン)")}}
+/* ---- カウントダウン ---- */
+function days(d){return Math.round((new Date(d+"T00:00:00")-new Date(today+"T00:00:00"))/864e5)}
+function renderCds(){const F=cds.find(c=>c.fixed)||DEF[0];const fn=days(F.date);
+ big.innerHTML='<div class="l">愛知県公立高校入試'+(fn>0?" まで":"")+'</div><div class="n">'+(fn>0?"あと "+fn+"<small>日</small>":(fn===0?"今日が試験日":"終了"))+'</div><div class="dt">'+F.date.replace(/-0?/g,(m,i)=>i===4?"年":"月").replace(/$/,"日")+"(水)</div>";
+ const L=cds.filter(c=>!c.fixed).sort((a,b)=>a.date<b.date?-1:1);cds_el.innerHTML=L.map(c=>{const n=days(c.date);const t=n>0?"あと<b>"+n+"</b>日":(n===0?"<b>今日</b>":"終了");return '<div class="cd">'+esc(c.label)+" "+t+' <span style="opacity:.6">('+c.date.slice(5).replace("-","/").replace(/^0/,"")+")</span>"+'<button class="x" data-id="'+esc(c.id)+'" aria-label="削除">×</button></div>'}).join("")+'<div class="cd add" id="cdtoggle">＋ 私立などの日程を追加</div>';
+ document.getElementById("cdtoggle").onclick=()=>cdform.classList.toggle("on");
+ cds_el.querySelectorAll(".x").forEach(b=>b.onclick=()=>{cds=cds.filter(c=>c.id!==b.dataset.id);touch();renderCds()})}
+const cds_el=document.getElementById("cds");
+cda.onclick=()=>{const l=cdl.value.trim(),d=cdd.value;if(!l||!d)return;cds.push({id:"c"+Date.now(),label:l,date:d});cdl.value="";cdd.value="";cdform.classList.remove("on");touch();renderCds()};
+/* ---- 画面 ---- */
 function weekRange(){const n=new Date(today+"T00:00:00");const dow=(n.getDay()+6)%7;const s=new Date(n);s.setDate(n.getDate()-dow);const e=new Date(s);e.setDate(s.getDate()+6);return[iso(s),iso(e)]}
 function render(){
  const st=ITEMS.filter(isStudy),n=st.length,dn=st.filter(x=>done[x.d]).length;
  const late=st.filter(x=>x.d<today&&!done[x.d]).length;
- const dd=Math.round((new Date(EXAM+"T00:00:00")-new Date(today+"T00:00:00"))/864e5);
  bar.style.width=(n?dn/n*100:0)+"%";
  s1.textContent="完了 "+dn+" / "+n;
- s2.textContent=dd>0?"試験まであと"+dd+"日":(dd===0?"今日が試験日":"試験終了");
  s3.textContent=late?("未完了(過去分) "+late+"件"):"";
- let L=ITEMS;
- if(view==="today"){let nx=ITEMS.filter(x=>x.d>=today).slice(0,1).map(x=>x.d)[0];L=ITEMS.filter(x=>x.d===today);if(!L.length&&nx)L=ITEMS.filter(x=>x.d===nx);
-  const lates=ITEMS.filter(x=>isStudy(x)&&x.d<today&&!done[x.d]);L=lates.concat(L)}
- else if(view==="week"){const[a,b]=weekRange();L=ITEMS.filter(x=>x.d>=a&&x.d<=b)}
+ renderCds();
+ foot.textContent=code?"チェック・メモ・日程は自動保存され、同じリンクを開いた端末で共有されます。リンクを他の人に教えないでください。":"この端末のブラウザにだけ保存されます(同期なし)。";
+ if(!code)setSync("この端末のみ");
  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
- if(view==='memo'){const seen={};let hh='';for(const x of ITEMS){const k=mkey(x);if(memo[k]&&!seen[k]){seen[k]=1;hh+='<div class="mi"><b>'+esc(mlabel(x))+'</b><div>'+esc(memo[k])+'</div></div>'}}list.innerHTML=hh||'<div class="empty">メモはまだありません。各項目の「メモ」ボタンから、わからないところを書き残せます。</div>';return}
+ if(view==="memo"){const seen={};let hh="";for(const x of ITEMS){const k=mkey(x);if(memo[k]&&!seen[k]){seen[k]=1;hh+='<div class="mi"><b>'+esc(mlabel(x))+"</b><div>"+esc(memo[k])+"</div></div>"}}list.innerHTML=hh||'<div class="empty">メモはまだありません。各項目の「メモ」ボタンから、わからないところを書き残せます。</div>';return}
+ let L=ITEMS;
+ if(view==="today"){const nx=ITEMS.filter(x=>x.d>=today).slice(0,1).map(x=>x.d)[0];L=ITEMS.filter(x=>x.d===today);if(!L.length&&nx)L=ITEMS.filter(x=>x.d===nx);const lates=ITEMS.filter(x=>isStudy(x)&&x.d<today&&!done[x.d]);L=lates.concat(L)}
+ else if(view==="week"){const[a,b]=weekRange();L=ITEMS.filter(x=>x.d>=a&&x.d<=b)}
  let h="",cur="";
  for(const x of L){
-  if(x.ph!=="予備日"&&x.ph!==cur){cur=x.ph;h+='<div class="ph">■ '+PH[x.ph]+'</div>'}
+  if(x.ph!=="予備日"&&x.ph!==cur){cur=x.ph;h+='<div class="ph">■ '+PH[x.ph]+"</div>"}
   const dt=x.d.slice(5).replace("-","/").replace(/^0/,"").replace("/0","/");
   const cls=["row",x.d===today?"today":"",x.m==="—"?"rest":"",done[x.d]?"done":"",(x.d<today&&isStudy(x)&&!done[x.d])?"lt":""].join(" ");
-  const k=mkey(x),hasM=!!memo[k];h+='<div class="'+cls+'"><input type="checkbox" data-d="'+x.d+'" '+(done[x.d]?"checked":"")+(isStudy(x)?"":" disabled")+'><div><div class="d">'+dt+"("+x.w+")"+(x.d===today?'<span class="tag">今日</span>':"")+'</div><div class="t">'+x.t+'</div><div class="m">'+(x.p&&x.p!=="—"?x.p+"・":"")+x.m+"</div>"+(isStudy(x)?'<button class="mb'+(hasM?' has':'')+'" data-k="'+esc(k)+'">📝 '+(hasM?'メモあり':'メモ')+'</button>'+(open[k]||hasM&&open[k]?'<textarea class="memo" data-k="'+esc(k)+'" placeholder="わからないところ(ページ・問題番号・なぜ間違えたか)">'+esc(memo[k]||"")+'</textarea>':""):"")+"</div></div>";
+  const k=mkey(x),hasM=!!memo[k];
+  h+='<div class="'+cls+'"><input type="checkbox" data-d="'+x.d+'" '+(done[x.d]?"checked":"")+(isStudy(x)?"":" disabled")+'><div style="flex:1;min-width:0"><div class="d">'+dt+"("+x.w+")"+(x.d===today?'<span class="tag">今日</span>':"")+'</div><div class="t">'+x.t+'</div><div class="m">'+(x.p&&x.p!=="—"?x.p+"・":"")+x.m+"</div>"+(isStudy(x)?'<button class="mb'+(hasM?" has":"")+'" data-k="'+esc(k)+'">📝 '+(hasM?"メモあり":"メモ")+"</button>"+(open[k]?'<textarea class="memo" data-k="'+esc(k)+'" placeholder="わからないところ(ページ・問題番号・なぜ間違えたか)">'+esc(memo[k]||"")+"</textarea>":""):"")+"</div></div>";
  }
  list.innerHTML=h||'<div class="empty">この期間の予定はありません</div>';
  list.querySelectorAll(".mb").forEach(b=>b.onclick=()=>{open[b.dataset.k]=!open[b.dataset.k];render();const t=list.querySelector('textarea[data-k="'+b.dataset.k+'"]');if(t)t.focus()});
- list.querySelectorAll("textarea.memo").forEach(t=>t.oninput=()=>{const k=t.dataset.k;if(t.value.trim())memo[k]=t.value;else delete memo[k];saveMemo();const bt=list.querySelectorAll('.mb[data-k="'+k+'"]');bt.forEach(b=>{b.classList.toggle("has",!!memo[k]);b.textContent="📝 "+(memo[k]?"メモあり":"メモ")})});
- list.querySelectorAll("input").forEach(i=>i.onchange=()=>{if(i.checked)done[i.dataset.d]=1;else delete done[i.dataset.d];save();render()});
+ list.querySelectorAll("textarea.memo").forEach(t=>t.oninput=()=>{const k=t.dataset.k;if(t.value.trim())memo[k]=t.value;else delete memo[k];touch();list.querySelectorAll('.mb[data-k="'+k+'"]').forEach(b=>{b.classList.toggle("has",!!memo[k]);b.textContent="📝 "+(memo[k]?"メモあり":"メモ")})});
+ list.querySelectorAll("input[type=checkbox]").forEach(i=>i.onchange=()=>{if(i.checked)done[i.dataset.d]=1;else delete done[i.dataset.d];touch();render()});
 }
-document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{view=b.dataset.v;try{localStorage.setItem(KEY+"-view",view)}catch(e){}render();scrollTo(0,0)});
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{view=b.dataset.v;ls.set(KEY+"-view",view);render();scrollTo(0,0)});
 render();
-if(view==="all"){const t=document.querySelector(".row.today");if(t)t.scrollIntoView({block:"center"})}
+if(code){setSync("同期中…");pull();document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")pull()})}
 </script></body></html>
