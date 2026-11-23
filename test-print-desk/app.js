@@ -253,6 +253,7 @@ edit.onsubmit=async event=>{
 function openPrint(record) {
   printing=record;
   print.reset();
+  $('reconnectForPrint').hidden = !record.shared || hasDriveConnection();
   print.querySelector('.error').textContent='';
   $('printTitle').textContent=record.shared ? displayTestName(record) : record.title+' ／ '+record.school+' '+record.grade+' '+record.year+'年度';
   $('parts').replaceChildren();
@@ -314,6 +315,12 @@ print.onsubmit=async event=>{
   const form=new FormData(print), chosen=form.getAll('part');
   if(!chosen.length) {errorBox.textContent='PDFを1つ以上選んでください。';return;}
   const action=event.submitter?.value;
+  if (chosen.some(key=>printing.files[key]?.driveId) && !hasDriveConnection()) {
+    $('reconnectForPrint').hidden = false;
+    errorBox.textContent='共有PDFを取得するにはGoogleに接続してください。';
+    return;
+  }
+  $('reconnectForPrint').hidden = true;
   const submits=[...print.querySelectorAll('[type=submit]')];
   submits.forEach(b=>b.disabled=true);
   const originalLabel = event.submitter?.textContent;
@@ -337,6 +344,7 @@ print.onsubmit=async event=>{
       download(new Blob([bytes],{type:'application/pdf'}),outputTitle+(layout==='normal'?'':'_冊子')+'.pdf');
     }
   } catch(error) {
+    if (error.code==='drive-reconnect') $('reconnectForPrint').hidden=false;
     errorBox.textContent=error.message || 'PDFの作成に失敗しました。';
   } finally {
     submits.forEach(b=>b.disabled=false);
@@ -398,6 +406,11 @@ $('restore').onchange=async event=>{
 };
 options(edit.elements.grade,grades);
 $('add').onclick=()=>openEditor();
+$('reconnectForPrint').onclick=()=>$('connectDrive').click();
+document.addEventListener('teststock-drive-connected',()=>{
+  $('reconnectForPrint').hidden=true;
+  if ($('printer').open) print.querySelector('.error').textContent='Googleに接続しました。印刷プレビューを開けます。';
+});
 $('clear').onclick=clear;
 $('search').oninput=draw;
 for (const [id] of filters) $(id).onchange=draw;

@@ -30,6 +30,12 @@ if (requestedFolder && !sharedRecords.length) {
 }
 const googleClientId = '739406071935-l7b4nq88frf82fou9drf5jke44n456i6.apps.googleusercontent.com';
 let accessToken, driveRequest = 0;
+function hasDriveConnection() { return Boolean(accessToken); }
+function driveReconnectError() {
+  const error = new Error('Googleとの接続が切れました。印刷設定のボタンから再接続してください。');
+  error.code = 'drive-reconnect';
+  return error;
+}
 
 function loadGoogleIdentity() {
   return new Promise((resolve, reject) => {
@@ -42,11 +48,14 @@ function loadGoogleIdentity() {
   });
 }
 async function driveApi(path, params, token = accessToken) {
-  if (!token) throw new Error('一覧は表示されています。印刷するには「共有ドライブを開く」からGoogleに再接続してください。');
+  if (!token) throw driveReconnectError();
   const url = new URL('https://www.googleapis.com/drive/v3/' + path);
   url.search = new URLSearchParams(params).toString();
   const response = await fetch(url, {headers:{Authorization:'Bearer ' + token}});
-  if (response.status === 401) throw new Error('Googleの接続が切れました。「共有ドライブを開く」から再接続してください。');
+  if (response.status === 401) {
+    if (accessToken===token) accessToken=null;
+    throw driveReconnectError();
+  }
   if (!response.ok) throw new Error('Googleドライブを読み込めませんでした。閲覧・ダウンロード権限とDrive APIの設定を確認してください。');
   return response;
 }
@@ -169,6 +178,7 @@ driveForm.onsubmit = event => {
         const files = await listDriveTree(id,response.access_token,idOfRequest);
         if (driveRequest!==idOfRequest) return;
         accessToken = response.access_token;
+        document.dispatchEvent(new Event('teststock-drive-connected'));
         sharedRecords = classifyDrive(files);
         rememberedFolder = folder;
         const catalogue = JSON.stringify({id,records:sharedRecords});
@@ -185,7 +195,11 @@ driveForm.onsubmit = event => {
         driveStatus('共有教材 ' + sharedRecords.length + '件を表示しました。' +
           (saved ? ' このブラウザに一覧を保存しました。' :
             remember ? ' 一覧をブラウザに保存できませんでした。' : ' 一覧はこのタブに表示しています。'));
-      } catch(error) { if (driveRequest===idOfRequest) fail(error); }
+      } catch(error) {
+        if (driveRequest!==idOfRequest) return;
+        fail(error);
+        if ($('printer').open) print.querySelector('.error').textContent=error.message;
+      }
     }
   });
   auth.requestAccessToken({prompt:'select_account'});

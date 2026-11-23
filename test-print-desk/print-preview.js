@@ -28,7 +28,7 @@ async function showPrintPreview(bytes, title, layout) {
     const renderer = await import(pdfJsRoot + 'legacy/build/pdf.min.mjs');
     renderer.GlobalWorkerOptions.workerSrc = pdfJsRoot + 'legacy/build/pdf.worker.min.mjs';
     loading = renderer.getDocument({
-      data: bytes,
+      data: bytes.slice(),
       cMapUrl: pdfJsRoot + 'cmaps/',
       cMapPacked: true,
       standardFontDataUrl: pdfJsRoot + 'standard_fonts/',
@@ -74,7 +74,19 @@ async function showPrintPreview(bytes, title, layout) {
     printButton.disabled = false;
   } catch {
     if (run === previewRun) {
-      info.textContent = 'プレビューを作成できませんでした。印刷設定に戻るとPDFを保存できます。';
+      clearPrintPreview();
+      const url = URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+      pageUrls.push(url);
+      const frame = make('iframe',null,'pdf-preview-fallback');
+      frame.title = '印刷用PDF';
+      frame.src = url;
+      $('previewPages').append(frame);
+      info.textContent = 'PDFビューアで表示しています。ビューア内の印刷アイコンを使ってください。';
+      const link = make('a','PDFを別タブで開く');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      info.append(' ',link);
     }
   } finally {
     await loading?.destroy().catch(()=>{});
