@@ -38,14 +38,19 @@ function button(title, action, css) {
 function draw() {
   const allRecords = [...records, ...sharedRecords];
   const word = $('search').value.normalize('NFKC').toLocaleLowerCase().trim();
-  const schools = [...new Set(allRecords.map(r=>r.school))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const schools = [...new Set(allRecords.map(r=>r.school))].sort((a,b)=>
+    Number(a==='学校未分類')-Number(b==='学校未分類') || a.localeCompare(b,'ja'));
   $('schools').replaceChildren(...schools.map(s=>new Option(s,s)));
   options($('schoolFilter'),schools,'すべての学校');
   options($('gradeFilter'),[...new Set(allRecords.map(r=>r.grade))].sort((a,b)=>grades.indexOf(a)-grades.indexOf(b)),'すべての学年');
   options($('yearFilter'),[...new Set(allRecords.map(r=>r.year))].sort((a,b)=>b-a),'すべての年度');
   const visible = allRecords.filter(r => filters.every(([id,key])=>!$(id).value || $(id).value===r[key])
     && [r.title,r.school,r.subject,r.grade,r.year,...Object.values(r.files).map(f=>f.name)].join(' ').normalize('NFKC').toLocaleLowerCase().includes(word));
-  visible.sort((a,b)=>a.school.localeCompare(b.school,'ja') || grades.indexOf(a.grade)-grades.indexOf(b.grade) || b.year-a.year || b.updated-a.updated);
+  const gradeOrder = grade => grades.includes(grade) ? grades.indexOf(grade) : grades.length;
+  visible.sort((a,b)=>schools.indexOf(a.school)-schools.indexOf(b.school)
+    || gradeOrder(a.grade)-gradeOrder(b.grade) || b.year-a.year
+    || (Number(a.round)||Infinity)-(Number(b.round)||Infinity)
+    || b.updated-a.updated || a.title.localeCompare(b.title,'ja'));
   $('count').textContent = visible.length+'件';
   $('list').replaceChildren();
   if (!visible.length) {
@@ -74,6 +79,7 @@ function draw() {
     }
     if (!r.shared) actions.append(button('編集',()=>openEditor(r)));
     if (r.shared) tags.append(make('span','共有ドライブ','tag'));
+    if (r.needsReview) tags.append(make('span','テスト回 要確認','tag'));
     if (r.sourceUrl) {
       const source = make('a','原本を開く','button');
       source.href = r.sourceUrl; source.target = '_blank'; source.rel = 'noopener noreferrer';

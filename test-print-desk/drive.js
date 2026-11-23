@@ -59,6 +59,7 @@ function classifyDrive(files) {
   const subjects = [['技術・家庭',/技術\s*[・･・\/\-&と]?\s*家庭/],['保健体育',/保健体育|保体|体育|保健/],['国語',/国語/],['数学',/数学/],['英語',/英語/],['理科',/理科/],['社会',/社会/],['音楽',/音楽/],['美術',/美術/],['家庭',/家庭/],['技術',/技術/]];
   const grouped = new Map();
   for (const {file,path} of files) {
+    if (file.mimeType === 'application/x-ms-shortcut' || /\.lnk$/i.test(file.name)) continue;
     const native = file.mimeType === 'application/vnd.google-apps.document';
     const printable = native || file.mimeType === 'application/pdf';
     const name = file.name.normalize('NFKC').replace(/\.pdf$/i,'');
@@ -70,16 +71,24 @@ function classifyDrive(files) {
     const schoolMatches = schools.filter(([,pattern])=>pattern.test(info));
     const school = schoolMatches.length === 1 ? schoolMatches[0][0] : '学校未分類';
     const subject = subjects.find(([,pattern])=>pattern.test(name))?.[0] || '';
-    const round = value => value.match(/(?:第\s*)?([1-5一二三四五])\s*回/)?.[1];
-    const rounds = new Set([round(name),...path.slice(2).map(x=>round(x.normalize('NFKC')))].filter(Boolean).map(x=>'一二三四五'.includes(x)?String('一二三四五'.indexOf(x)+1):x));
-    const number = rounds.size === 1 ? [...rounds][0] : '';
+    const round = value => {
+      const marked = value.match(/[①②③④⑤]/)?.[0];
+      if (marked) return String('①②③④⑤'.indexOf(marked)+1);
+      const explicit = value.normalize('NFKC').match(/(?:第\s*)?([1-5一二三四五])\s*回/)?.[1];
+      return explicit && '一二三四五'.includes(explicit) ? String('一二三四五'.indexOf(explicit)+1) : explicit;
+    };
+    const namedRound = round(file.name);
+    const folderRounds = new Set(path.slice(2).map(round).filter(Boolean));
+    // Conflicting folder and filename labels need a teacher's review.
+    const roundConflict = folderRounds.size > 1 || (namedRound && folderRounds.size && !folderRounds.has(namedRound));
+    const number = roundConflict ? '' : namedRound || [...folderRounds][0];
     const label = /範囲/.test(name)?'テスト範囲':/解答\s*(?:付|付き|あり)|解有/.test(name)?'問題・解答':/解説/.test(name)?'解説':/解答|答え/.test(name)?'解答':'問題';
     const canGroup = printable && year && gradeMark && schoolMatches.length===1 && number && subject && label!=='テスト範囲';
     const key = canGroup ? [year,grade,school,number,subject].join('/') : file.id;
     const fallback = 'https://drive.google.com/open?id='+encodeURIComponent(file.id);
     let record = grouped.get(key);
     if (!record) {
-      record = {id:'drive:'+key,year,grade,school,subject,title:canGroup?'第'+number+'回 '+subject:name,shared:true,files:{},updated:0};
+      record = {id:'drive:'+key,year,grade,school,subject,round:number || '',needsReview:!!roundConflict,title:canGroup?'第'+number+'回 '+subject:name,shared:true,files:{},updated:0};
       grouped.set(key,record);
     }
     if (printable) {
