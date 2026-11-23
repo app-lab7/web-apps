@@ -75,7 +75,7 @@ function draw(){
  h+='<div class="card"><h2>未完了(過去分) '+missed.length+" 件</h2>"+(missed.length?missed.slice(-15).reverse().map(x=>'<div class="li"><span class="d warn">'+md(x.d)+"("+x.w+")</span> "+esc(x.t)+"</div>").join("")+(missed.length>15?'<div class="empty">ほか '+(missed.length-15)+" 件(古いもの)</div>":""):'<div class="empty">遅れはありません</div>')+"</div>";
 
  const qk=Object.keys(done).filter(k=>k.startsWith("q:")).sort().reverse();
- if(qk.length){const f=qk.filter(k=>done[k].f).length;h+='<div class="card"><h2>今日の1問(正誤)</h2><div class="empty" style="margin-bottom:6px">回答 '+qk.length+" 問・初回正解 "+f+" 問("+Math.round(f/qk.length*100)+"%)</div>"+qk.slice(0,10).map(k=>{const r=done[k],d=k.slice(2);const it=ITEMS.find(x=>x.d===d);return '<div class="li"><span class="d">'+md(d)+'</span> '+(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)"))+(it?'<div class="m">'+esc(it.t)+"</div>":"")+"</div>"}).join("")+"</div>"}
+ if(qk.length){const f=qk.filter(k=>done[k].f).length;h+='<div class="card"><h2>今日の確認テスト(正誤)</h2><div class="empty" style="margin-bottom:6px">回答 '+qk.length+" 問・初回正解 "+f+" 問("+Math.round(f/qk.length*100)+"%)</div>"+qk.slice(0,10).map(k=>{const r=done[k],d=k.slice(2);const it=ITEMS.find(x=>x.d===d);return '<div class="li"><span class="d">'+md(d)+'</span> '+(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)"))+(it?'<div class="m">'+esc(it.t)+"</div>":"")+"</div>"}).join("")+"</div>"}
  // calendar
  const first=new Date(ITEMS[0].d+"T00:00:00");const pad=(first.getDay()+6)%7;
  let cal='<div class="cal">'+"月火水木金土日".split("").map(w=>'<div class="h">'+w+"</div>").join("")+'<div class="c off"></div>'.repeat(pad);
