@@ -4,6 +4,7 @@ const driveDialog = $('driveDialog');
 const driveError = driveForm.querySelector('.error');
 const settingKey = 'test-print-drive-settings';
 const catalogueKey = 'test-print-drive-tab-catalogue-v1';
+const savedCatalogueKey = 'test-print-drive-saved-catalogue-v1';
 const folderFromLink = new URLSearchParams(location.hash.slice(1)).get('folder');
 const folderId = url => url.match(/^https:\/\/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([\w-]+)(?:[/?#]|$)/)?.[1];
 const driveStatus = message => { $('status').textContent = message; };
@@ -13,14 +14,17 @@ try {
 } catch {}
 const requestedFolder = /^[\w-]+$/.test(folderFromLink || '')
   ? 'https://drive.google.com/drive/folders/' + folderFromLink : rememberedFolder;
-try {
-  const cached = JSON.parse(sessionStorage.getItem(catalogueKey) || 'null');
-  if (folderId(requestedFolder) && cached?.id === folderId(requestedFolder) && Array.isArray(cached.records)) {
-    sharedRecords = cached.records;
-    draw();
-    driveStatus('共有教材の一覧を復元しました。印刷するときは「共有ドライブを開く」からGoogleに再接続してください。');
-  }
-} catch {}
+for (const [storageName,key] of [['localStorage',savedCatalogueKey],['sessionStorage',catalogueKey]]) {
+  try {
+    const cached = JSON.parse(window[storageName].getItem(key) || 'null');
+    if (folderId(requestedFolder) && cached?.id === folderId(requestedFolder) && Array.isArray(cached.records)) {
+      sharedRecords = cached.records;
+      draw();
+      driveStatus('保存済みの共有教材 ' + sharedRecords.length + '件を表示しています。印刷・更新する場合はGoogleに接続してください。');
+      break;
+    }
+  } catch {}
+}
 if (requestedFolder && !sharedRecords.length) {
   driveStatus('共有教材を表示するには「共有ドライブを開く」からGoogleに接続してください。');
 }
@@ -143,10 +147,16 @@ driveForm.onsubmit = event => {
     driveError.textContent = 'Googleドライブの共有フォルダURLを確認してください。'; return;
   }
   if (!window.google?.accounts?.oauth2) {driveError.textContent = 'Googleログインを読み込めませんでした。';return;}
+  const remember = driveForm.elements.remember.checked;
   const idOfRequest = ++driveRequest;
   const auth = google.accounts.oauth2.initTokenClient({
     client_id:googleClientId,scope:'https://www.googleapis.com/auth/drive.readonly',
-    error_callback:()=>{driveError.textContent='Googleログインを完了できませんでした。';},
+    error_callback:error=>{
+      if (driveRequest!==idOfRequest) return;
+      driveError.textContent=error.type==='popup_failed_to_open'
+        ? 'Googleの画面を開けませんでした。このサイトのポップアップを許可してください。'
+        : 'Googleログインが完了する前に画面が閉じられました。';
+    },
     callback:async response=>{
       if (driveRequest!==idOfRequest) return;
       if (!response.access_token) {driveError.textContent='Googleドライブの読み取りを許可してください。';return;}
@@ -158,10 +168,20 @@ driveForm.onsubmit = event => {
         accessToken = response.access_token;
         sharedRecords = classifyDrive(files);
         rememberedFolder = folder;
-        try { sessionStorage.setItem(catalogueKey,JSON.stringify({id,records:sharedRecords})); } catch {}
-        try { localStorage.setItem(settingKey,JSON.stringify({folder})); } catch {}
+        const catalogue = JSON.stringify({id,records:sharedRecords});
+        try { sessionStorage.setItem(catalogueKey,catalogue); } catch {}
+        let saved = false;
+        try {
+          localStorage.setItem(settingKey,JSON.stringify({folder}));
+          if (remember) {
+            localStorage.setItem(savedCatalogueKey,catalogue);
+            saved = true;
+          } else localStorage.removeItem(savedCatalogueKey);
+        } catch {}
         draw();
-        $('status').textContent='共有ドライブから '+files.length+' ファイルを読み込みました。';
+        driveStatus('共有教材 ' + sharedRecords.length + '件を表示しました。' +
+          (saved ? ' このブラウザに一覧を保存しました。' :
+            remember ? ' 一覧をブラウザに保存できませんでした。' : ' 一覧はこのタブに表示しています。'));
       } catch(error) { if (driveRequest===idOfRequest) fail(error); }
     }
   });
@@ -172,6 +192,7 @@ $('closeDrive').onclick = () => {
   accessToken = null;
   sharedRecords = [];
   try { sessionStorage.removeItem(catalogueKey); } catch {}
+  try { localStorage.removeItem(savedCatalogueKey); } catch {}
   draw();
   driveDialog.close();
   $('status').textContent = '共有ドライブとの接続を解除しました。';

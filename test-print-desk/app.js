@@ -51,13 +51,14 @@ function draw() {
     || gradeOrder(a.grade)-gradeOrder(b.grade) || b.year-a.year
     || (Number(a.round)||Infinity)-(Number(b.round)||Infinity)
     || b.updated-a.updated || a.title.localeCompare(b.title,'ja'));
-  $('count').textContent = visible.length+'件';
+  const waitingForDrive = !allRecords.length && new URLSearchParams(location.hash.slice(1)).has('folder');
+  $('count').textContent = waitingForDrive ? '共有教材は未表示' : visible.length+'件';
   $('list').replaceChildren();
   if (!visible.length) {
     const empty = make('div',null,'empty');
     empty.append(make('div','▤','icon'),make('strong',allRecords.length?'条件に合うテストがありません':'まだテストが登録されていません'),
       make('p',allRecords.length?'検索語や絞り込み条件を変えてください。':'テストを登録すると、学校・学年・年度ごとに表示されます。'));
-    if (!allRecords.length && new URLSearchParams(location.hash.slice(1)).has('folder')) {
+    if (waitingForDrive) {
       empty.replaceChildren(make('div','▤','icon'),make('strong','共有教材を開く'),
         make('p','Googleに接続すると、学校・学年・年度で仕分けした教材が表示されます。'),
         button('共有ドライブを開く',()=>$('connectDrive').click(),'primary'));
