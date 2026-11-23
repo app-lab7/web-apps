@@ -54,7 +54,7 @@ async function rpc(fn,body){const r=await fetch(SB+"/rest/v1/rpc/"+fn,{method:"P
 let QUIZ={},students=[],sums={},err="",sortBy=ls.get("rika-teacher-sort")||"order";
 const studentUrl=c=>new URL("../rika-plan/?k="+c,location.href).href;
 const rand=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);return[...a].map(b=>b.toString(16).padStart(2,"0")).join("")};
-function stats(d){const done=d.checks||{};const st=ITEMS.filter(isStudy),n=st.length,dn=st.filter(x=>done[x.d]).length;const missed=st.filter(x=>x.d<today&&!done[x.d]).length;const ts=d.updated_at?Date.parse(d.updated_at):0;const qk=Object.keys(done).filter(k=>k.startsWith("q:"));const qf=qk.filter(k=>done[k].f).length;const exp=st.filter(x=>x.d<today).length;return{dn,n,missed,ts,qn:qk.length,qf,diff:dn-exp}}
+function stats(d){const done=d.checks||{};const st=ITEMS.filter(isStudy),n=st.length,dn=st.filter(x=>done[x.d]).length;const missed=st.filter(x=>x.d<today&&!done[x.d]).length;const ts=d.updated_at?Date.parse(d.updated_at):0;const qk=Object.keys(done).filter(k=>k.startsWith("q:"));const qf=qk.filter(k=>done[k].f).length;const exp=st.filter(x=>x.d<today).length;const tr=done["q:"+today];const tq=tr?(tr.f?"⭕":(tr.ok?"❌→⭕":"❌")):(QUIZ[today]?"未回答":"");return{dn,n,missed,ts,qn:qk.length,qf,diff:dn-exp,tq}}
 /* ---- 生徒一覧 ---- */
 async function loadList(){
  upd.textContent="更新中…";
@@ -74,7 +74,7 @@ function drawList(){
  if(!L.length)h+='<div class="card empty">まだ生徒がいません。上のフォームから追加してください。</div>';
  for(const s of L){const x=sums[s.id];
   h+='<div class="card" data-id="'+esc(s.id)+'"><div class="sc"><b>'+esc(s.name)+"</b>"+(x&&x.missed>0?'<span class="pill">遅れ '+x.missed+"件</span>":"")+"</div>";
-  h+=x?'<div class="stat">完了 '+x.dn+"/"+x.n+"・最終入力 "+(x.ts?ago(x.ts):"なし")+(x.qn?"・確認テスト初回正解 "+x.qf+"/"+x.qn:"")+(x.ts&&(Date.now()-x.ts)>3*864e5?' <span class="warn">3日以上入力なし</span>':"")+"</div>":'<div class="stat">読み込み中…</div>';
+  h+=x?'<div class="stat">完了 '+x.dn+"/"+x.n+"・最終入力 "+(x.ts?ago(x.ts):"なし")+(x.qn?"・テスト初回正解 "+x.qf+"/"+x.qn:"")+(x.tq?"・今日のテスト "+x.tq:"")+(x.ts&&(Date.now()-x.ts)>3*864e5?' <span class="warn">3日以上入力なし</span>':"")+"</div>":'<div class="stat">読み込み中…</div>';
   h+='<div class="bt"><button data-a="open">詳しく見る</button><button data-a="link">リンク・QR</button><button data-a="ren">名前変更</button><button data-a="del">一覧から外す</button></div><div class="pn"></div></div>'}
  m.innerHTML=h;
  document.getElementById("na").onclick=addStudent;document.getElementById("nn").onkeydown=e=>{if(e.key==="Enter")addStudent()};
@@ -115,11 +115,11 @@ function drawDetail(){
  const seen={};let mh="";for(const x of ITEMS){const k=mkey(x);if(memo[k]&&!seen[k]){seen[k]=1;mh+='<div class="li"><span class="d">'+esc(mlabel(x))+'</span><div class="memo">'+esc(memo[k])+"</div></div>"}}
  h+='<div class="card"><h2>わからないところ(メモ)</h2>'+(mh||'<div class="empty">メモはまだありません</div>')+"</div>";
  const td=ITEMS.filter(x=>x.d===today);
- h+='<div class="card"><h2>今日の予定</h2>'+(td.length?td.map(x=>'<div class="li"><span class="d">'+(isStudy(x)?(done[x.d]?"✅ 完了":"⬜ 未完了"):"—")+"</span> "+esc(x.t)+'<div class="m">'+(x.p&&x.p!=="—"?esc(x.p)+"・":"")+esc(x.m)+"</div></div>").join(""):'<div class="empty">学習期間外です</div>')+"</div>";
+ h+='<div class="card"><h2>今日の予定</h2>'+(td.length?td.map(x=>'<div class="li"><span class="d">'+(isStudy(x)?(done[x.d]?"✅ 完了":"⬜ 未完了"):"—")+"</span> "+esc(x.t)+'<div class="m">'+(x.p&&x.p!=="—"?esc(x.p)+"・":"")+esc(x.m)+"</div></div>").join(""):'<div class="empty">学習期間外です</div>')+(()=>{if(!QUIZ[today])return"";const r=done["q:"+today];return '<div class="li"><span class="d">📝 今日のテスト</span> '+(r?(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)")):"⬜ まだ回答なし")+"</div>"})()+"</div>";
  h+='<div class="card"><h2>未完了(過去分) '+missed.length+" 件</h2>"+(missed.length?missed.slice(-15).reverse().map(x=>'<div class="li"><span class="d warn">'+md(x.d)+"("+x.w+")</span> "+esc(x.t)+"</div>").join("")+(missed.length>15?'<div class="empty">ほか '+(missed.length-15)+" 件(古いもの)</div>":""):'<div class="empty">遅れはありません</div>')+"</div>";
  const qk=Object.keys(done).filter(k=>k.startsWith("q:")).sort().reverse();
  const qdet=(d,r)=>{const q=QUIZ[d];if(!q)return"";return '<div class="qd"><div class="qq">'+esc(q.q)+"</div>"+q.o.map((o,i)=>'<div class="'+(i===q.a?"qa":"")+(r&&i===r.l&&!r.ok?" qw":"")+'">'+"アイウエ"[i]+" "+esc(o)+(i===q.a?" ✅正解":"")+(r&&i===r.l&&i!==q.a?" ← 生徒の選択":"")+"</div>").join("")+'<div class="qe">解説:'+esc(q.e)+"</div></div>"};
- if(qk.length){const f=qk.filter(k=>done[k].f).length;h+='<div class="card"><h2>今日の確認テスト(正誤)</h2><div class="empty" style="margin-bottom:6px">回答 '+qk.length+" 問・初回正解 "+f+" 問("+Math.round(f/qk.length*100)+"%)</div>"+qk.slice(0,10).map(k=>{const r=done[k],d=k.slice(2);const it=ITEMS.find(x=>x.d===d);return '<details class="li"><summary><span class="d">'+md(d)+'</span> '+(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)"))+(r.v?" ・解説を見た":"")+(it?'<div class="m">'+esc(it.t)+"</div>":"")+"</summary>"+qdet(d,r)+"</details>"}).join("")+"</div>"}
+ if(qk.length){const f=qk.filter(k=>done[k].f).length;h+='<div class="card"><h2>今日のテスト(正誤)</h2><div class="empty" style="margin-bottom:6px">回答 '+qk.length+" 問・初回正解 "+f+" 問("+Math.round(f/qk.length*100)+"%)</div>"+qk.slice(0,10).map(k=>{const r=done[k],d=k.slice(2);const it=ITEMS.find(x=>x.d===d);return '<details class="li"><summary><span class="d">'+md(d)+'</span> '+(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)"))+(r.v?" ・解説を見た":"")+(it?'<div class="m">'+esc(it.t)+"</div>":"")+"</summary>"+qdet(d,r)+"</details>"}).join("")+"</div>"}
  const qall=Object.keys(QUIZ).sort();
  if(qall.length){h+='<details class="card"><summary><b style="color:var(--n)">問題一覧(解説つき・先生の確認用) '+qall.length+" 問</b></summary>"+qall.map(d=>'<div class="li"><span class="d">'+md(d)+'</span> '+esc(QUIZ[d].u)+qdet(d,done["q:"+d])+"</div>").join("")+"</details>"}
  const first=new Date(ITEMS[0].d+"T00:00:00");const pad=(first.getDay()+6)%7;

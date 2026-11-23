@@ -75,7 +75,7 @@ const open={};
 const PH={"確認編":"マイペース 確認編(1〜28回)","補強編":"差がつく単元(塾のプリント)","対策編":"入試対策(過去問・塾のプリント)","愛知県過去問":"愛知県入試 過去問","直前チェック":"直前チェック","予備日":"予備日"};
 const MARK=["ア","イ","ウ","エ"];
 function quizHtml(x){const q=QUIZ[x.d];if(!q)return"";const r=done["q:"+x.d];const o=open["q"+x.d];
- let h='<button class="qb'+(r?(r.ok?" ok":" ng"):"")+'" data-qd="'+x.d+'">❓ 今日の確認テスト'+(r?(r.ok?" ✅":" ❌"):"")+"</button>";
+ let h='<button class="qb'+(r?(r.ok?" ok":" ng"):"")+'" data-qd="'+x.d+'">❓ 今日のテスト'+(r?(r.ok?" ✅":" ❌"):"")+"</button>";
  if(!o)return h;
  h+='<div class="qz"><div class="qu">'+esc(q.u)+'</div><div class="qt">'+esc(q.q)+"</div>";
  q.o.forEach((t,i)=>{let c="qo";if(r){if(i===q.a&&r.ok)c+=" right";else if(i===r.l&&!r.ok)c+=" wrong";else if(i===q.a&&r.l===i)c+=" right"}h+='<button class="'+c+'" data-qd="'+x.d+'" data-qi="'+i+'">'+MARK[i]+"　"+esc(t)+"</button>"});
