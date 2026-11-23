@@ -2,8 +2,8 @@
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#7a2e3b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
 <title>【先生用】理科 学習状況</title>
 <style>
-:root{--n:#1f3a5f;--bg:#f4f6fa;--c:#fff;--b:#d5dbe6;--ok:#2e8b57;--warn:#d9822b;--t:#222;--g:#e3e7ee}
-@media(prefers-color-scheme:dark){:root{--bg:#14181f;--c:#1e242e;--b:#333c4b;--t:#e8ecf2;--n:#9db8e6;--g:#2a3240}}
+:root{--n:#7a2e3b;--on:#fff;--bg:#f8f4f5;--c:#fff;--b:#e3d6da;--ok:#2e8b57;--warn:#d9822b;--t:#2a2224;--g:#ece3e6}
+@media(prefers-color-scheme:dark){:root{--bg:#181315;--c:#241d20;--b:#473a3e;--t:#f1e9eb;--n:#e49aa8;--on:#2a1519;--g:#352b2e}}
 *{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--t);line-height:1.5}
 header{position:relative;background:#7a2e3b;color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
 @media(prefers-color-scheme:dark){header{background:#c9707f;color:#14181f}}.role{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;background:#fff;color:#7a2e3b;font-weight:800;font-size:13px;border-radius:999px;padding:2px 12px;letter-spacing:.05em}
@@ -14,8 +14,8 @@ main{max-width:760px;margin:0 auto;padding:12px 12px calc(40px + env(safe-area-i
 .kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.kpi div{background:var(--bg);border-radius:10px;padding:8px;text-align:center}.kpi b{display:block;font-size:24px;line-height:1.2}.kpi span{font-size:11px;opacity:.7}
 .bar{height:12px;background:var(--g);border-radius:6px;overflow:hidden;margin:10px 0 2px}.bar i{display:block;height:100%;background:var(--ok)}
 .late b{color:var(--warn)}.ok b{color:var(--ok)}
-.big{text-align:center;background:var(--n);color:#fff;border-radius:12px;padding:8px;margin:10px 0}.big .n{font-size:38px;font-weight:800;line-height:1.1}.big small{font-size:15px}.big .l{font-size:12px;opacity:.9}
-@media(prefers-color-scheme:dark){.big{color:#14181f}}
+.big{text-align:center;background:var(--n);color:var(--on);border-radius:12px;padding:8px;margin:10px 0}.big .n{font-size:38px;font-weight:800;line-height:1.1}.big small{font-size:15px}.big .l{font-size:12px;opacity:.9}
+@media(prefers-color-scheme:dark){.big{color:var(--on)}}
 .chips{display:flex;gap:6px;flex-wrap:wrap}.chip{border:1px solid var(--b);border-radius:8px;padding:3px 10px;font-size:12px;background:var(--bg)}.chip b{color:var(--n);font-size:15px}
 .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;max-width:300px}.cal .h{font-size:9px;text-align:center;opacity:.6}
 .cal .c{height:17px;border-radius:4px;background:var(--g);font-size:9px;line-height:1;display:flex;align-items:flex-start;justify-content:flex-start;padding:2px 3px;opacity:.9;position:relative}
@@ -25,10 +25,17 @@ main{max-width:760px;margin:0 auto;padding:12px 12px calc(40px + env(safe-area-i
 .qd{margin-top:6px;font-size:13px;background:var(--bg);border-radius:8px;padding:8px}.qd .qq{font-weight:600;margin-bottom:4px}.qd .qa{color:var(--ok);font-weight:700}.qd .qw{color:var(--warn)}.qd .qe{margin-top:6px;opacity:.9;white-space:pre-wrap}summary{cursor:pointer}details.card>summary{list-style:none}
 .sc{display:flex;justify-content:space-between;align-items:center;gap:8px}.sc b{font-size:16px}.sc .bt{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.sc .bt button,.bk{border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:8px;padding:5px 10px;font-size:12px}.bk{margin:4px 0 0;font-size:13px}.ln{word-break:break-all;font-size:12px;background:var(--bg);border-radius:8px;padding:8px;margin-top:8px}.qrbox{margin-top:8px;background:#fff;display:inline-block;padding:8px;border-radius:8px}.stat{font-size:12px;opacity:.85;margin-top:2px}.pill{display:inline-block;border-radius:999px;padding:0 8px;font-size:11px;background:var(--warn);color:#fff;margin-left:4px}.srt{display:flex;gap:6px;align-items:center;font-size:12px;margin:6px 0}.srt select{padding:4px;border-radius:6px;border:1px solid var(--b);background:var(--c);color:var(--t)}
 .warn{color:var(--warn);font-weight:700}.empty{opacity:.6;font-size:13px}
-.form{display:flex;gap:6px}.form input{flex:1;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--bg);color:var(--t);font:inherit}.form button{padding:8px 14px;border:0;border-radius:8px;background:var(--n);color:#fff}
-@media(prefers-color-scheme:dark){.form button{color:#14181f}}
+.form{display:flex;gap:6px}.form input{flex:1;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--bg);color:var(--t);font:inherit}.form button{padding:8px 14px;border:0;border-radius:10px;background:var(--n);color:var(--on);font-weight:700}
+@media(prefers-color-scheme:dark){.form button{color:var(--on)}}
 button.r{border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:8px;padding:6px 12px;font-size:13px}
-.tt{display:flex;gap:6px;margin:4px 0 8px}.tt button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--b);background:var(--c);color:var(--t);font-weight:700;font-size:14px}.tt button.on{background:var(--n);color:#fff;border-color:var(--n)}.ck{display:flex;align-items:center;gap:6px;font-size:13px;margin:5px 0}.lb{display:block;font-size:12px;opacity:.8;margin-top:10px}.in{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--c);color:var(--t);font-size:14px;margin:4px 0}.ta{width:100%;box-sizing:border-box;min-height:150px;border:1px solid var(--b);border-radius:8px;padding:8px;font-size:12px;background:var(--bg);color:var(--t);font-family:inherit;margin:4px 0}.pcs{display:flex;gap:6px;margin:8px 0;overflow-x:auto}.pcs button{flex:0 0 auto;border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:700}.pcs button small{display:block;font-size:10px;font-weight:400;opacity:.7}.pcs button.on{background:var(--n);color:#fff;border-color:var(--n)}.pe{margin-top:4px}
+.tt{display:flex;gap:6px;margin:4px 0 8px}.tt button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--b);background:var(--c);color:var(--t);font-weight:700;font-size:14px}.tt button.on{background:var(--n);color:var(--on);border-color:var(--n)}.ck{display:flex;align-items:center;gap:6px;font-size:13px;margin:5px 0}.lb{display:block;font-size:12px;opacity:.8;margin-top:10px}.in{width:100%;box-sizing:border-box;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--c);color:var(--t);font-size:14px;margin:4px 0}.ta{width:100%;box-sizing:border-box;min-height:150px;border:1px solid var(--b);border-radius:8px;padding:8px;font-size:12px;background:var(--bg);color:var(--t);font-family:inherit;margin:4px 0}.pcs{display:flex;gap:6px;margin:8px 0;overflow-x:auto}.pcs button{flex:0 0 auto;border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:999px;padding:6px 14px;font-size:14px;font-weight:700}.pcs button small{display:block;font-size:10px;font-weight:400;opacity:.7}.pcs button.on{background:var(--n);color:var(--on);border-color:var(--n)}.pe{margin-top:4px}
+.bt button,.bk,button.r{border:1.5px solid var(--n);background:var(--c);color:var(--n);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:700;font-family:inherit}
+.bt button[data-a=open],.bt button[data-a=plsave],#psave,#pnew{background:var(--n);color:var(--on)}
+.bt button[data-a=del]{border-color:var(--warn);color:var(--warn)}
+.bk{border-color:var(--b);color:var(--t);font-weight:600}
+.tt button,.pcs button{border-color:var(--b)}
+.tt button.on,.pcs button.on{border-color:var(--n)}
+
 @media(max-width:700px){.bt{gap:8px}.bt button,.bk{padding:12px 16px;font-size:15px;min-height:46px;border-radius:10px}.form button{min-height:46px;font-size:15px;padding:0 18px}.form input{min-height:46px;font-size:16px}.tt button{padding:14px;font-size:16px}.in,.ta{font-size:16px}.in{padding:12px}.srt select{padding:10px;font-size:15px}.ck{font-size:15px;padding:6px 0}.ck input{width:22px;height:22px}#rf{padding:10px 18px;font-size:15px}.pcs button{padding:10px 16px}summary{padding:6px 0}}
 </style></head><body>
 <header><span class="role">先生用</span><h1>理科 学習状況</h1><div class="sub"><span id="upd">読み込み中…</span><button class="r" id="rf" style="padding:2px 10px">更新</button></div></header>
