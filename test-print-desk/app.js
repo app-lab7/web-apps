@@ -10,6 +10,9 @@ const fields = {question:'問題', answer:'解答', explanation:'解説'};
 const grades = ['小1','小2','小3','小4','小5','小6','中1','中2','中3','高1','高2','高3','その他'];
 const edit = $('editForm'), print = $('printForm');
 const filters = [['schoolFilter','school'],['gradeFilter','grade'],['yearFilter','year']];
+const subjectOrder = ['国語','数学','英語','理科','社会','音楽','美術','保健体育','技術・家庭','技術','家庭'];
+const unclassifiedSubject = '科目未分類';
+let subjectFilter = '';
 let records = [], sharedRecords = [], editing, printing, db, ready = false;
 const fail = error => { $('status').textContent = error.message || String(error); };
 function transaction(mode, run) {
@@ -24,9 +27,9 @@ async function refresh() {
   records = await transaction('readonly', store => store.getAll());
   draw();
 }
-function options(node, values, first) {
+function options(node, values, first, label = value => value) {
   const selected = node.value;
-  node.replaceChildren(...(first ? [new Option(first,'')] : []), ...values.map(value => new Option(value,value)));
+  node.replaceChildren(...(first ? [new Option(first,'')] : []), ...values.map(value => new Option(label(value),value)));
   if (values.includes(selected)) node.value = selected;
 }
 function button(title, action, css) {
@@ -41,18 +44,67 @@ function displayTestName(record) {
   const grade = /^中[1-3]$/.test(record.grade) ? '中学' + record.grade.slice(1) + '年' : record.grade;
   return [year, record.school, grade, record.title].filter(Boolean).join('・');
 }
+function filterChip(label, remove) {
+  const chip = button(label+' ×',()=>{
+    remove();
+    draw();
+    ($('activeFilters').querySelector('button') || $('search')).focus();
+  },'active-filter');
+  chip.setAttribute('aria-label',label+'の絞り込みを解除');
+  return chip;
+}
 function draw() {
   const allRecords = [...records, ...sharedRecords];
-  const word = $('search').value.normalize('NFKC').toLocaleLowerCase().trim();
+  const keyword = $('search').value.trim();
+  const words = keyword.normalize('NFKC').toLocaleLowerCase().split(/\s+/).filter(Boolean);
   const schools = [...new Set(allRecords.map(r=>r.school))].sort((a,b)=>
     Number(a==='学校未分類')-Number(b==='学校未分類') || a.localeCompare(b,'ja'));
   $('schools').replaceChildren(...schools.map(s=>new Option(s,s)));
-  options($('schoolFilter'),schools,'すべての学校');
-  options($('gradeFilter'),[...new Set(allRecords.map(r=>r.grade))].sort((a,b)=>grades.indexOf(a)-grades.indexOf(b)),'すべての学年');
-  options($('yearFilter'),[...new Set(allRecords.map(r=>r.year))].sort((a,b)=>b-a),'すべての年度');
-  const visible = allRecords.filter(r => filters.every(([id,key])=>!$(id).value || $(id).value===r[key])
-    && [displayTestName(r),r.title,r.school,r.subject,r.grade,r.year,...Object.values(r.files).map(f=>f.name)].join(' ').normalize('NFKC').toLocaleLowerCase().includes(word));
   const gradeOrder = grade => grades.includes(grade) ? grades.indexOf(grade) : grades.length;
+  options($('schoolFilter'),schools,'すべての学校');
+  options($('gradeFilter'),[...new Set(allRecords.map(r=>r.grade))].sort((a,b)=>gradeOrder(a)-gradeOrder(b)),'すべての学年');
+  options($('yearFilter'),[...new Set(allRecords.map(r=>r.year).filter(Boolean))].sort((a,b)=>b-a),'すべての年度',year=>year+'年度');
+  const base = allRecords.filter(r => {
+    if (!filters.every(([id,key])=>!$(id).value || $(id).value===r[key])) return false;
+    if (!words.length) return true;
+    const searchable = [displayTestName(r),r.title,r.school,r.subject,r.grade,r.year,...Object.values(r.files).map(f=>f.name)]
+      .join(' ').normalize('NFKC').toLocaleLowerCase();
+    return words.every(word=>searchable.includes(word));
+  });
+  const getSubject = record => record.subject?.trim() || unclassifiedSubject;
+  const availableSubjects = new Set(allRecords.map(getSubject));
+  if (subjectFilter && !availableSubjects.has(subjectFilter)) subjectFilter = '';
+  const counts = new Map();
+  for (const r of base) {
+    const subject = getSubject(r);
+    counts.set(subject,(counts.get(subject)||0)+1);
+  }
+  const subjects = [...subjectOrder.filter(subject=>availableSubjects.has(subject)),
+    ...[...availableSubjects].filter(subject=>!subjectOrder.includes(subject)).sort((a,b)=>a.localeCompare(b,'ja'))]
+    .filter(subject=>counts.has(subject) || subject===subjectFilter);
+  $('subjectButtons').replaceChildren(...['',...subjects].map(subject=>{
+    const choice = button(subject || 'すべての科目',()=>{
+      subjectFilter = subject;
+      draw();
+      const selected = $('subjectButtons').querySelector('[aria-pressed="true"]');
+      selected?.focus();
+    },'subject-choice');
+    choice.setAttribute('aria-pressed',String(subject===subjectFilter));
+    choice.append(make('span',String(subject ? counts.get(subject)||0 : base.length),'subject-count'));
+    return choice;
+  }));
+  const active = $('activeFilters');
+  active.replaceChildren();
+  if (keyword) active.append(filterChip('検索「'+keyword+'」',()=>{$('search').value='';}));
+  for (const [id] of filters) {
+    const select = $(id);
+    if (select.value) active.append(filterChip(select.selectedOptions[0].textContent,()=>{select.value='';}));
+  }
+  if (subjectFilter) active.append(filterChip(subjectFilter,()=>{subjectFilter='';}));
+  active.hidden = !active.children.length;
+  $('clear').disabled = active.hidden;
+  const visible = subjectFilter ? base.filter(r=>getSubject(r)===subjectFilter) : base;
+  $('filterTotal').textContent = allRecords.length ? '全'+allRecords.length+'件のうち '+visible.length+'件を表示' : '';
   visible.sort((a,b)=>schools.indexOf(a.school)-schools.indexOf(b.school)
     || gradeOrder(a.grade)-gradeOrder(b.grade) || b.year-a.year
     || (Number(a.round)||Infinity)-(Number(b.round)||Infinity)
@@ -112,6 +164,7 @@ function draw() {
   }
 }
 function clear() {
+  subjectFilter='';
   $('search').value='';
   for (const [id] of filters) $(id).value='';
   draw();
