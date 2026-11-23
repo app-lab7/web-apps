@@ -88,10 +88,13 @@ function classifyDrive(files) {
     const native = file.mimeType === 'application/vnd.google-apps.document';
     const printable = native || file.mimeType === 'application/pdf';
     const name = file.name.normalize('NFKC').replace(/\.pdf$/i,'');
-    const info = [...path,file.name].join(' ').normalize('NFKC');
-    const yearMark = path[0]?.normalize('NFKC').match(/^(?:R|令和)\s*(\d+)/i);
-    const year = yearMark ? String(2018+Number(yearMark[1])) : '';
-    const gradeMark = path[1]?.normalize('NFKC').match(/^(?:中)?\s*([123])(?:年)?$/);
+    const info = [...path,file.name].join(' ').replace(/南([①②③④⑤])/g,'南中$1').normalize('NFKC');
+    const yearFolder = path[0]?.normalize('NFKC') || '';
+    const yearMark = yearFolder.match(/^(?:R|令和)\s*(\d+)/i) || name.match(/^(?:R|令和)\s*(\d+)/i);
+    const westernYear = yearFolder.match(/^(20\d{2})(?:年度|年)?$/)?.[1] || name.match(/^(20\d{2})(?!\d)/)?.[1];
+    const year = yearMark ? String(2018+Number(yearMark[1])) : westernYear || '';
+    const gradeMark = path[1]?.normalize('NFKC').match(/^(?:中学?|中学校)?\s*([123])(?:年(?:生)?)?$/) ||
+      name.match(/中(?:学(?:校)?)?\s*([123])年/);
     const grade = gradeMark ? '中'+gradeMark[1] : '学年未分類';
     const schoolMatches = schools.filter(([,pattern])=>pattern.test(info));
     const school = schoolMatches.length === 1 ? schoolMatches[0][0] : '学校未分類';

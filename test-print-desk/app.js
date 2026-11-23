@@ -35,6 +35,12 @@ function button(title, action, css) {
   node.onclick = action;
   return node;
 }
+function displayTestName(record) {
+  if (!record.shared) return record.title;
+  const year = record.year ? record.year + '年度' : '年度未分類';
+  const grade = /^中[1-3]$/.test(record.grade) ? '中学' + record.grade.slice(1) + '年' : record.grade;
+  return [year, record.school, grade, record.title].filter(Boolean).join('・');
+}
 function draw() {
   const allRecords = [...records, ...sharedRecords];
   const word = $('search').value.normalize('NFKC').toLocaleLowerCase().trim();
@@ -45,7 +51,7 @@ function draw() {
   options($('gradeFilter'),[...new Set(allRecords.map(r=>r.grade))].sort((a,b)=>grades.indexOf(a)-grades.indexOf(b)),'すべての学年');
   options($('yearFilter'),[...new Set(allRecords.map(r=>r.year))].sort((a,b)=>b-a),'すべての年度');
   const visible = allRecords.filter(r => filters.every(([id,key])=>!$(id).value || $(id).value===r[key])
-    && [r.title,r.school,r.subject,r.grade,r.year,...Object.values(r.files).map(f=>f.name)].join(' ').normalize('NFKC').toLocaleLowerCase().includes(word));
+    && [displayTestName(r),r.title,r.school,r.subject,r.grade,r.year,...Object.values(r.files).map(f=>f.name)].join(' ').normalize('NFKC').toLocaleLowerCase().includes(word));
   const gradeOrder = grade => grades.includes(grade) ? grades.indexOf(grade) : grades.length;
   visible.sort((a,b)=>schools.indexOf(a.school)-schools.indexOf(b.school)
     || gradeOrder(a.grade)-gradeOrder(b.grade) || b.year-a.year
@@ -69,12 +75,12 @@ function draw() {
   }
   let previous;
   for (const r of visible) {
-    const group = [r.school,r.grade,(r.year ? r.year+'年度' : '年度未分類')].join(' / ');
+    const group = [(r.year ? r.year+'年度' : '年度未分類'),r.school,r.grade].join(' / ');
     if (group!==previous) $('list').append(make('h3',group,'group'));
     previous = group;
     const row = make('article'), details = make('div'), tags=make('div',null,'tags'), actions=make('div',null,'actions');
-    details.append(make('h3',r.title));
-    if(r.subject) details.append(make('p',r.subject,'meta'));
+    details.append(make('h3',displayTestName(r)));
+    if(r.subject && !r.shared) details.append(make('p',r.subject,'meta'));
     for (const label of new Set(Object.entries(r.files).map(([key,file])=>file.label || fields[key]))) {
       tags.append(make('span',label+' PDF','tag'));
     }
@@ -87,6 +93,14 @@ function draw() {
     if (!r.shared) actions.append(button('編集',()=>openEditor(r)));
     if (r.shared) tags.append(make('span','共有ドライブ','tag'));
     if (r.needsReview) tags.append(make('span','テスト回 要確認','tag'));
+    if (r.shared && Object.keys(r.files).length) {
+      const originals = make('details',null,'original-names');
+      originals.append(make('summary','元のファイル名'));
+      const names = make('ul');
+      for (const asset of Object.values(r.files)) names.append(make('li',asset.name));
+      originals.append(names);
+      details.append(originals);
+    }
     if (r.sourceUrl) {
       const source = make('a','原本を開く','button');
       source.href = r.sourceUrl; source.target = '_blank'; source.rel = 'noopener noreferrer';
@@ -187,7 +201,7 @@ function openPrint(record) {
   printing=record;
   print.reset();
   print.querySelector('.error').textContent='';
-  $('printTitle').textContent=record.title+' ／ '+record.school+' '+record.grade+' '+record.year+'年度';
+  $('printTitle').textContent=record.shared ? displayTestName(record) : record.title+' ／ '+record.school+' '+record.grade+' '+record.year+'年度';
   $('parts').replaceChildren();
   for(const [key,asset] of Object.entries(record.files)) {
     const label = asset.label || fields[key];
@@ -261,12 +275,13 @@ print.onsubmit=async event=>{
       } else pages.push(...doc.getPages());
     }
     if(layout!=='normal') await booklet(out,pages,layout,form.get('binding'));
-    out.setTitle(record.title);
+    const outputTitle = displayTestName(record);
+    out.setTitle(outputTitle);
     const bytes=await out.save();
     if (action==='preview' && $('printer').open) {
-      await showPrintPreview(bytes, record.title, layout);
+      await showPrintPreview(bytes, outputTitle, layout);
     } else if (action==='download') {
-      download(new Blob([bytes],{type:'application/pdf'}),record.title+(layout==='normal'?'':'_冊子')+'.pdf');
+      download(new Blob([bytes],{type:'application/pdf'}),outputTitle+(layout==='normal'?'':'_冊子')+'.pdf');
     }
   } catch(error) {
     errorBox.textContent=error.message || 'PDFの作成に失敗しました。';
