@@ -10,7 +10,7 @@ const fields = {question:'問題', answer:'解答', explanation:'解説'};
 const grades = ['小1','小2','小3','小4','小5','小6','中1','中2','中3','高1','高2','高3','その他'];
 const edit = $('editForm'), print = $('printForm');
 const filters = [['schoolFilter','school'],['gradeFilter','grade'],['yearFilter','year']];
-let records = [], editing, printing, db, ready = false;
+let records = [], sharedRecords = [], editing, printing, db, ready = false;
 const fail = error => { $('status').textContent = error.message || String(error); };
 function transaction(mode, run) {
   return new Promise((resolve,reject) => {
@@ -36,34 +36,35 @@ function button(title, action, css) {
   return node;
 }
 function draw() {
+  const allRecords = [...records, ...sharedRecords];
   const word = $('search').value.normalize('NFKC').toLocaleLowerCase().trim();
-  const schools = [...new Set(records.map(r=>r.school))].sort((a,b)=>a.localeCompare(b,'ja'));
+  const schools = [...new Set(allRecords.map(r=>r.school))].sort((a,b)=>a.localeCompare(b,'ja'));
   $('schools').replaceChildren(...schools.map(s=>new Option(s,s)));
   options($('schoolFilter'),schools,'すべての学校');
-  options($('gradeFilter'),grades.filter(g=>records.some(r=>r.grade===g)),'すべての学年');
-  options($('yearFilter'),[...new Set(records.map(r=>r.year))].sort((a,b)=>b-a),'すべての年度');
-  const visible = records.filter(r => filters.every(([id,key])=>!$(id).value || $(id).value===r[key])
-    && [r.title,r.school,r.subject,r.grade,r.year].join(' ').normalize('NFKC').toLocaleLowerCase().includes(word));
+  options($('gradeFilter'),[...new Set(allRecords.map(r=>r.grade))].sort((a,b)=>grades.indexOf(a)-grades.indexOf(b)),'すべての学年');
+  options($('yearFilter'),[...new Set(allRecords.map(r=>r.year))].sort((a,b)=>b-a),'すべての年度');
+  const visible = allRecords.filter(r => filters.every(([id,key])=>!$(id).value || $(id).value===r[key])
+    && [r.title,r.school,r.subject,r.grade,r.year,...Object.values(r.files).map(f=>f.name)].join(' ').normalize('NFKC').toLocaleLowerCase().includes(word));
   visible.sort((a,b)=>a.school.localeCompare(b.school,'ja') || grades.indexOf(a.grade)-grades.indexOf(b.grade) || b.year-a.year || b.updated-a.updated);
   $('count').textContent = visible.length+'件';
   $('list').replaceChildren();
   if (!visible.length) {
     const empty = make('div',null,'empty');
-    empty.append(make('div','▤','icon'),make('strong',records.length?'条件に合うテストがありません':'まだテストが登録されていません'),
-      make('p',records.length?'検索語や絞り込み条件を変えてください。':'テストを登録すると、学校・学年・年度ごとに表示されます。'));
-    empty.append(records.length?button('絞り込みを解除',clear):button('＋ テストを登録',()=>openEditor(),'primary'));
+    empty.append(make('div','▤','icon'),make('strong',allRecords.length?'条件に合うテストがありません':'まだテストが登録されていません'),
+      make('p',allRecords.length?'検索語や絞り込み条件を変えてください。':'テストを登録すると、学校・学年・年度ごとに表示されます。'));
+    empty.append(allRecords.length?button('絞り込みを解除',clear):button('＋ テストを登録',()=>openEditor(),'primary'));
     $('list').append(empty);
   }
   let previous;
   for (const r of visible) {
-    const group = [r.school,r.grade,r.year+'年度'].join(' / ');
+    const group = [r.school,r.grade,(r.year ? r.year+'年度' : '年度未分類')].join(' / ');
     if (group!==previous) $('list').append(make('h3',group,'group'));
     previous = group;
     const row = make('article'), details = make('div'), tags=make('div',null,'tags'), actions=make('div',null,'actions');
     details.append(make('h3',r.title));
     if(r.subject) details.append(make('p',r.subject,'meta'));
-    for (const [key,label] of Object.entries(fields)) {
-      if(r.files[key]) tags.append(make('span',label+' PDF','tag'));
+    for (const label of new Set(Object.entries(r.files).map(([key,file])=>file.label || fields[key]))) {
+      tags.append(make('span',label+' PDF','tag'));
     }
     details.append(tags);
     if (r.doc) {
@@ -71,7 +72,13 @@ function draw() {
       link.href=r.doc; link.target='_blank'; link.rel='noopener noreferrer';
       actions.append(link);
     }
-    actions.append(button('編集',()=>openEditor(r)));
+    if (!r.shared) actions.append(button('編集',()=>openEditor(r)));
+    if (r.shared) tags.append(make('span','共有ドライブ','tag'));
+    if (r.sourceUrl) {
+      const source = make('a','原本を開く','button');
+      source.href = r.sourceUrl; source.target = '_blank'; source.rel = 'noopener noreferrer';
+      actions.append(source);
+    }
     if (Object.keys(r.files).length) actions.append(button('印刷・PDF',()=>openPrint(r),'primary'));
     row.append(details,actions);
     $('list').append(row);
@@ -93,7 +100,7 @@ function openEditor(record) {
   edit.querySelector('.error').textContent='';
   $('editTitle').textContent=record?'テストを編集':'テストを登録';
   for (const name of ['title','school','grade','year','subject','doc']) {
-    edit.elements[name].value=record?.[name] ?? ({year:$('yearFilter').value || currentYear(),grade:$('gradeFilter').value || '中1',school:$('schoolFilter').value}[name] ?? '');
+    edit.elements[name].value=record?.[name] ?? ({year:$('yearFilter').value || currentYear(),grade:grades.includes($('gradeFilter').value) ? $('gradeFilter').value : '中1',school:$('schoolFilter').value}[name] ?? '');
   }
   $('uploads').replaceChildren();
   for (const [key,label] of Object.entries(fields)) {
@@ -169,8 +176,8 @@ function openPrint(record) {
   print.querySelector('.error').textContent='';
   $('printTitle').textContent=record.title+' ／ '+record.school+' '+record.grade+' '+record.year+'年度';
   $('parts').replaceChildren();
-  for(const [key,label] of Object.entries(fields)) {
-    if(!record.files[key]) continue;
+  for(const [key,asset] of Object.entries(record.files)) {
+    const label = asset.label || fields[key];
     const item=make('label'), check=make('input');
     check.type='checkbox';check.name='part';check.value=key;check.checked=true;
     item.append(check,' '+label+'（'+record.files[key].name+'）');
@@ -235,7 +242,8 @@ print.onsubmit=async event=>{
   try {
     const record=printing, layout=form.get('layout'), out=await PDFLib.PDFDocument.create(), pages=[];
     for(const key of chosen) {
-      const doc=await openPdf(record.files[key]);
+      const asset=record.files[key];
+      const doc=await openPdf(asset.driveId ? {...asset,blob:await fetchDrivePdf(asset)} : asset);
       if(layout==='normal') {
         for(const page of await out.copyPages(doc,doc.getPageIndices())) out.addPage(page);
       } else pages.push(...doc.getPages());
