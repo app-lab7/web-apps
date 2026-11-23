@@ -139,23 +139,30 @@ function classifyDrive(files) {
   }
   return [...grouped.values()];
 }
-$('connectDrive').onclick = async () => {
+let resumeDrivePrint;
+async function openDriveDialog(resumePrint) {
+  resumeDrivePrint = resumePrint;
   driveError.textContent = '';
   driveForm.elements.folder.value = requestedFolder || rememberedFolder;
-  $('closeDrive').hidden = !accessToken && !sharedRecords.length;
+  $('closeDrive').hidden = Boolean(resumePrint) || (!accessToken && !sharedRecords.length);
+  $('driveDialogTitle').textContent = resumePrint ? '選んだPDFを取得' : '共有ドライブを開く';
+  $('driveFolderField').hidden = Boolean(resumePrint);
+  $('driveRememberField').hidden = Boolean(resumePrint);
   driveDialog.showModal();
   const submit = driveForm.querySelector('[type=submit]');
   submit.disabled = true;
   try { await loadGoogleIdentity(); }
   catch (error) { driveError.textContent = error.message; }
   finally { submit.disabled = false; }
-};
+}
+$('connectDrive').onclick = () => openDriveDialog();
 driveForm.onsubmit = event => {
   event.preventDefault();
   driveError.textContent = '';
   const folder = driveForm.elements.folder.value.trim();
+  const resumePrint = resumeDrivePrint;
   const id = folderId(folder);
-  if (!id) {
+  if (!id && !resumePrint) {
     driveError.textContent = 'Googleドライブの共有フォルダURLを確認してください。'; return;
   }
   if (!window.google?.accounts?.oauth2) {driveError.textContent = 'Googleログインを読み込めませんでした。';return;}
@@ -172,13 +179,19 @@ driveForm.onsubmit = event => {
     callback:async response=>{
       if (driveRequest!==idOfRequest) return;
       if (!response.access_token) {driveError.textContent='Googleドライブの読み取りを許可してください。';return;}
+      if (!driveDialog.open) return;
+      if (resumePrint) {
+        accessToken = response.access_token;
+        driveDialog.close();
+        resumePrint();
+        return;
+      }
       try {
         $('status').textContent='共有フォルダを読み込んでいます…';
         driveDialog.close();
         const files = await listDriveTree(id,response.access_token,idOfRequest);
         if (driveRequest!==idOfRequest) return;
         accessToken = response.access_token;
-        document.dispatchEvent(new Event('teststock-drive-connected'));
         sharedRecords = classifyDrive(files);
         rememberedFolder = folder;
         const catalogue = JSON.stringify({id,records:sharedRecords});

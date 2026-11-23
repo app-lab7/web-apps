@@ -263,6 +263,13 @@ function openPrint(record) {
     check.type='checkbox';check.name='part';check.value=key;check.checked=true;
     item.append(check,' '+label+'（'+record.files[key].name+'）');
     $('parts').append(item);
+    if (asset.driveId) {
+      const original = make('a','元ファイルを開く','print-original');
+      original.href = 'https://drive.google.com/open?id=' + encodeURIComponent(asset.driveId);
+      original.target = '_blank';
+      original.rel = 'noopener noreferrer';
+      $('parts').append(original);
+    }
   }
   printHint();
   $('printer').showModal();
@@ -317,7 +324,9 @@ print.onsubmit=async event=>{
   const action=event.submitter?.value;
   if (chosen.some(key=>printing.files[key]?.driveId) && !hasDriveConnection()) {
     $('reconnectForPrint').hidden = false;
-    errorBox.textContent='共有PDFを取得するにはGoogleに接続してください。';
+    openDriveDialog(()=>{
+      if ($('printer').open) print.requestSubmit(event.submitter || $('openPrintPreview'));
+    });
     return;
   }
   $('reconnectForPrint').hidden = true;
@@ -406,11 +415,7 @@ $('restore').onchange=async event=>{
 };
 options(edit.elements.grade,grades);
 $('add').onclick=()=>openEditor();
-$('reconnectForPrint').onclick=()=>$('connectDrive').click();
-document.addEventListener('teststock-drive-connected',()=>{
-  $('reconnectForPrint').hidden=true;
-  if ($('printer').open) print.querySelector('.error').textContent='Googleに接続しました。印刷プレビューを開けます。';
-});
+$('reconnectForPrint').onclick=()=>print.requestSubmit($('openPrintPreview'));
 $('clear').onclick=clear;
 $('search').oninput=draw;
 for (const [id] of filters) $(id).onchange=draw;
