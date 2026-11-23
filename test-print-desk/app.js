@@ -57,7 +57,13 @@ function draw() {
     const empty = make('div',null,'empty');
     empty.append(make('div','▤','icon'),make('strong',allRecords.length?'条件に合うテストがありません':'まだテストが登録されていません'),
       make('p',allRecords.length?'検索語や絞り込み条件を変えてください。':'テストを登録すると、学校・学年・年度ごとに表示されます。'));
-    empty.append(allRecords.length?button('絞り込みを解除',clear):button('＋ テストを登録',()=>openEditor(),'primary'));
+    if (!allRecords.length && new URLSearchParams(location.hash.slice(1)).has('folder')) {
+      empty.replaceChildren(make('div','▤','icon'),make('strong','共有教材を開く'),
+        make('p','Googleに接続すると、学校・学年・年度で仕分けした教材が表示されます。'),
+        button('共有ドライブを開く',()=>$('connectDrive').click(),'primary'));
+    } else {
+      empty.append(allRecords.length?button('絞り込みを解除',clear):button('＋ テストを登録',()=>openEditor(),'primary'));
+    }
     $('list').append(empty);
   }
   let previous;

@@ -3,6 +3,27 @@ const driveForm = $('driveForm');
 const driveDialog = $('driveDialog');
 const driveError = driveForm.querySelector('.error');
 const settingKey = 'test-print-drive-settings';
+const catalogueKey = 'test-print-drive-tab-catalogue-v1';
+const folderFromLink = new URLSearchParams(location.hash.slice(1)).get('folder');
+const folderId = url => url.match(/^https:\/\/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([\w-]+)(?:[/?#]|$)/)?.[1];
+const driveStatus = message => { $('status').textContent = message; };
+let rememberedFolder = '';
+try {
+  rememberedFolder = JSON.parse(localStorage.getItem(settingKey) || '{}').folder || '';
+} catch {}
+const requestedFolder = /^[\w-]+$/.test(folderFromLink || '')
+  ? 'https://drive.google.com/drive/folders/' + folderFromLink : rememberedFolder;
+try {
+  const cached = JSON.parse(sessionStorage.getItem(catalogueKey) || 'null');
+  if (folderId(requestedFolder) && cached?.id === folderId(requestedFolder) && Array.isArray(cached.records)) {
+    sharedRecords = cached.records;
+    draw();
+    driveStatus('共有教材の一覧を復元しました。印刷するときは「共有ドライブを開く」からGoogleに再接続してください。');
+  }
+} catch {}
+if (requestedFolder && !sharedRecords.length) {
+  driveStatus('共有教材を表示するには「共有ドライブを開く」からGoogleに接続してください。');
+}
 const googleClientId = '739406071935-l7b4nq88frf82fou9drf5jke44n456i6.apps.googleusercontent.com';
 let accessToken, driveRequest = 0;
 
@@ -17,7 +38,7 @@ function loadGoogleIdentity() {
   });
 }
 async function driveApi(path, params, token = accessToken) {
-  if (!token) throw new Error('共有ドライブを開き直してください。');
+  if (!token) throw new Error('一覧は表示されています。印刷するには「共有ドライブを開く」からGoogleに再接続してください。');
   const url = new URL('https://www.googleapis.com/drive/v3/' + path);
   url.search = new URLSearchParams(params).toString();
   const response = await fetch(url, {headers:{Authorization:'Bearer ' + token}});
@@ -104,15 +125,8 @@ function classifyDrive(files) {
 }
 $('connectDrive').onclick = async () => {
   driveError.textContent = '';
-  try {
-    const saved = JSON.parse(localStorage.getItem(settingKey) || '{}');
-    driveForm.elements.folder.value = saved.folder || '';
-  } catch {}
-  const suppliedFolder = new URLSearchParams(location.hash.slice(1)).get('folder');
-  if (suppliedFolder && /^[\w-]+$/.test(suppliedFolder)) {
-    driveForm.elements.folder.value = 'https://drive.google.com/drive/folders/' + suppliedFolder;
-  }
-  $('closeDrive').hidden = !accessToken;
+  driveForm.elements.folder.value = requestedFolder || rememberedFolder;
+  $('closeDrive').hidden = !accessToken && !sharedRecords.length;
   driveDialog.showModal();
   const submit = driveForm.querySelector('[type=submit]');
   submit.disabled = true;
@@ -124,7 +138,7 @@ driveForm.onsubmit = event => {
   event.preventDefault();
   driveError.textContent = '';
   const folder = driveForm.elements.folder.value.trim();
-  const id = folder.match(/^https:\/\/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([\w-]+)(?:[/?#]|$)/)?.[1];
+  const id = folderId(folder);
   if (!id) {
     driveError.textContent = 'Googleドライブの共有フォルダURLを確認してください。'; return;
   }
@@ -143,6 +157,8 @@ driveForm.onsubmit = event => {
         if (driveRequest!==idOfRequest) return;
         accessToken = response.access_token;
         sharedRecords = classifyDrive(files);
+        rememberedFolder = folder;
+        try { sessionStorage.setItem(catalogueKey,JSON.stringify({id,records:sharedRecords})); } catch {}
         try { localStorage.setItem(settingKey,JSON.stringify({folder})); } catch {}
         draw();
         $('status').textContent='共有ドライブから '+files.length+' ファイルを読み込みました。';
@@ -155,6 +171,7 @@ $('closeDrive').onclick = () => {
   ++driveRequest;
   accessToken = null;
   sharedRecords = [];
+  try { sessionStorage.removeItem(catalogueKey); } catch {}
   draw();
   driveDialog.close();
   $('status').textContent = '共有ドライブとの接続を解除しました。';
