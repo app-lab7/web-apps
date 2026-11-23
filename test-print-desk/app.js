@@ -246,11 +246,10 @@ print.onsubmit=async event=>{
   const form=new FormData(print), chosen=form.getAll('part');
   if(!chosen.length) {errorBox.textContent='PDFを1つ以上選んでください。';return;}
   const action=event.submitter?.value;
-  const tab=action==='open'?window.open('about:blank','_blank'):null;
-  if(action==='open' && !tab) {errorBox.textContent='新しいタブを開けません。ポップアップを許可するか「PDFを保存」を使ってください。';return;}
-  if(tab) tab.opener=null;
   const submits=[...print.querySelectorAll('[type=submit]')];
   submits.forEach(b=>b.disabled=true);
+  const originalLabel = event.submitter?.textContent;
+  if (event.submitter) event.submitter.textContent = 'PDFを準備中…';
   try {
     const record=printing, layout=form.get('layout'), out=await PDFLib.PDFDocument.create(), pages=[];
     for(const key of chosen) {
@@ -262,13 +261,18 @@ print.onsubmit=async event=>{
     }
     if(layout!=='normal') await booklet(out,pages,layout,form.get('binding'));
     out.setTitle(record.title);
-    const blob=new Blob([await out.save()],{type:'application/pdf'});
-    if(tab) tab.location.href=URL.createObjectURL(blob);
-    else download(blob,record.title+(layout==='normal'?'':'_冊子')+'.pdf');
+    const bytes=await out.save();
+    if (action==='preview' && $('printer').open) {
+      await showPrintPreview(bytes, record.title, layout);
+    } else if (action==='download') {
+      download(new Blob([bytes],{type:'application/pdf'}),record.title+(layout==='normal'?'':'_冊子')+'.pdf');
+    }
   } catch(error) {
-    tab?.close();
     errorBox.textContent=error.message || 'PDFの作成に失敗しました。';
-  } finally { submits.forEach(b=>b.disabled=false); }
+  } finally {
+    submits.forEach(b=>b.disabled=false);
+    if (event.submitter) event.submitter.textContent=originalLabel;
+  }
 };
 function dataUrl(blob) {
   return new Promise((resolve,reject)=>{
