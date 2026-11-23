@@ -22,6 +22,7 @@ main{max-width:760px;margin:0 auto;padding:12px 12px calc(40px + env(safe-area-i
 .cal .c.done{background:var(--ok);color:#fff}.cal .c.miss{background:var(--warn);color:#fff}.cal .c.rest{background:transparent;border:1px dashed var(--b)}.cal .c.today{outline:2px solid var(--n)}.cal .c.off{visibility:hidden}.cal .c.memo::after{content:"📝";position:absolute;right:1px;bottom:0;font-size:9px}
 .leg{font-size:11px;opacity:.75;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
 .li{padding:8px 0;border-top:1px solid var(--b);font-size:14px}.li:first-of-type{border-top:0}.li .d{font-weight:700}.li .m{font-size:12px;opacity:.7}.li .memo{white-space:pre-wrap;margin-top:2px}
+.qd{margin-top:6px;font-size:13px;background:var(--bg);border-radius:8px;padding:8px}.qd .qq{font-weight:600;margin-bottom:4px}.qd .qa{color:var(--ok);font-weight:700}.qd .qw{color:var(--warn)}.qd .qe{margin-top:6px;opacity:.9;white-space:pre-wrap}summary{cursor:pointer}details.card>summary{list-style:none}
 .warn{color:var(--warn);font-weight:700}.empty{opacity:.6;font-size:13px}
 .form{display:flex;gap:6px}.form input{flex:1;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--bg);color:var(--t);font:inherit}.form button{padding:8px 14px;border:0;border-radius:8px;background:var(--n);color:#fff}
 @media(prefers-color-scheme:dark){.form button{color:#14181f}}
@@ -46,7 +47,7 @@ const mlabel=x=>x.p&&x.p.startsWith("p.")?x.p+"("+x.t.replace(/^確認編 /,"").
 const md=d=>d.slice(5).replace("-","/").replace(/^0/,"").replace("/0","/");
 const days=d=>Math.round((new Date(d+"T00:00:00")-new Date(today+"T00:00:00"))/864e5);
 function ago(ms){const s=(Date.now()-ms)/1000;if(s<90)return"たった今";if(s<3600)return Math.round(s/60)+"分前";if(s<86400)return Math.round(s/3600)+"時間前";return Math.round(s/86400)+"日前"}
-let data=null,err="";
+let QUIZ={};let data=null,err="";
 async function load(){
  if(!code){draw();return}
  upd.textContent="更新中…";
@@ -75,7 +76,10 @@ function draw(){
  h+='<div class="card"><h2>未完了(過去分) '+missed.length+" 件</h2>"+(missed.length?missed.slice(-15).reverse().map(x=>'<div class="li"><span class="d warn">'+md(x.d)+"("+x.w+")</span> "+esc(x.t)+"</div>").join("")+(missed.length>15?'<div class="empty">ほか '+(missed.length-15)+" 件(古いもの)</div>":""):'<div class="empty">遅れはありません</div>')+"</div>";
 
  const qk=Object.keys(done).filter(k=>k.startsWith("q:")).sort().reverse();
- if(qk.length){const f=qk.filter(k=>done[k].f).length;h+='<div class="card"><h2>今日の確認テスト(正誤)</h2><div class="empty" style="margin-bottom:6px">回答 '+qk.length+" 問・初回正解 "+f+" 問("+Math.round(f/qk.length*100)+"%)</div>"+qk.slice(0,10).map(k=>{const r=done[k],d=k.slice(2);const it=ITEMS.find(x=>x.d===d);return '<div class="li"><span class="d">'+md(d)+'</span> '+(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)"))+(it?'<div class="m">'+esc(it.t)+"</div>":"")+"</div>"}).join("")+"</div>"}
+ const qdet=(d,r)=>{const q=QUIZ[d];if(!q)return"";return '<div class="qd"><div class="qq">'+esc(q.q)+"</div>"+q.o.map((o,i)=>'<div class="'+(i===q.a?"qa":"")+(r&&i===r.l&&!r.ok?" qw":"")+'">'+"アイウエ"[i]+" "+esc(o)+(i===q.a?" ✅正解":"")+(r&&i===r.l&&i!==q.a?" ← 生徒の選択":"")+"</div>").join("")+'<div class="qe">解説:'+esc(q.e)+"</div></div>"};
+ if(qk.length){const f=qk.filter(k=>done[k].f).length;h+='<div class="card"><h2>今日の確認テスト(正誤)</h2><div class="empty" style="margin-bottom:6px">回答 '+qk.length+" 問・初回正解 "+f+" 問("+Math.round(f/qk.length*100)+"%)</div>"+qk.slice(0,10).map(k=>{const r=done[k],d=k.slice(2);const it=ITEMS.find(x=>x.d===d);return '<details class="li"><summary><span class="d">'+md(d)+'</span> '+(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)"))+(r.v?" ・解説を見た":"")+(it?'<div class="m">'+esc(it.t)+"</div>":"")+"</summary>"+qdet(d,r)+"</details>"}).join("")+"</div>"}
+ const qall=Object.keys(QUIZ).sort();
+ if(qall.length){h+='<details class="card"><summary><b style="color:var(--n)">問題一覧(解説つき・先生の確認用) '+qall.length+" 問</b></summary>"+qall.map(d=>'<div class="li"><span class="d">'+md(d)+'</span> '+esc(QUIZ[d].u)+qdet(d,done["q:"+d])+"</div>").join("")+"</details>"}
  // calendar
  const first=new Date(ITEMS[0].d+"T00:00:00");const pad=(first.getDay()+6)%7;
  let cal='<div class="cal">'+"月火水木金土日".split("").map(w=>'<div class="h">'+w+"</div>").join("")+'<div class="c off"></div>'.repeat(pad);
@@ -91,5 +95,6 @@ function draw(){
 rf.onclick=load;
 setInterval(()=>{if(document.visibilityState==="visible")load()},60000);
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
+fetch('../rika-plan/quiz.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&typeof j==='object'){QUIZ=j;if(data)draw()}}).catch(()=>{});
 load();
 </script></body></html>
