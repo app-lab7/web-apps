@@ -111,9 +111,9 @@ function drawDetail(){
  h+='<div class="big"><div class="l">愛知県公立高校入試 まで</div><div class="n">'+(exam>0?"あと "+exam+"<small>日</small>":(exam===0?"今日":"終了"))+"</div></div>";
  const others=cds.filter(c=>!c.fixed).sort((a,b)=>a.date<b.date?-1:1);
  if(others.length)h+='<div class="chips">'+others.map(c=>{const k=days(c.date);return '<div class="chip">'+esc(c.label)+" "+(k>0?"あと<b>"+k+"</b>日":(k===0?"<b>今日</b>":"終了"))+" ("+md(c.date)+")</div>"}).join("")+"</div>";
- h+='<div class="card"><h2>進み具合</h2><div class="kpi"><div><b>'+dn+"/"+n+"</b><span>完了(全体)</span></div><div class='"+(missed.length?"late":"ok")+"'><b>"+missed.length+"</b><span>未完了(過去分)</span></div><div class='"+(diff<0?"late":"ok")+"'><b>"+(diff>0?"+":"")+diff+"</b><span>予定との差</span></div></div><div class='bar'><i style='width:"+(n?dn/n*100:0)+"%'></i></div><div class='empty'>昨日までの予定 "+exp+" 件のうち "+pd+" 件完了</div>"+(ts&&(Date.now()-ts)>3*864e5?'<p class="warn">3日以上、入力がありません。</p>':"")+"</div>";
  const seen={};let mh="";for(const x of ITEMS){const k=mkey(x);if(memo[k]&&!seen[k]){seen[k]=1;mh+='<div class="li"><span class="d">'+esc(mlabel(x))+'</span><div class="memo">'+esc(memo[k])+"</div></div>"}}
  h+='<div class="card"><h2>わからないところ(メモ)</h2>'+(mh||'<div class="empty">メモはまだありません</div>')+"</div>";
+ h+='<div class="card"><h2>進み具合</h2><div class="kpi"><div><b>'+dn+"/"+n+"</b><span>完了(全体)</span></div><div class='"+(missed.length?"late":"ok")+"'><b>"+missed.length+"</b><span>未完了(過去分)</span></div><div class='"+(diff<0?"late":"ok")+"'><b>"+(diff>0?"+":"")+diff+"</b><span>予定との差</span></div></div><div class='bar'><i style='width:"+(n?dn/n*100:0)+"%'></i></div><div class='empty'>昨日までの予定 "+exp+" 件のうち "+pd+" 件完了</div>"+(ts&&(Date.now()-ts)>3*864e5?'<p class="warn">3日以上、入力がありません。</p>':"")+"</div>";
  const td=ITEMS.filter(x=>x.d===today);
  h+='<div class="card"><h2>今日の予定</h2>'+(td.length?td.map(x=>'<div class="li"><span class="d">'+(isStudy(x)?(done[x.d]?"✅ 完了":"⬜ 未完了"):"—")+"</span> "+esc(x.t)+'<div class="m">'+(x.p&&x.p!=="—"?esc(x.p)+"・":"")+esc(x.m)+"</div></div>").join(""):'<div class="empty">学習期間外です</div>')+(()=>{if(!QUIZ[today])return"";const r=done["q:"+today];return '<div class="li"><span class="d">📝 今日のテスト</span> '+(r?(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)")):"⬜ まだ回答なし")+"</div>"})()+"</div>";
  h+='<div class="card"><h2>未完了(過去分) '+missed.length+" 件</h2>"+(missed.length?missed.slice(-15).reverse().map(x=>'<div class="li"><span class="d warn">'+md(x.d)+"("+x.w+")</span> "+esc(x.t)+"</div>").join("")+(missed.length>15?'<div class="empty">ほか '+(missed.length-15)+" 件(古いもの)</div>":""):'<div class="empty">遅れはありません</div>')+"</div>";
@@ -127,7 +127,7 @@ function drawDetail(){
  const memoDays={};for(const x of ITEMS){if(memo[mkey(x)])memoDays[x.d]=1}
  for(const x of ITEMS){const cl=["c"];if(!isStudy(x))cl.push("rest");else if(done[x.d])cl.push("done");else if(x.d<today)cl.push("miss");if(x.d===today)cl.push("today");if(memoDays[x.d])cl.push("memo");cal+='<div class="'+cl.join(" ")+'">'+Number(x.d.slice(8))+"</div>"}
  cal+="</div>";
- h+='<div class="card"><h2>カレンダー</h2>'+cal+'<div class="leg"><span><i style="background:var(--ok)"></i>完了</span><span><i style="background:var(--warn)"></i>未完了</span><span><i style="background:var(--g)"></i>これから</span><span>📝 メモあり</span></div></div>';
+ h+='<details class="card"><summary><b style="color:var(--n)">カレンダー(タップで開く)</b></summary><div style="margin-top:8px">'+cal+'<div class="leg"><span><i style="background:var(--ok)"></i>完了</span><span><i style="background:var(--warn)"></i>未完了</span><span><i style="background:var(--g)"></i>これから</span><span>📝 メモあり</span></div></div></details>';
  h+='<p class="empty" style="text-align:center">この画面は閲覧専用です。60秒ごとに自動更新されます。</p>';
  m.innerHTML=h;bind()}
 function bind(){const b=document.getElementById("bk");if(b)b.onclick=()=>{location.hash=""}}
