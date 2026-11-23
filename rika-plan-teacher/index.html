@@ -23,6 +23,7 @@ main{max-width:760px;margin:0 auto;padding:12px 12px calc(40px + env(safe-area-i
 .leg{font-size:11px;opacity:.75;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap}.leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:3px;vertical-align:-1px}
 .li{padding:8px 0;border-top:1px solid var(--b);font-size:14px}.li:first-of-type{border-top:0}.li .d{font-weight:700}.li .m{font-size:12px;opacity:.7}.li .memo{white-space:pre-wrap;margin-top:2px}
 .qd{margin-top:6px;font-size:13px;background:var(--bg);border-radius:8px;padding:8px}.qd .qq{font-weight:600;margin-bottom:4px}.qd .qa{color:var(--ok);font-weight:700}.qd .qw{color:var(--warn)}.qd .qe{margin-top:6px;opacity:.9;white-space:pre-wrap}summary{cursor:pointer}details.card>summary{list-style:none}
+.sc{display:flex;justify-content:space-between;align-items:center;gap:8px}.sc b{font-size:16px}.sc .bt{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.sc .bt button,.bk{border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:8px;padding:5px 10px;font-size:12px}.bk{margin:4px 0 0;font-size:13px}.ln{word-break:break-all;font-size:12px;background:var(--bg);border-radius:8px;padding:8px;margin-top:8px}.qrbox{margin-top:8px;background:#fff;display:inline-block;padding:8px;border-radius:8px}.stat{font-size:12px;opacity:.85;margin-top:2px}.pill{display:inline-block;border-radius:999px;padding:0 8px;font-size:11px;background:var(--warn);color:#fff;margin-left:4px}.srt{display:flex;gap:6px;align-items:center;font-size:12px;margin:6px 0}.srt select{padding:4px;border-radius:6px;border:1px solid var(--b);background:var(--c);color:var(--t)}
 .warn{color:var(--warn);font-weight:700}.empty{opacity:.6;font-size:13px}
 .form{display:flex;gap:6px}.form input{flex:1;padding:8px;border:1px solid var(--b);border-radius:8px;background:var(--bg);color:var(--t);font:inherit}.form button{padding:8px 14px;border:0;border-radius:8px;background:var(--n);color:#fff}
 @media(prefers-color-scheme:dark){.form button{color:#14181f}}
@@ -30,14 +31,16 @@ button.r{border:1px solid var(--b);background:var(--c);color:var(--t);border-rad
 </style></head><body>
 <header><span class="role">先生用</span><h1>理科 学習状況</h1><div class="sub"><span id="upd">読み込み中…</span><button class="r" id="rf" style="padding:2px 10px">更新</button></div></header>
 <main id="m"></main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const ITEMS=[{"d": "2026-11-23", "w": "月", "p": "p.2〜5", "t": "確認編 1回「観察・実験の基本操作、分類の基礎」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-24", "w": "火", "p": "p.2〜5", "t": "確認編 1回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-25", "w": "水", "p": "p.6〜9", "t": "確認編 2回「植物のなかま」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-26", "w": "木", "p": "p.6〜9", "t": "確認編 2回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-27", "w": "金", "p": "p.10〜13", "t": "確認編 3回「動物のなかま」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-28", "w": "土", "p": "p.10〜13", "t": "確認編 3回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-11-29", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-11-30", "w": "月", "p": "p.14〜17", "t": "確認編 4回「物質の区別、気体の性質」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-01", "w": "火", "p": "p.14〜17", "t": "確認編 4回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-02", "w": "水", "p": "p.18〜21", "t": "確認編 5回「水溶液の性質」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-03", "w": "木", "p": "p.18〜21", "t": "確認編 5回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-04", "w": "金", "p": "p.22〜25", "t": "確認編 6回「物質の状態変化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-05", "w": "土", "p": "p.22〜25", "t": "確認編 6回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-06", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-07", "w": "月", "p": "p.26〜29", "t": "確認編 7回「光と音」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-08", "w": "火", "p": "p.26〜29", "t": "確認編 7回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-09", "w": "水", "p": "p.30〜33", "t": "確認編 8回「力のはたらき」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-10", "w": "木", "p": "p.30〜33", "t": "確認編 8回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-11", "w": "金", "p": "p.34〜37", "t": "確認編 9回「火山と地震」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-12", "w": "土", "p": "p.34〜37", "t": "確認編 9回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-13", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-14", "w": "月", "p": "p.38〜41", "t": "確認編 10回「地層、大地の変化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-15", "w": "火", "p": "p.38〜41", "t": "確認編 10回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-16", "w": "水", "p": "p.42〜45", "t": "確認編 11回「物質の成り立ち」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-17", "w": "木", "p": "p.42〜45", "t": "確認編 11回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-18", "w": "金", "p": "p.46〜49", "t": "確認編 12回「いろいろな化学変化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-19", "w": "土", "p": "p.46〜49", "t": "確認編 12回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-20", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-21", "w": "月", "p": "p.50〜53", "t": "確認編 13回「化学変化と物質の質量、化学変化と熱」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-22", "w": "火", "p": "p.50〜53", "t": "確認編 13回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-23", "w": "水", "p": "p.54〜57", "t": "確認編 14回「生物をつくる細胞、植物の体のつくりとはたらき」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-24", "w": "木", "p": "p.54〜57", "t": "確認編 14回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2026-12-25", "w": "金", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-26", "w": "土", "p": "p.58〜61", "t": "確認編 15回「消化と吸収、呼吸」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-27", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2026-12-28", "w": "月", "p": "p.62〜65", "t": "確認編 16回「血液とその循環、行動のしくみ」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-29", "w": "火", "p": "p.66〜69", "t": "確認編 17回「気象観測と空気中の水蒸気」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-30", "w": "水", "p": "p.70〜73", "t": "確認編 18回「天気の変化、日本の気象」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2026-12-31", "w": "木", "p": "—", "t": "年末年始のお休み", "m": "—", "ph": "確認編"}, {"d": "2027-01-01", "w": "金", "p": "—", "t": "年末年始のお休み", "m": "—", "ph": "確認編"}, {"d": "2027-01-02", "w": "土", "p": "—", "t": "年末年始のお休み", "m": "—", "ph": "確認編"}, {"d": "2027-01-03", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-04", "w": "月", "p": "p.74〜77", "t": "確認編 19回「回路と電流」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2027-01-05", "w": "火", "p": "p.78〜81", "t": "確認編 20回「電流のはたらき」 A-1・A-2・B問題(×印をつける)", "m": "80分", "ph": "確認編"}, {"d": "2027-01-06", "w": "水", "p": "p.82〜85", "t": "確認編 21回「水溶液とイオン、電池」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-07", "w": "木", "p": "p.82〜85", "t": "確認編 21回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-08", "w": "金", "p": "p.86〜89", "t": "確認編 22回「酸・アルカリとイオン」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-09", "w": "土", "p": "p.86〜89", "t": "確認編 22回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-10", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-11", "w": "月", "p": "p.90〜93", "t": "確認編 23回「生物の成長とふえ方、進化」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-12", "w": "火", "p": "p.90〜93", "t": "確認編 23回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-13", "w": "水", "p": "p.94〜97", "t": "確認編 24回「力と運動」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-14", "w": "木", "p": "p.94〜97", "t": "確認編 24回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-15", "w": "金", "p": "p.98〜101", "t": "確認編 25回「仕事とエネルギー」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-16", "w": "土", "p": "p.98〜101", "t": "確認編 25回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-17", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-18", "w": "月", "p": "p.102〜105", "t": "確認編 26回「天体の動き」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-19", "w": "火", "p": "p.102〜105", "t": "確認編 26回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-20", "w": "水", "p": "p.106〜109", "t": "確認編 27回「太陽系と恒星」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-21", "w": "木", "p": "p.106〜109", "t": "確認編 27回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-22", "w": "金", "p": "p.110〜113", "t": "確認編 28回「自然環境・科学技術と人間」 A-1・A-2", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-23", "w": "土", "p": "p.110〜113", "t": "確認編 28回 B問題+×問題の解き直し(C問題は飛ばしてよい)", "m": "30〜40分", "ph": "確認編"}, {"d": "2027-01-24", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-01-25", "w": "月", "p": "—", "t": "塾のプリント:光の進み方と像の作図(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-26", "w": "火", "p": "—", "t": "塾のプリント:地層の広がり(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-27", "w": "水", "p": "—", "t": "塾のプリント:化学変化と物質の質量の計算(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-28", "w": "木", "p": "—", "t": "塾のプリント:天体の見え方(差がつく単元)", "m": "60分", "ph": "補強編"}, {"d": "2027-01-29", "w": "金", "p": "—", "t": "塾のプリント:分野別まとめ「生物の分類・物質」", "m": "60分", "ph": "対策編"}, {"d": "2027-01-30", "w": "土", "p": "—", "t": "塾のプリント:分野別まとめ「光・音・力、火山・地震・地層」", "m": "60分", "ph": "対策編"}, {"d": "2027-01-31", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-01", "w": "月", "p": "—", "t": "塾のプリント:分野別まとめ「化学変化、生物の体のつくり」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-02", "w": "火", "p": "—", "t": "塾のプリント:分野別まとめ「天気、電気」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-03", "w": "水", "p": "—", "t": "塾のプリント:分野別まとめ「イオン、遺伝」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-04", "w": "木", "p": "—", "t": "塾のプリント:分野別まとめ「力と運動、天体」", "m": "60分", "ph": "対策編"}, {"d": "2027-02-05", "w": "金", "p": "過去問・塾のプリント", "t": "入試問題(1・2年内容中心) 通し", "m": "60分", "ph": "対策編"}, {"d": "2027-02-06", "w": "土", "p": "過去問・塾のプリント", "t": "入試問題(1・2年内容中心) 解き直し(×印)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-07", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-08", "w": "月", "p": "過去問・塾のプリント", "t": "入試問題(3年・全範囲) 通し", "m": "60分", "ph": "対策編"}, {"d": "2027-02-09", "w": "火", "p": "過去問・塾のプリント", "t": "入試問題(3年・全範囲) 解き直し(×印)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-10", "w": "水", "p": "過去問", "t": "令和8年度 理科 通し(50分)", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-11", "w": "木", "p": "過去問", "t": "令和8年度 解き直し・間違いノート", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-12", "w": "金", "p": "過去問", "t": "令和7年度 理科 通し(50分)", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-13", "w": "土", "p": "過去問", "t": "令和7年度 解き直し・間違いノート", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-14", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-15", "w": "月", "p": "塾のプリント", "t": "思考力・表現力が問われる問題①(取れる問題だけ)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-16", "w": "火", "p": "塾のプリント", "t": "思考力・表現力が問われる問題②(取れる問題だけ)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-17", "w": "水", "p": "過去問・塾の模試", "t": "入試模擬 通し(50分)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-18", "w": "木", "p": "過去問・塾の模試", "t": "入試模擬 解き直し(×印)", "m": "60分", "ph": "対策編"}, {"d": "2027-02-19", "w": "金", "p": "過去問", "t": "令和6年度 理科 通し(50分)", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-20", "w": "土", "p": "過去問", "t": "令和6年度 解き直し・間違いノート", "m": "60分", "ph": "愛知県過去問"}, {"d": "2027-02-21", "w": "日", "p": "—", "t": "予備日(遅れの取り戻し・×問題の解き直し・休み)", "m": "—", "ph": "予備日"}, {"d": "2027-02-22", "w": "月", "p": "塾のプリント", "t": "用語の総確認(前半)+間違いノート確認", "m": "30分", "ph": "直前チェック"}, {"d": "2027-02-23", "w": "火", "p": "塾のプリント", "t": "用語の総確認(後半)/持ち物・会場の確認/早く寝る", "m": "30分", "ph": "直前チェック"}];
 const SB="https://sqtgtzouaodytpkapmqn.supabase.co",SK="sb_publishable_nJIR_zrTyJArCVLRjlrQfQ__wvnmUag";
-const KEY="rika-teacher-code";
+const TK="rika-teacher-key",CK="rika-teacher-code";
 const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
-let code="";try{code=new URLSearchParams(location.search).get("k")||""}catch(e){}
-if(code.length>=16)ls.set(KEY,code);else code=ls.get(KEY)||"";
-if(code.length<16)code="";
+const P=new URLSearchParams(location.search);
+let T=P.get("t")||"";if(T.length>=24)ls.set(TK,T);else T=ls.get(TK)||"";if(T.length<24)T="";
+let directCode=P.get("k")||"";if(directCode.length>=16&&!T)ls.set(CK,directCode);else if(directCode.length<16)directCode=T?"":(ls.get(CK)||"");if(directCode.length<16)directCode="";
+if(T&&directCode&&!P.get("k"))directCode="";
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 const today=iso(new Date());
@@ -47,17 +50,55 @@ const mlabel=x=>x.p&&x.p.startsWith("p.")?x.p+"("+x.t.replace(/^確認編 /,"").
 const md=d=>d.slice(5).replace("-","/").replace(/^0/,"").replace("/0","/");
 const days=d=>Math.round((new Date(d+"T00:00:00")-new Date(today+"T00:00:00"))/864e5);
 function ago(ms){const s=(Date.now()-ms)/1000;if(s<90)return"たった今";if(s<3600)return Math.round(s/60)+"分前";if(s<86400)return Math.round(s/3600)+"時間前";return Math.round(s/86400)+"日前"}
-let QUIZ={};let data=null,err="";
-async function load(){
- if(!code){draw();return}
+async function rpc(fn,body){const r=await fetch(SB+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SK,"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
+let QUIZ={},students=[],sums={},err="",sortBy=ls.get("rika-teacher-sort")||"order";
+const studentUrl=c=>new URL("../rika-plan/?k="+c,location.href).href;
+const rand=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);return[...a].map(b=>b.toString(16).padStart(2,"0")).join("")};
+function stats(d){const done=d.checks||{};const st=ITEMS.filter(isStudy),n=st.length,dn=st.filter(x=>done[x.d]).length;const missed=st.filter(x=>x.d<today&&!done[x.d]).length;const ts=d.updated_at?Date.parse(d.updated_at):0;const qk=Object.keys(done).filter(k=>k.startsWith("q:"));const qf=qk.filter(k=>done[k].f).length;const exp=st.filter(x=>x.d<today).length;return{dn,n,missed,ts,qn:qk.length,qf,diff:dn-exp}}
+/* ---- 生徒一覧 ---- */
+async function loadList(){
  upd.textContent="更新中…";
- try{const r=await fetch(SB+"/rest/v1/rpc/rika_get",{method:"POST",headers:{apikey:SK,"Content-Type":"application/json"},body:JSON.stringify({p_code:code})});if(!r.ok)throw new Error(r.status);const a=await r.json();data=a.length?a[0]:{checks:{},memo:{},countdowns:[],updated_at:null};err=""}catch(e){err="読み込めませんでした(通信を確認してください)"}
- draw()}
-function draw(){
- if(!code){m.innerHTML='<div class="card"><h2>生徒のコードを入力</h2><div class="form"><input id="ci" placeholder="コード(生徒用リンクの k= のあと)"><button id="cb">開く</button></div><p class="empty">生徒用リンクの「?k=」のあとの文字列を貼り付けてください。</p></div>';
-  cb.onclick=()=>{const v=ci.value.trim();if(v.length>=16){code=v;ls.set(KEY,v);load()}};upd.textContent="";return}
- if(err&&!data){m.innerHTML='<div class="card warn">'+err+"</div>";upd.textContent="";return}
- if(!data){return}
+ try{const a=await rpc("rika_t_get",{p_key:T});students=a.length?a[0].students||[]:[];err=""}catch(e){err="読み込めませんでした(通信を確認してください)";drawList();return}
+ await Promise.all(students.map(async s=>{try{const a=await rpc("rika_get",{p_code:s.code});sums[s.id]=a.length?stats(a[0]):stats({checks:{},updated_at:null})}catch(e){}}));
+ drawList()}
+async function saveStudents(){try{await rpc("rika_t_save",{p_key:T,p_students:students});err=""}catch(e){err="保存できませんでした"}}
+function drawList(){
+ if(err&&!students.length){m.innerHTML='<div class="card warn">'+esc(err)+"</div>";upd.textContent="";return}
+ upd.textContent=err?err:"生徒 "+students.length+" 人";
+ let L=students.slice();
+ const sv=s=>sums[s.id]||{};
+ if(sortBy==="late")L.sort((a,b)=>(sv(b).missed||0)-(sv(a).missed||0));
+ else if(sortBy==="old")L.sort((a,b)=>(sv(a).ts||0)-(sv(b).ts||0));
+ let h='<div class="card"><h2>生徒を追加</h2><div class="form"><input id="nn" placeholder="生徒の名前(または番号)"><button id="na">追加</button></div><p class="empty" style="margin:6px 0 0">追加すると、その生徒専用のリンクとQRが作られます。</p></div>';
+ h+='<div class="srt">並べ替え <select id="so"><option value="order"'+(sortBy==="order"?" selected":"")+'>登録順</option><option value="late"'+(sortBy==="late"?" selected":"")+'>遅れが多い順</option><option value="old"'+(sortBy==="old"?" selected":"")+'>最終入力が古い順</option></select></div>';
+ if(!L.length)h+='<div class="card empty">まだ生徒がいません。上のフォームから追加してください。</div>';
+ for(const s of L){const x=sums[s.id];
+  h+='<div class="card" data-id="'+esc(s.id)+'"><div class="sc"><b>'+esc(s.name)+"</b>"+(x&&x.missed>0?'<span class="pill">遅れ '+x.missed+"件</span>":"")+"</div>";
+  h+=x?'<div class="stat">完了 '+x.dn+"/"+x.n+"・最終入力 "+(x.ts?ago(x.ts):"なし")+(x.qn?"・確認テスト初回正解 "+x.qf+"/"+x.qn:"")+(x.ts&&(Date.now()-x.ts)>3*864e5?' <span class="warn">3日以上入力なし</span>':"")+"</div>":'<div class="stat">読み込み中…</div>';
+  h+='<div class="bt"><button data-a="open">詳しく見る</button><button data-a="link">リンク・QR</button><button data-a="ren">名前変更</button><button data-a="del">一覧から外す</button></div><div class="pn"></div></div>'}
+ m.innerHTML=h;
+ document.getElementById("na").onclick=addStudent;document.getElementById("nn").onkeydown=e=>{if(e.key==="Enter")addStudent()};
+ document.getElementById("so").onchange=e=>{sortBy=e.target.value;ls.set("rika-teacher-sort",sortBy);drawList()};
+ m.querySelectorAll(".card[data-id] button").forEach(b=>b.onclick=()=>{const c=b.closest(".card"),id=c.dataset.id,s=students.find(z=>z.id===id);const a=b.dataset.a;
+  if(a==="open")location.hash="s-"+id;
+  else if(a==="ren"){const v=prompt("名前を入力",s.name);if(v&&v.trim()){s.name=v.trim();saveStudents().then(drawList)}}
+  else if(a==="del"){if(confirm("「"+s.name+"」を一覧から外します。記録そのものは消えません(リンクを知っていれば開けます)。よろしいですか?")){students=students.filter(z=>z.id!==id);saveStudents().then(drawList)}}
+  else if(a==="link"){const pn=c.querySelector(".pn");if(pn.innerHTML){pn.innerHTML="";return}const u=studentUrl(s.code);pn.innerHTML='<div class="ln">'+esc(u)+'</div><div class="bt"><button data-a="copy">リンクをコピー</button></div><div class="qrbox"></div><div class="empty">このリンクとQRは、この生徒専用です。他の人に見せないでください。</div>';
+   try{new QRCode(pn.querySelector(".qrbox"),{text:u,width:200,height:200,correctLevel:QRCode.CorrectLevel.M})}catch(e){pn.querySelector(".qrbox").remove()}
+   pn.querySelector('[data-a=copy]').onclick=()=>{try{navigator.clipboard.writeText(u).then(()=>{pn.querySelector('[data-a=copy]').textContent="コピーしました"})}catch(e){}}}
+ })}
+async function addStudent(){const v=document.getElementById("nn").value.trim();if(!v)return;students.push({id:"s"+Date.now().toString(36),name:v,code:rand()});await saveStudents();sums={};loadList()}
+/* ---- 生徒の詳細 ---- */
+let data=null,detailCode="",detailName="";
+async function loadDetail(){
+ if(!detailCode){return}
+ upd.textContent="更新中…";
+ try{const a=await rpc("rika_get",{p_code:detailCode});data=a.length?a[0]:{checks:{},memo:{},countdowns:[],updated_at:null};err=""}catch(e){err="読み込めませんでした(通信を確認してください)"}
+ drawDetail()}
+function drawDetail(){
+ let back=T?'<button class="bk" id="bk">← 生徒一覧</button>':"";
+ if(err&&!data){m.innerHTML=back+'<div class="card warn">'+esc(err)+"</div>";bind();upd.textContent="";return}
+ if(!data)return;
  const done=data.checks||{},memo=data.memo||{},cds=(data.countdowns||[]);
  const st=ITEMS.filter(isStudy),n=st.length,dn=st.filter(x=>done[x.d]).length;
  const past=st.filter(x=>x.d<today),exp=past.length,pd=past.filter(x=>done[x.d]).length;
@@ -66,35 +107,42 @@ function draw(){
  const ts=data.updated_at?Date.parse(data.updated_at):0;
  upd.textContent=err?err:(ts?"最終入力 "+ago(ts):"まだ入力がありません");
  const exam=days("2027-02-24");
- const f=cds.find(c=>c.fixed);
- let h='<div class="big"><div class="l">愛知県公立高校入試 まで</div><div class="n">'+(exam>0?"あと "+exam+"<small>日</small>":(exam===0?"今日":"終了"))+"</div></div>";
+ let h=back+(detailName?'<h2 style="margin:8px 4px 0;font-size:18px;color:var(--n)">'+esc(detailName)+" さん</h2>":"");
+ h+='<div class="big"><div class="l">愛知県公立高校入試 まで</div><div class="n">'+(exam>0?"あと "+exam+"<small>日</small>":(exam===0?"今日":"終了"))+"</div></div>";
  const others=cds.filter(c=>!c.fixed).sort((a,b)=>a.date<b.date?-1:1);
  if(others.length)h+='<div class="chips">'+others.map(c=>{const k=days(c.date);return '<div class="chip">'+esc(c.label)+" "+(k>0?"あと<b>"+k+"</b>日":(k===0?"<b>今日</b>":"終了"))+" ("+md(c.date)+")</div>"}).join("")+"</div>";
  h+='<div class="card"><h2>進み具合</h2><div class="kpi"><div><b>'+dn+"/"+n+"</b><span>完了(全体)</span></div><div class='"+(missed.length?"late":"ok")+"'><b>"+missed.length+"</b><span>未完了(過去分)</span></div><div class='"+(diff<0?"late":"ok")+"'><b>"+(diff>0?"+":"")+diff+"</b><span>予定との差</span></div></div><div class='bar'><i style='width:"+(n?dn/n*100:0)+"%'></i></div><div class='empty'>昨日までの予定 "+exp+" 件のうち "+pd+" 件完了</div>"+(ts&&(Date.now()-ts)>3*864e5?'<p class="warn">3日以上、入力がありません。</p>':"")+"</div>";
  const td=ITEMS.filter(x=>x.d===today);
  h+='<div class="card"><h2>今日の予定</h2>'+(td.length?td.map(x=>'<div class="li"><span class="d">'+(isStudy(x)?(done[x.d]?"✅ 完了":"⬜ 未完了"):"—")+"</span> "+esc(x.t)+'<div class="m">'+(x.p&&x.p!=="—"?esc(x.p)+"・":"")+esc(x.m)+"</div></div>").join(""):'<div class="empty">学習期間外です</div>')+"</div>";
  h+='<div class="card"><h2>未完了(過去分) '+missed.length+" 件</h2>"+(missed.length?missed.slice(-15).reverse().map(x=>'<div class="li"><span class="d warn">'+md(x.d)+"("+x.w+")</span> "+esc(x.t)+"</div>").join("")+(missed.length>15?'<div class="empty">ほか '+(missed.length-15)+" 件(古いもの)</div>":""):'<div class="empty">遅れはありません</div>')+"</div>";
-
  const qk=Object.keys(done).filter(k=>k.startsWith("q:")).sort().reverse();
  const qdet=(d,r)=>{const q=QUIZ[d];if(!q)return"";return '<div class="qd"><div class="qq">'+esc(q.q)+"</div>"+q.o.map((o,i)=>'<div class="'+(i===q.a?"qa":"")+(r&&i===r.l&&!r.ok?" qw":"")+'">'+"アイウエ"[i]+" "+esc(o)+(i===q.a?" ✅正解":"")+(r&&i===r.l&&i!==q.a?" ← 生徒の選択":"")+"</div>").join("")+'<div class="qe">解説:'+esc(q.e)+"</div></div>"};
  if(qk.length){const f=qk.filter(k=>done[k].f).length;h+='<div class="card"><h2>今日の確認テスト(正誤)</h2><div class="empty" style="margin-bottom:6px">回答 '+qk.length+" 問・初回正解 "+f+" 問("+Math.round(f/qk.length*100)+"%)</div>"+qk.slice(0,10).map(k=>{const r=done[k],d=k.slice(2);const it=ITEMS.find(x=>x.d===d);return '<details class="li"><summary><span class="d">'+md(d)+'</span> '+(r.f?"⭕ 初回で正解":(r.ok?"❌→⭕ "+r.n+"回目で正解":"❌ 未正解("+r.n+"回)"))+(r.v?" ・解説を見た":"")+(it?'<div class="m">'+esc(it.t)+"</div>":"")+"</summary>"+qdet(d,r)+"</details>"}).join("")+"</div>"}
  const qall=Object.keys(QUIZ).sort();
  if(qall.length){h+='<details class="card"><summary><b style="color:var(--n)">問題一覧(解説つき・先生の確認用) '+qall.length+" 問</b></summary>"+qall.map(d=>'<div class="li"><span class="d">'+md(d)+'</span> '+esc(QUIZ[d].u)+qdet(d,done["q:"+d])+"</div>").join("")+"</details>"}
- // calendar
  const first=new Date(ITEMS[0].d+"T00:00:00");const pad=(first.getDay()+6)%7;
  let cal='<div class="cal">'+"月火水木金土日".split("").map(w=>'<div class="h">'+w+"</div>").join("")+'<div class="c off"></div>'.repeat(pad);
  const memoDays={};for(const x of ITEMS){if(memo[mkey(x)])memoDays[x.d]=1}
  for(const x of ITEMS){const cl=["c"];if(!isStudy(x))cl.push("rest");else if(done[x.d])cl.push("done");else if(x.d<today)cl.push("miss");if(x.d===today)cl.push("today");if(memoDays[x.d])cl.push("memo");cal+='<div class="'+cl.join(" ")+'">'+Number(x.d.slice(8))+"</div>"}
  cal+="</div>";
  h+='<div class="card"><h2>カレンダー</h2>'+cal+'<div class="leg"><span><i style="background:var(--ok)"></i>完了</span><span><i style="background:var(--warn)"></i>未完了</span><span><i style="background:var(--g)"></i>これから</span><span>📝 メモあり</span></div></div>';
- // memos
  const seen={};let mh="";for(const x of ITEMS){const k=mkey(x);if(memo[k]&&!seen[k]){seen[k]=1;mh+='<div class="li"><span class="d">'+esc(mlabel(x))+'</span><div class="memo">'+esc(memo[k])+"</div></div>"}}
  h+='<div class="card"><h2>わからないところ(メモ)</h2>'+(mh||'<div class="empty">メモはまだありません</div>')+"</div>";
  h+='<p class="empty" style="text-align:center">この画面は閲覧専用です。60秒ごとに自動更新されます。</p>';
- m.innerHTML=h}
-rf.onclick=load;
-setInterval(()=>{if(document.visibilityState==="visible")load()},60000);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")load()});
-fetch('../rika-plan/quiz.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&typeof j==='object'){QUIZ=j;if(data)draw()}}).catch(()=>{});
-load();
+ m.innerHTML=h;bind()}
+function bind(){const b=document.getElementById("bk");if(b)b.onclick=()=>{location.hash=""}}
+/* ---- 画面の切り替え ---- */
+function route(){
+ if(T){const h=location.hash;if(h.startsWith("#s-")){const id=h.slice(3);const s=students.find(z=>z.id===id);if(s){detailCode=s.code;detailName=s.name;data=null;m.innerHTML='<div class="card empty">読み込み中…</div>';loadDetail();return}}
+  detailCode="";loadList();return}
+ if(directCode){detailCode=directCode;detailName="";loadDetail();return}
+ m.innerHTML='<div class="card"><h2>先生用キーまたは生徒のコード</h2><div class="form"><input id="ci" placeholder="先生用リンクの t= または 生徒の k= の文字列"><button id="cb">開く</button></div><p class="empty">先生用リンク(?t=…)で開くと、生徒の一覧が使えます。</p></div>';
+ document.getElementById("cb").onclick=()=>{const v=document.getElementById("ci").value.trim();if(v.length>=24){ls.set(TK,v);T=v;route()}else if(v.length>=16){ls.set(CK,v);directCode=v;route()}};upd.textContent=""}
+function refresh(){if(detailCode)loadDetail();else if(T)loadList()}
+rf.onclick=refresh;
+setInterval(()=>{if(document.visibilityState==="visible")refresh()},60000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refresh()});
+window.addEventListener("hashchange",async()=>{if(T&&!students.length){try{const a=await rpc("rika_t_get",{p_key:T});students=a.length?a[0].students||[]:[]}catch(e){}}route()});
+fetch('../rika-plan/quiz.json?'+Date.now(),{cache:'no-store'}).then(r=>r.ok?r.json():null).then(j=>{if(j&&typeof j==='object'){QUIZ=j;if(detailCode&&data)drawDetail()}}).catch(()=>{});
+(async()=>{if(T){try{const a=await rpc("rika_t_get",{p_key:T});students=a.length?a[0].students||[]:[]}catch(e){}}route()})();
 </script></body></html>
