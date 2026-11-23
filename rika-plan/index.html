@@ -74,7 +74,7 @@ async function rpc(fn,body){const r=await fetch(SB+"/rest/v1/rpc/"+fn,{method:"P
 let timer=null,pushing=false,dirty=false;
 function touch(){ts=Date.now();saveLocal();if(!code)return;dirty=true;setSync("保存中…");clearTimeout(timer);timer=setTimeout(push,800)}
 async function push(){if(!code||pushing)return;pushing=true;dirty=false;try{const t=await rpc("rika_save",{p_code:code,p_checks:done,p_memo:memo,p_countdowns:cds});ts=Date.parse(t)||ts;saveLocal();setSync(dirty?"保存中…":"同期済み")}catch(e){dirty=true;setSync("同期できません(あとで再試行)");clearTimeout(timer);timer=setTimeout(push,15000)}pushing=false;if(dirty&&!timer)timer=setTimeout(push,800)}
-async function pull(){if(!code)return;if(dirty||pushing)return;try{const a=await rpc("rika_get",{p_code:code});if(a.length){const r=a[0],rts=Date.parse(r.updated_at);if(rts>ts){if(document.activeElement&&document.activeElement.tagName==="TEXTAREA")return;done=r.checks||{};memo=r.memo||{};cds=(r.countdowns&&r.countdowns.length)?r.countdowns:DEF;if(!cds.some(c=>c.fixed))cds=DEF.concat(cds);ts=rts;saveLocal();render();}else if(ts>rts){await push();return}}else{await push();return}setSync("同期済み")}catch(e){setSync("同期できません(オフライン)")}}
+async function pull(){if(!code)return;if(dirty||pushing)return;try{const a=await rpc("rika_get",{p_code:code});if(a.length){const r=a[0],rts=Date.parse(r.updated_at);if(ts===0&&(Object.keys(done).length||Object.keys(memo).length||cds.some(c=>!c.fixed))){done=Object.assign({},r.checks||{},done);memo=Object.assign({},r.memo||{},memo);const ids={};cds=(r.countdowns||[]).concat(cds).filter(c=>ids[c.id]?false:(ids[c.id]=1));if(!cds.some(c=>c.fixed))cds=DEF.concat(cds);ts=Date.now();saveLocal();render();await push();return}if(rts>ts){if(document.activeElement&&document.activeElement.tagName==="TEXTAREA")return;done=r.checks||{};memo=r.memo||{};cds=(r.countdowns&&r.countdowns.length)?r.countdowns:DEF;if(!cds.some(c=>c.fixed))cds=DEF.concat(cds);ts=rts;saveLocal();render();}else if(ts>rts){await push();return}}else{await push();return}setSync("同期済み")}catch(e){setSync("同期できません(オフライン)")}}
 /* ---- カウントダウン ---- */
 function days(d){return Math.round((new Date(d+"T00:00:00")-new Date(today+"T00:00:00"))/864e5)}
 function renderCds(){const F=cds.find(c=>c.fixed)||DEF[0];const fn=days(F.date);
@@ -93,8 +93,8 @@ function render(){
  s1.textContent="完了 "+dn+" / "+n;
  s3.textContent=late?("未完了(過去分) "+late+"件"):"";
  renderCds();
- foot.textContent=code?"チェック・メモ・日程は自動保存され、同じリンクを開いた端末で共有されます。リンクを他の人に教えないでください。":"この端末のブラウザにだけ保存されます(同期なし)。";
- if(!code)setSync("この端末のみ");
+ foot.textContent=code?"チェック・メモ・日程は自動保存され、同じリンクを開いた端末で共有されます。リンクを他の人に教えないでください。":"リンクに ?k=… が付いていないため、この端末にだけ保存されます。先生に共有されません。配られたリンク(QR)から開き直してください。";
+ if(!code){setSync("⚠ この端末のみ(同期されません)");sync.style.color="#d9822b";sync.style.fontWeight="700"}
  document.querySelectorAll(".tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===view));
  if(view==="memo"){const seen={};let hh="";for(const x of ITEMS){const k=mkey(x);if(memo[k]&&!seen[k]){seen[k]=1;hh+='<div class="mi"><b>'+esc(mlabel(x))+"</b><div>"+esc(memo[k])+"</div></div>"}}list.innerHTML=hh||'<div class="empty">メモはまだありません。各項目の「メモ」ボタンから、わからないところを書き残せます。</div>';return}
  let L=ITEMS;
