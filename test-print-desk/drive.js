@@ -3,6 +3,7 @@ const driveForm = $('driveForm');
 const driveDialog = $('driveDialog');
 const driveError = driveForm.querySelector('.error');
 const settingKey = 'test-print-drive-settings';
+const googleClientId = '739406071935-l7b4nq88frf82fou9drf5jke44n456i6.apps.googleusercontent.com';
 let accessToken, driveRequest = 0;
 
 function loadGoogleIdentity() {
@@ -97,8 +98,11 @@ $('connectDrive').onclick = async () => {
   try {
     const saved = JSON.parse(localStorage.getItem(settingKey) || '{}');
     driveForm.elements.folder.value = saved.folder || '';
-    driveForm.elements.client.value = saved.client || '';
   } catch {}
+  const suppliedFolder = new URLSearchParams(location.hash.slice(1)).get('folder');
+  if (suppliedFolder && /^[\w-]+$/.test(suppliedFolder)) {
+    driveForm.elements.folder.value = 'https://drive.google.com/drive/folders/' + suppliedFolder;
+  }
   $('closeDrive').hidden = !accessToken;
   driveDialog.showModal();
   const submit = driveForm.querySelector('[type=submit]');
@@ -110,15 +114,15 @@ $('connectDrive').onclick = async () => {
 driveForm.onsubmit = event => {
   event.preventDefault();
   driveError.textContent = '';
-  const folder = driveForm.elements.folder.value.trim(), client = driveForm.elements.client.value.trim();
+  const folder = driveForm.elements.folder.value.trim();
   const id = folder.match(/^https:\/\/drive\.google\.com\/drive\/(?:u\/\d+\/)?folders\/([\w-]+)(?:[/?#]|$)/)?.[1];
-  if (!id || !/^[\w-]+\.apps\.googleusercontent\.com$/.test(client)) {
-    driveError.textContent = '共有フォルダのURLとOAuthクライアントIDを確認してください。'; return;
+  if (!id) {
+    driveError.textContent = 'Googleドライブの共有フォルダURLを確認してください。'; return;
   }
   if (!window.google?.accounts?.oauth2) {driveError.textContent = 'Googleログインを読み込めませんでした。';return;}
   const idOfRequest = ++driveRequest;
   const auth = google.accounts.oauth2.initTokenClient({
-    client_id:client,scope:'https://www.googleapis.com/auth/drive.readonly',
+    client_id:googleClientId,scope:'https://www.googleapis.com/auth/drive.readonly',
     error_callback:()=>{driveError.textContent='Googleログインを完了できませんでした。';},
     callback:async response=>{
       if (driveRequest!==idOfRequest) return;
@@ -130,7 +134,7 @@ driveForm.onsubmit = event => {
         if (driveRequest!==idOfRequest) return;
         accessToken = response.access_token;
         sharedRecords = classifyDrive(files);
-        try { localStorage.setItem(settingKey,JSON.stringify({folder,client})); } catch {}
+        try { localStorage.setItem(settingKey,JSON.stringify({folder})); } catch {}
         draw();
         $('status').textContent='共有ドライブから '+files.length+' ファイルを読み込みました。';
       } catch(error) { if (driveRequest===idOfRequest) fail(error); }
