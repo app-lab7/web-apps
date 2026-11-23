@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#1f7a6d"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="宿題"><meta name="robots" content="noindex"><title>宿題チェック</title>
+<style>
+:root{--n:#1f7a6d;--on:#fff;--bg:#f2f7f6;--c:#fff;--b:#d3e2df;--ok:#2e8b57;--warn:#d9822b;--bad:#d64545;--t:#1f2a29;--g:#e4eeec}
+@media(prefers-color-scheme:dark){:root{--bg:#121918;--c:#1b2523;--b:#33443f;--t:#e8f1ef;--n:#5fc7b6;--on:#0c1f1b;--g:#2a3935;--bad:#ff7b7b}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--t);line-height:1.5}
+header{background:var(--n);color:var(--on);padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+h1{font-size:18px;margin:0}
+.sub{font-size:12px;opacity:.9;display:flex;justify-content:space-between;gap:8px;margin-top:2px}
+main{max-width:640px;margin:0 auto;padding:12px 12px 24px}
+.cnt{display:flex;gap:8px;margin:4px 0 10px}.cnt div{flex:1;background:var(--c);border:1px solid var(--b);border-radius:12px;text-align:center;padding:8px}.cnt b{display:block;font-size:26px;line-height:1.2}.cnt span{font-size:11px;opacity:.7}.cnt .l b{color:var(--bad)}
+h2{font-size:14px;margin:16px 4px 6px;color:var(--n)}h2.late{color:var(--bad)}
+.it{display:flex;gap:12px;background:var(--c);border:1px solid var(--b);border-radius:14px;padding:12px;margin:8px 0}
+.it.late{border-color:var(--bad)}
+.it.done{opacity:.65}
+.ck{flex:0 0 auto;width:44px;height:44px;border-radius:12px;border:2.5px solid var(--n);background:var(--c);color:transparent;font-size:26px;font-weight:800;line-height:1;padding:0}
+.it.done .ck{background:var(--n);color:var(--on)}
+.bd{flex:1;min-width:0}
+.t{font-size:16px;font-weight:700;word-break:break-word}
+.it.done .t{text-decoration:line-through}
+.meta{font-size:12px;opacity:.85;margin-top:2px}
+.chip{display:inline-block;border-radius:999px;background:var(--g);padding:0 8px;margin-right:6px;font-size:11px}
+.due.bad{color:var(--bad);font-weight:700}.due.today{color:var(--warn);font-weight:700}
+.dt{font-size:13px;margin-top:4px;white-space:pre-wrap;word-break:break-word}
+.mb{margin-top:8px;border:1px solid var(--b);background:var(--bg);color:var(--t);border-radius:10px;padding:8px 12px;font-size:13px;min-height:40px}
+.mb.has{border-color:var(--n);color:var(--n);font-weight:700}
+textarea.memo{display:block;width:100%;margin-top:8px;min-height:80px;border:1px solid var(--b);border-radius:10px;padding:8px;font:inherit;font-size:16px;background:var(--bg);color:var(--t)}
+.empty{text-align:center;opacity:.65;padding:24px 8px;font-size:14px}
+details summary{cursor:pointer;font-size:14px;font-weight:700;color:var(--n);margin:16px 4px 6px;padding:6px 0}
+.foot{text-align:center;font-size:12px;opacity:.85;margin:20px 0 6px}
+.foot button{border:1.5px solid var(--n);background:var(--c);color:var(--n);border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;min-height:44px}
+#newver{position:sticky;top:0;z-index:50;background:var(--ok);color:#fff;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+#newver button{border:0;border-radius:8px;padding:8px 14px;font-weight:700;background:#fff;color:var(--ok);min-height:40px}
+</style></head><body>
+<header><h1>宿題チェック</h1><div class="sub"><span id="who"></span><span id="sync"></span></div></header>
+<main id="m"></main>
+<script>
+const VER="2026-11-24a";
+const SB="https://sqtgtzouaodytpkapmqn.supabase.co",SK="sb_publishable_nJIR_zrTyJArCVLRjlrQfQ__wvnmUag";
+const KEY="hw-v1";
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const J=(k,d)=>{try{return JSON.parse(ls.get(k)||"")||d}catch(e){return d}};
+let code="";try{code=new URLSearchParams(location.search).get("k")||""}catch(e){}
+if(code.length>=16)ls.set(KEY+"-code",code);else code=ls.get(KEY+"-code")||"";
+if(code.length<16)code="";
+let S=J(KEY+"-s",null),checks=J(KEY+"-c",{}),open={};
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today=iso(new Date());
+const dd=d=>Math.round((new Date(d+"T00:00:00")-new Date(today+"T00:00:00"))/864e5);
+const md=d=>{const x=new Date(d+"T00:00:00");return(x.getMonth()+1)+"/"+x.getDate()+"("+"日月火水木金土"[x.getDay()]+")"};
+const isDone=id=>!!(checks[id]&&checks[id].d);
+const mergeChecks=(a,b)=>{const o=Object.assign({},a);for(const k in b){if(!o[k]||(b[k].at||0)>(o[k].at||0))o[k]=b[k]}return o};
+const saveC=()=>ls.set(KEY+"-c",JSON.stringify(checks));
+const setSync=t=>{document.getElementById("sync").textContent=t};
+async function rpc(fn,body){const r=await fetch(SB+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SK,"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
+/* ---- 同期 ---- */
+let timer=null,pushing=false,dirty=false;
+function touch(){saveC();if(!code)return;dirty=true;setSync("保存中…");clearTimeout(timer);timer=setTimeout(push,700)}
+async function push(){if(!code||pushing)return;pushing=true;dirty=false;try{const r=await rpc("hw_s_save",{p_code:code,p_checks:checks});checks=mergeChecks(r||{},checks);saveC();setSync(dirty?"保存中…":"同期済み");render()}catch(e){dirty=true;setSync("同期できません(あとで再試行)");clearTimeout(timer);timer=setTimeout(push,15000)}pushing=false;if(dirty&&!timer)timer=setTimeout(push,700)}
+async function pull(){if(!code||dirty||pushing)return;try{const r=await rpc("hw_s_get",{p_code:code});if(!r){setSync("このリンクは無効です。先生に確認してください");return}S={name:r.name,cls:r.cls,homework:r.homework||[]};ls.set(KEY+"-s",JSON.stringify(S));const server=r.checks||{},m=mergeChecks(server,checks);checks=m;saveC();render();if(JSON.stringify(m)!==JSON.stringify(server))await push();else setSync("同期済み")}catch(e){setSync("同期できません(オフライン)")}}
+/* ---- 画面 ---- */
+function item(h){const c=checks[h.id]||{},done=!!c.d,dl=dd(h.due),late=!done&&dl<0;
+ const due=done?'<span class="due">完了</span>':(dl<0?'<span class="due bad">期限 '+md(h.due)+'・'+(-dl)+'日すぎています</span>':(dl===0?'<span class="due today">今日まで</span>':'<span class="due">期限 '+md(h.due)+'・あと'+dl+'日</span>'));
+ return '<div class="it'+(done?" done":"")+(late?" late":"")+'"><button class="ck" data-id="'+esc(h.id)+'" aria-label="終わったらチェック">✓</button><div class="bd"><div class="t">'+esc(h.title)+'</div><div class="meta">'+(h.subject?'<span class="chip">'+esc(h.subject)+"</span>":"")+due+"</div>"+(h.detail?'<div class="dt">'+esc(h.detail)+"</div>":"")+'<button class="mb'+(c.m?" has":"")+'" data-id="'+esc(h.id)+'">📝 '+(c.m?"メモあり":"わからないところをメモ")+"</button>"+(open[h.id]?'<textarea class="memo" data-id="'+esc(h.id)+'" placeholder="わからないところ(ページ・問題番号など)">'+esc(c.m||"")+"</textarea>":"")+"</div></div>"}
+function render(){
+ const m=document.getElementById("m");
+ document.getElementById("who").textContent=S?S.name+" さん"+(S.cls?"・"+S.cls:""):"";
+ if(!code){setSync("");m.innerHTML='<div class="empty">先生から配られたリンク(QR)から開いてください。</div>'+foot();bindFoot();return}
+ if(!S){m.innerHTML='<div class="empty">読み込み中…</div>'+foot();bindFoot();return}
+ const all=S.homework.slice(),nd=all.filter(h=>!isDone(h.id)),late=nd.filter(h=>dd(h.due)<0).sort((a,b)=>a.due<b.due?-1:1),soon=nd.filter(h=>dd(h.due)>=0).sort((a,b)=>a.due<b.due?-1:1),dn=all.filter(h=>isDone(h.id)).sort((a,b)=>a.due<b.due?1:-1).slice(0,30);
+ let h='<div class="cnt"><div><b>'+nd.length+'</b><span>のこりの宿題</span></div><div class="l"><b>'+late.length+'</b><span>期限すぎ</span></div></div>';
+ if(late.length)h+='<h2 class="late">⚠ 期限がすぎています</h2>'+late.map(item).join("");
+ if(soon.length)h+="<h2>出された宿題</h2>"+soon.map(item).join("");
+ if(!nd.length)h+='<div class="empty">'+(all.length?"🎉 宿題は全部おわっています!":"いま出ている宿題はありません")+"</div>";
+ if(dn.length)h+='<details'+(open._d?" open":"")+'><summary>完了した宿題 ('+dn.length+")</summary>"+dn.map(item).join("")+"</details>";
+ const act=document.activeElement,keep=act&&act.tagName==="TEXTAREA"?{id:act.dataset.id,pos:act.selectionStart}:null;
+ m.innerHTML=h+foot();bindFoot();
+ m.querySelectorAll(".ck").forEach(b=>b.onclick=()=>{const id=b.dataset.id,c=checks[id]||{};checks[id]={d:c.d?0:1,at:Date.now(),m:c.m||""};touch();render()});
+ m.querySelectorAll(".mb").forEach(b=>b.onclick=()=>{open[b.dataset.id]=!open[b.dataset.id];render();const t=m.querySelector('textarea[data-id="'+b.dataset.id+'"]');if(t)t.focus()});
+ m.querySelectorAll("textarea.memo").forEach(t=>t.oninput=()=>{const id=t.dataset.id,c=checks[id]||{};checks[id]={d:c.d?1:0,at:Date.now(),m:t.value};touch()});
+ const dt=m.querySelector("details");if(dt)dt.ontoggle=()=>{open._d=dt.open};
+ if(keep){const t=m.querySelector('textarea[data-id="'+keep.id+'"]');if(t){t.focus();try{t.setSelectionRange(keep.pos,keep.pos)}catch(e){}}}}
+const foot=()=>'<div class="foot"><button id="upbtn">🔄 最新版にする</button><div style="margin-top:6px">ver '+VER+"</div></div>";
+function bindFoot(){const b=document.getElementById("upbtn");if(b)b.onclick=reloadLatest}
+/* ---- 最新版 ---- */
+function reloadLatest(){try{if(window.caches)caches.keys().then(ks=>ks.forEach(k=>caches.delete(k)))}catch(e){}const u=new URL(location.href);u.searchParams.set("_",Date.now());if(code)u.searchParams.set("k",code);location.replace(u.toString())}
+function showNew(){if(document.getElementById("newver"))return;const d=document.createElement("div");d.id="newver";d.innerHTML='<span>🆕 新しいバージョンがあります</span><button id="newbtn">更新する</button>';document.body.prepend(d);document.getElementById("newbtn").onclick=reloadLatest}
+async function checkVer(){try{const r=await fetch("version.json?"+Date.now(),{cache:"no-store"});if(!r.ok)return;const j=await r.json();if(j&&j.v&&j.v!==VER)showNew()}catch(e){}}
+render();checkVer();pull();
+setInterval(checkVer,300000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"){checkVer();pull()}});
+</script></body></html>

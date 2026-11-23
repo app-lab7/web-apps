@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#7a2e3b"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="宿題管理"><meta name="robots" content="noindex"><title>【先生用】宿題管理</title>
+<style>
+:root{--n:#7a2e3b;--on:#fff;--bg:#f8f4f5;--c:#fff;--b:#e3d6da;--ok:#2e8b57;--warn:#d9822b;--t:#2a2224;--g:#ece3e6}
+@media(prefers-color-scheme:dark){:root{--bg:#181315;--c:#241d20;--b:#473a3e;--t:#f1e9eb;--n:#e49aa8;--on:#2a1519;--g:#352b2e}}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--t);line-height:1.5}
+header{position:relative;background:#7a2e3b;color:#fff;padding:calc(12px + env(safe-area-inset-top)) 16px 12px}
+@media(prefers-color-scheme:dark){header{background:#c9707f;color:#14181f}}
+.role{position:absolute;top:calc(10px + env(safe-area-inset-top));right:12px;background:#fff;color:#7a2e3b;font-weight:800;font-size:13px;border-radius:999px;padding:2px 12px;letter-spacing:.05em}
+h1{font-size:17px;margin:0}
+.sub{font-size:12px;opacity:.9;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:2px}
+main{max-width:760px;margin:0 auto;padding:12px 12px calc(40px + env(safe-area-inset-bottom))}
+.card{background:var(--c);border:1px solid var(--b);border-radius:12px;padding:12px 14px;margin:10px 0}
+.card h2{font-size:14px;margin:0 0 8px;color:var(--n)}
+.tt{display:flex;gap:6px;margin:4px 0 8px}
+.tt button{flex:1;padding:14px;border-radius:10px;border:1px solid var(--b);background:var(--c);color:var(--t);font-weight:700;font-size:16px}
+.tt button.on{background:var(--n);color:var(--on);border-color:var(--n)}
+button{font-family:inherit}
+.bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.bt button,.bk,.r{border:1.5px solid var(--n);background:var(--c);color:var(--n);border-radius:10px;padding:12px 16px;font-size:15px;font-weight:700;min-height:46px}
+.bt button.pri,.bt button[data-a=open]{background:var(--n);color:var(--on)}
+.bt button.dng{border-color:var(--warn);color:var(--warn)}
+.bk{border-color:var(--b);color:var(--t);font-weight:600;margin:4px 0 0}
+.r{padding:8px 16px;min-height:38px;font-size:14px;background:transparent;color:inherit;border-color:currentColor}
+.stat{font-size:13px;opacity:.9;margin-top:2px}
+.sc{display:flex;justify-content:space-between;align-items:center;gap:8px}.sc b{font-size:16px}
+.pill{display:inline-block;border-radius:999px;padding:0 8px;font-size:12px;background:var(--warn);color:#fff;white-space:nowrap}
+.pill.ok{background:var(--ok)}
+.bar{height:10px;background:var(--g);border-radius:6px;overflow:hidden;margin:8px 0 2px}.bar i{display:block;height:100%;background:var(--ok)}
+.late{color:var(--warn);font-weight:700}
+.empty{opacity:.65;font-size:14px}
+.chips{display:flex;gap:6px;overflow-x:auto;margin:6px 0}
+.chips button{flex:0 0 auto;border:1px solid var(--b);background:var(--c);color:var(--t);border-radius:999px;padding:10px 16px;font-size:14px;font-weight:700}
+.chips button.on{background:var(--n);color:var(--on);border-color:var(--n)}
+.lb{display:block;font-size:13px;opacity:.85;margin-top:12px}
+.in,.ta,select.in{width:100%;padding:12px;border:1px solid var(--b);border-radius:10px;background:var(--bg);color:var(--t);font:inherit;font-size:16px;margin:4px 0}
+.ta{min-height:100px}
+.li{padding:10px 0;border-top:1px solid var(--b);font-size:15px}.li:first-of-type{border-top:0}
+.li .m{font-size:12px;opacity:.75;white-space:pre-wrap}
+.ln{word-break:break-all;font-size:12px;background:var(--bg);border-radius:8px;padding:8px;margin-top:8px}
+.qrbox{margin-top:8px;background:#fff;display:inline-block;padding:8px;border-radius:8px}
+.hwc{cursor:pointer}
+details summary{cursor:pointer;padding:6px 0;font-weight:700;color:var(--n)}
+#pa{display:none}
+@media print{header,main{display:none!important}#pa{display:block}body{background:#fff;color:#000}.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.pc{border:1px solid #999;border-radius:8px;padding:8px;text-align:center;break-inside:avoid;font-size:12px}.pc b{font-size:15px;display:block}.pc .qr{display:inline-block;margin:6px 0}.pc .u{word-break:break-all;font-size:8px}}
+</style></head><body>
+<header><span class="role">先生用</span><h1>宿題管理</h1><div class="sub"><span id="upd"></span><button id="rf" class="r">更新</button></div></header>
+<main id="m"></main>
+<div id="pa"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const SB="https://sqtgtzouaodytpkapmqn.supabase.co",SK="sb_publishable_nJIR_zrTyJArCVLRjlrQfQ__wvnmUag";
+const TKEY="hw-teacher-key";
+const ls={get:k=>{try{return localStorage.getItem(k)}catch(e){return null}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+const Q=new URLSearchParams(location.search);
+let T=Q.get("t")||"";if(T.length>=24)ls.set(TKEY,T);else T=ls.get(TKEY)||"";if(T.length<24)T="";
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iso=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today=iso(new Date());
+const dd=d=>Math.round((new Date(d+"T00:00:00")-new Date(today+"T00:00:00"))/864e5);
+const md=d=>{const x=new Date(d+"T00:00:00");return(x.getMonth()+1)+"/"+x.getDate()+"("+"日月火水木金土"[x.getDay()]+")"};
+const uid=()=>"x"+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const rand=()=>{const a=new Uint8Array(12);crypto.getRandomValues(a);return[...a].map(b=>b.toString(16).padStart(2,"0")).join("")};
+const studentUrl=c=>new URL("../homework/?k="+c,location.href).href;
+function ago(ms){const s=(Date.now()-ms)/1000;if(s<90)return"たった今";if(s<3600)return Math.round(s/60)+"分前";if(s<86400)return Math.round(s/3600)+"時間前";return Math.round(s/86400)+"日前"}
+async function rpc(fn,body){const r=await fetch(SB+"/rest/v1/rpc/"+fn,{method:"POST",headers:{apikey:SK,"Content-Type":"application/json"},body:JSON.stringify(body)});if(!r.ok)throw new Error(r.status);return r.json()}
+let D={classes:[],homework:[]},prog={},loaded=false,err="";
+const cls=id=>D.classes.find(c=>c.id===id);
+const chk=(code,id)=>((prog[code]||{}).checks||{})[id]||null;
+const isDone=(code,id)=>{const c=chk(code,id);return!!(c&&c.d)};
+function hwStat(h){const c=cls(h.cid),st=c?c.students:[];return{c,st,n:st.length,done:st.filter(s=>isDone(s.code,h.id)).length}}
+function stuStat(c,s){const hs=D.homework.filter(h=>h.cid===c.id);const nd=hs.filter(h=>!isDone(s.code,h.id));return{n:hs.length,done:hs.length-nd.length,late:nd.filter(h=>h.due<today).length,ts:(prog[s.code]||{}).updated_at?Date.parse(prog[s.code].updated_at):0}}
+async function load(){try{const a=await rpc("hw_t_get",{p_key:T});if(!a.length){err="先生用キーが違います";return false}D=a[0].data||{};D.classes=D.classes||[];D.homework=D.homework||[];const p=await rpc("hw_t_progress",{p_key:T});prog={};p.forEach(r=>prog[r.code]=r);loaded=true;err="";return true}catch(e){err="読み込めませんでした(通信を確認してください)";return false}}
+async function save(){try{await rpc("hw_t_save",{p_key:T,p_data:D});err="";return true}catch(e){alert("保存できませんでした。通信を確認してからもう一度押してください。");return false}}
+const tabs=a=>'<div class="tt"><button data-h="" class="'+(a==="h"?"on":"")+'">宿題</button><button data-h="classes" class="'+(a==="c"?"on":"")+'">クラス</button></div>';
+function bindTabs(){m.querySelectorAll(".tt button").forEach(b=>b.onclick=()=>{location.hash=b.dataset.h;if(!location.hash)route()})}
+const $=id=>document.getElementById(id);
+const back=(h,t)=>'<button class="bk" data-back="'+h+'">← '+t+'</button>';
+function bindBack(){m.querySelectorAll("[data-back]").forEach(b=>b.onclick=()=>{location.hash=b.dataset.back;if(!location.hash)route()})}
+/* ---- 宿題一覧 ---- */
+function vHome(){
+ upd.textContent=err||"";
+ if(err&&!loaded){m.innerHTML='<div class="card late">'+esc(err)+"</div>";return}
+ const fc=ls.get("hw-filter")||"",fcOk=D.classes.some(c=>c.id===fc)?fc:"";
+ const L=D.homework.filter(h=>!fcOk||h.cid===fcOk),up=L.filter(h=>h.due>=today).sort((a,b)=>a.due<b.due?-1:1),past=L.filter(h=>h.due<today).sort((a,b)=>a.due<b.due?1:-1);
+ const row=h=>{const s=hwStat(h),dl=dd(h.due),late=dl<0&&s.n-s.done>0;return'<div class="card hwc" data-id="'+esc(h.id)+'"><div class="sc"><b>'+esc(h.title)+"</b>"+(late?'<span class="pill">未提出 '+(s.n-s.done)+"人</span>":(s.n&&s.done===s.n?'<span class="pill ok">全員完了</span>':""))+'</div><div class="stat">'+esc(s.c?s.c.name:"(クラス削除済)")+(h.subject?"・"+esc(h.subject):"")+"・期限 "+md(h.due)+"("+(dl<0?-dl+"日すぎ":dl===0?"今日":"あと"+dl+"日")+')</div><div class="bar"><i style="width:'+(s.n?s.done/s.n*100:0)+'%"></i></div><div class="stat">完了 '+s.done+" / "+s.n+" 人</div></div>"};
+ let h=tabs("h");
+ if(!D.classes.length){m.innerHTML=h+'<div class="card empty">まず「クラス」タブで、クラスと生徒を登録してください。そのあと、ここから宿題を出せます。</div>';bindTabs();return}
+ h+='<div class="bt" style="margin:0 0 6px"><button class="pri" id="newhw" style="flex:1">＋ 宿題を出す</button></div>';
+ h+='<div class="chips"><button data-c="" class="'+(fcOk?"":"on")+'">すべて</button>'+D.classes.map(c=>'<button data-c="'+esc(c.id)+'" class="'+(fcOk===c.id?"on":"")+'">'+esc(c.name)+"</button>").join("")+"</div>";
+ h+=up.length?"<h2 style='font-size:14px;margin:12px 4px 0;color:var(--n)'>期限がこれから</h2>"+up.map(row).join(""):'<div class="card empty">期限がこれからの宿題はありません</div>';
+ if(past.length)h+="<details open><summary style='margin-top:12px'>期限がすぎた宿題 ("+past.length+")</summary>"+past.slice(0,30).map(row).join("")+"</details>";
+ m.innerHTML=h;bindTabs();
+ $("newhw").onclick=()=>{location.hash="new"};
+ m.querySelectorAll(".chips button").forEach(b=>b.onclick=()=>{ls.set("hw-filter",b.dataset.c);vHome()});
+ m.querySelectorAll(".hwc").forEach(c=>c.onclick=()=>{location.hash="h-"+c.dataset.id})}
+/* ---- 宿題を出す・直す ---- */
+function vForm(id){
+ const ex=id?D.homework.find(h=>h.id===id):null;
+ if(id&&!ex){location.hash="";return}
+ if(!D.classes.length){location.hash="classes";return}
+ const dflt=new Date();dflt.setDate(dflt.getDate()+7);
+ upd.textContent=ex?"宿題を直す":"宿題を出す";
+ m.innerHTML=back(ex?"h-"+ex.id:"","もどる")+'<div class="card"><h2>'+(ex?"宿題を直す":"宿題を出す")+'</h2><label class="lb">クラス</label><select class="in" id="fc">'+D.classes.map(c=>'<option value="'+esc(c.id)+'"'+((ex?ex.cid:(ls.get("hw-filter")||D.classes[0].id))===c.id?" selected":"")+">"+esc(c.name)+"("+c.students.length+"人)</option>").join("")+'</select><label class="lb">宿題の内容(必須)</label><input class="in" id="ft" maxlength="60" placeholder="例: 漢字ドリル 第5回" value="'+esc(ex?ex.title:"")+'"><label class="lb">科目(なくてもOK)</label><input class="in" id="fs" maxlength="12" placeholder="例: 国語" value="'+esc(ex?ex.subject||"":(ls.get("hw-subject")||""))+'"><label class="lb">くわしい説明(なくてもOK)</label><textarea class="ta" id="fd" maxlength="400" placeholder="例: p.12〜14を書き取り。間違えた字は3回ずつ練習。">'+esc(ex?ex.detail||"":"")+'</textarea><label class="lb">期限</label><input class="in" id="fu" type="date" value="'+(ex?ex.due:iso(dflt))+'"><div class="late" id="fe"></div><div class="bt"><button class="pri" id="fsv">'+(ex?"保存する":"出す")+"</button></div></div>";
+ bindBack();
+ $("fsv").onclick=async()=>{const t=$("ft").value.trim(),due=$("fu").value;if(!t){$("fe").textContent="宿題の内容を入れてください";return}if(!due){$("fe").textContent="期限を入れてください";return}
+  const o={id:ex?ex.id:uid(),cid:$("fc").value,title:t,subject:$("fs").value.trim(),detail:$("fd").value.trim(),due,created:ex?ex.created:Date.now()};
+  if(ex)D.homework=D.homework.map(h=>h.id===ex.id?o:h);else D.homework.push(o);
+  ls.set("hw-subject",o.subject);ls.set("hw-filter",o.cid);$("fsv").disabled=true;$("fe").textContent="保存中…";
+  if(await save())location.hash="h-"+o.id;else{$("fsv").disabled=false;$("fe").textContent=""}}}
+/* ---- 宿題の詳細(誰が終わったか) ---- */
+function vHw(id){
+ const h=D.homework.find(z=>z.id===id);if(!h){location.hash="";return}
+ const s=hwStat(h),dl=dd(h.due);
+ upd.textContent=err||"";
+ const st=s.st.slice().sort((a,b)=>(isDone(a.code,h.id)?1:0)-(isDone(b.code,h.id)?1:0));
+ let x=back("","宿題の一覧")+'<div class="card"><div class="sc"><b>'+esc(h.title)+'</b></div><div class="stat">'+esc(s.c?s.c.name:"")+(h.subject?"・"+esc(h.subject):"")+"・期限 "+md(h.due)+"("+(dl<0?-dl+"日すぎ":dl===0?"今日":"あと"+dl+"日")+")</div>"+(h.detail?'<div class="li m" style="font-size:13px;opacity:1">'+esc(h.detail)+"</div>":"")+'<div class="bar"><i style="width:'+(s.n?s.done/s.n*100:0)+'%"></i></div><div class="stat">完了 '+s.done+" / "+s.n+' 人</div><div class="bt"><button data-a="ed">直す</button><button data-a="rm" class="dng">この宿題を消す</button></div></div>';
+ x+='<div class="card"><h2>提出状況(未完了が上)</h2>'+(st.length?st.map(z=>{const c=chk(z.code,h.id),dn=!!(c&&c.d);return'<div class="li"><b>'+(dn?"✅ ":"⬜ ")+esc(z.name)+"</b>"+(dn&&c.at?' <span class="stat">'+ago(c.at)+"に完了</span>":(dl<0?' <span class="late">期限すぎ</span>':""))+(c&&c.m?'<div class="m">📝 '+esc(c.m)+"</div>":"")+"</div>"}).join(""):'<div class="empty">このクラスには生徒がいません</div>')+"</div>";
+ m.innerHTML=x;bindBack();
+ m.querySelector('[data-a=ed]').onclick=()=>{location.hash="edit-"+h.id};
+ m.querySelector('[data-a=rm]').onclick=async()=>{if(!confirm("宿題「"+h.title+"」を消します。生徒の画面からも消えます。よろしいですか?"))return;D.homework=D.homework.filter(z=>z.id!==h.id);if(await save())location.hash=""}}
+/* ---- クラス ---- */
+function vClasses(){
+ upd.textContent=err||"";
+ let h=tabs("c")+'<div class="card"><h2>クラスを作る</h2><div class="bt" style="margin:0"><input class="in" id="cn" placeholder="例: 国語 中2火曜クラス" style="flex:1;min-width:0;margin:0"><button class="pri" id="ca">作る</button></div></div>';
+ h+=D.classes.length?D.classes.map(c=>{const hs=D.homework.filter(z=>z.cid===c.id).length;return'<div class="card hwc" data-id="'+esc(c.id)+'"><div class="sc"><b>'+esc(c.name)+'</b></div><div class="stat">生徒 '+c.students.length+" 人・宿題 "+hs+" 件</div></div>"}).join(""):'<div class="card empty">クラスがありません。上から作ってください。</div>';
+ m.innerHTML=h;bindTabs();
+ const add=async()=>{const v=$("cn").value.trim();if(!v)return;D.classes.push({id:uid(),name:v,students:[]});if(await save())vClasses()};
+ $("ca").onclick=add;$("cn").onkeydown=e=>{if(e.key==="Enter")add()};
+ m.querySelectorAll(".hwc").forEach(c=>c.onclick=()=>{location.hash="c-"+c.dataset.id})}
+function vClass(id){
+ const c=cls(id);if(!c){location.hash="classes";return}
+ upd.textContent=err||"";
+ let h=back("classes","クラス一覧")+'<div class="card"><div class="sc"><b>'+esc(c.name)+'</b></div><div class="bt"><button data-a="rn">名前を変える</button><button data-a="dl" class="dng">クラスを消す</button></div></div>';
+ h+='<div class="card"><h2>生徒を追加(1行に1人)</h2><textarea class="ta" id="sn" placeholder="山田 太郎&#10;佐藤 花子&#10;(名前を並べて貼り付けられます)"></textarea><div class="bt"><button class="pri" id="sa">追加する</button></div></div>';
+ h+='<div class="card"><h2>生徒 '+c.students.length+' 人</h2>'+(c.students.length?'<div class="bt" style="margin:0 0 6px"><button id="pr">配布用シートを印刷(QR)</button></div>'+c.students.map(s=>{const z=stuStat(c,s);return'<div class="li" data-sid="'+esc(s.id)+'"><div class="sc"><b>'+esc(s.name)+"</b>"+(z.late?'<span class="pill">遅れ '+z.late+"件</span>":"")+'</div><div class="stat">完了 '+z.done+" / "+z.n+"・最終入力 "+(z.ts?ago(z.ts):"なし")+'</div><div class="bt"><button data-a="so">宿題の状況</button><button data-a="lk">リンク・QR</button><button data-a="sr">名前変更</button><button data-a="sd" class="dng">外す</button></div><div class="pn"></div></div>'}).join(""):'<div class="empty">まだ生徒がいません</div>')+"</div>";
+ m.innerHTML=h;bindBack();
+ m.querySelector('[data-a=rn]').onclick=async()=>{const v=prompt("クラス名",c.name);if(v&&v.trim()){c.name=v.trim();if(await save())vClass(id)}};
+ m.querySelector('[data-a=dl]').onclick=async()=>{if(!confirm("クラス「"+c.name+"」を消します。生徒の登録と、このクラスの宿題もすべて消えます。元に戻せません。よろしいですか?"))return;D.homework=D.homework.filter(z=>z.cid!==id);D.classes=D.classes.filter(z=>z.id!==id);if(await save())location.hash="classes"};
+ $("sa").onclick=async()=>{const names=$("sn").value.split(/\r?\n/).map(z=>z.trim()).filter(Boolean);if(!names.length)return;names.forEach(n=>c.students.push({id:uid(),name:n,code:rand()}));if(await save())vClass(id)};
+ const pr=$("pr");if(pr)pr.onclick=()=>printSheet(c);
+ m.querySelectorAll(".li[data-sid] button").forEach(b=>b.onclick=async()=>{const li=b.closest(".li"),s=c.students.find(z=>z.id===li.dataset.sid),a=b.dataset.a;
+  if(a==="so")location.hash="st-"+s.id;
+  else if(a==="sr"){const v=prompt("名前",s.name);if(v&&v.trim()){s.name=v.trim();if(await save())vClass(id)}}
+  else if(a==="sd"){if(confirm("「"+s.name+"」をこのクラスから外します。この生徒のリンクは使えなくなります。よろしいですか?")){c.students=c.students.filter(z=>z.id!==s.id);if(await save())vClass(id)}}
+  else if(a==="lk"){const pn=li.querySelector(".pn");if(pn.innerHTML){pn.innerHTML="";return}const u=studentUrl(s.code);pn.innerHTML='<div class="ln">'+esc(u)+'</div><div class="bt"><button data-a="cp">リンクをコピー</button></div><div class="qrbox"></div><div class="empty">この生徒専用のリンクです。他の人に見せないでください。</div>';
+   try{new QRCode(pn.querySelector(".qrbox"),{text:u,width:200,height:200,correctLevel:QRCode.CorrectLevel.M})}catch(e){pn.querySelector(".qrbox").remove()}
+   pn.querySelector("[data-a=cp]").onclick=()=>{try{navigator.clipboard.writeText(u).then(()=>{pn.querySelector("[data-a=cp]").textContent="コピーしました"})}catch(e){}}}})}
+function printSheet(c){
+ const pa=$("pa");pa.innerHTML='<h2 style="margin:0 0 8px">'+esc(c.name)+' 宿題チェック用リンク</h2><div class="pg"></div>';const g=pa.querySelector(".pg");
+ c.students.forEach(s=>{const u=studentUrl(s.code),d=document.createElement("div");d.className="pc";d.innerHTML="<b>"+esc(s.name)+'</b><div class="qr"></div><div class="u">'+esc(u)+"</div>";g.appendChild(d);try{new QRCode(d.querySelector(".qr"),{text:u,width:110,height:110,correctLevel:QRCode.CorrectLevel.M})}catch(e){}});
+ setTimeout(()=>window.print(),200)}
+/* ---- 生徒ごとの状況 ---- */
+function vStudent(sid){
+ let c=null,s=null;D.classes.forEach(k=>k.students.forEach(z=>{if(z.id===sid){c=k;s=z}}));
+ if(!s){location.hash="classes";return}
+ const hs=D.homework.filter(h=>h.cid===c.id).sort((a,b)=>a.due<b.due?1:-1),z=stuStat(c,s);
+ upd.textContent=err||"";
+ m.innerHTML=back("c-"+c.id,c.name)+'<div class="card"><div class="sc"><b>'+esc(s.name)+" さん</b>"+(z.late?'<span class="pill">遅れ '+z.late+"件</span>":"")+'</div><div class="stat">完了 '+z.done+" / "+z.n+"・最終入力 "+(z.ts?ago(z.ts):"なし")+"</div></div>"+'<div class="card"><h2>宿題の状況</h2>'+(hs.length?hs.map(h=>{const k=chk(s.code,h.id),dn=!!(k&&k.d),dl=dd(h.due);return'<div class="li"><b>'+(dn?"✅ ":"⬜ ")+esc(h.title)+'</b> <span class="stat">期限 '+md(h.due)+"</span>"+(!dn&&dl<0?' <span class="late">期限すぎ</span>':"")+(k&&k.m?'<div class="m">📝 '+esc(k.m)+"</div>":"")+"</div>"}).join(""):'<div class="empty">宿題はまだありません</div>')+"</div>";
+ bindBack()}
+/* ---- ルーティング ---- */
+async function route(){
+ if(!T){m.innerHTML='<div class="card"><h2>先生用キー</h2><div class="bt" style="margin:0"><input class="in" id="ki" placeholder="先生用リンクの t= の文字列" style="flex:1;min-width:0;margin:0"><button class="pri" id="kb">開く</button></div></div>';$("kb").onclick=()=>{const v=$("ki").value.trim();if(v.length>=24){ls.set(TKEY,v);T=v;route()}};upd.textContent="";return}
+ if(!loaded){m.innerHTML='<div class="card empty">読み込み中…</div>';await load()}
+ draw();bgReload()}
+const isForm=()=>{const h=location.hash;return h==="#new"||h.startsWith("#edit-")};
+function draw(){const h=location.hash;
+ if(h==="#new")vForm(null);else if(h.startsWith("#edit-"))vForm(h.slice(6));else if(h.startsWith("#h-"))vHw(h.slice(3));else if(h==="#classes")vClasses();else if(h.startsWith("#c-"))vClass(h.slice(3));else if(h.startsWith("#st-"))vStudent(h.slice(4));else vHome()}
+let bgN=0;
+async function bgReload(){if(isForm())return;const n=++bgN;const ok=await load();if(n!==bgN||!ok||isForm())return;if(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;draw()}
+async function refresh(){if(isForm())return;if(document.activeElement&&/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))return;upd.textContent="更新中…";await bgReload()}
+rf.onclick=refresh;
+setInterval(()=>{if(document.visibilityState==="visible")refresh()},60000);
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")refresh()});
+window.addEventListener("hashchange",route);
+route();
+</script></body></html>
