@@ -92,7 +92,12 @@ select { appearance: none; padding-right: 32px; background-image: url("data:imag
 }
 .project-disclosure[open] > .project-summary::after { transform: rotate(225deg); }
 .project-summary:focus-visible { outline-offset: -3px; }
-.project-summary:hover, .project-disclosure[open] > .project-summary { background: #f4f8f6; }
+.project-summary[data-plan="プレミアム"] { --plan-bg: #f3eafb; --plan-active: #ecdaf8; --plan-line: #8554a6; }
+.project-summary[data-plan="スタンダード"] { --plan-bg: #e8f2ff; --plan-active: #dceafe; --plan-line: #3b75b2; }
+.project-summary[data-plan="ライト"] { --plan-bg: #e7f6ef; --plan-active: #d9eee3; --plan-line: #388669; }
+.project-summary { background: var(--plan-bg, #fff); box-shadow: inset 4px 0 var(--plan-line, transparent); }
+.project-summary:hover, .project-disclosure[open] > .project-summary { background: var(--plan-active, #f4f8f6); }
+.project-plan { font-size: .875rem; color: var(--muted); }
 .project-detail { padding: 12px 16px 15px; border-top: 1px solid var(--line); }
 .project-detail-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 .project-detail-heading h3 { font-size: 1rem; overflow-wrap: anywhere; min-width: 0; }
