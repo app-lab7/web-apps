@@ -1,4 +1,4 @@
-import { convertRequest } from './request-import.js';
+import { convertRequest, parseCopiedRequest } from './request-import.js?v=request-copy';
 import { projectStore } from './storage.js';
 import { amountFields, fields, formatYen, plans, safeUrl, stages, totalRevenue } from './model.js';
 
@@ -333,6 +333,7 @@ backupPicker.addEventListener('change', async () => {
 
 const requestDialog = $('#request-dialog');
 const requestPicker = $('#request-file');
+const requestText = $('#request-text');
 const requestPreview = $('#request-preview');
 const requestConfirm = $('#request-confirm');
 let requestRecords = [];
@@ -346,6 +347,7 @@ function showRequestError(message = '') {
 $('#request-import').addEventListener('click', () => {
   requestRecords = [];
   requestPicker.value = '';
+  requestText.value = '';
   requestPreview.hidden = true;
   showRequestError();
   requestDialog.showModal();
@@ -353,29 +355,16 @@ $('#request-import').addEventListener('click', () => {
 $('#request-close').addEventListener('click', () => requestDialog.close());
 requestDialog.addEventListener('close', () => { reading += 1; });
 
-requestPicker.addEventListener('change', async () => {
+async function previewRequests(readProjects) {
   const readId = ++reading;
   requestRecords = [];
   requestPreview.hidden = true;
   showRequestError();
-  const files = [...requestPicker.files];
-  requestPicker.value = '';
-  if (!files.length) return;
-  if (files.length > 50 || files.some(file => file.size > 1024 * 1024)) {
-    showRequestError('1MB以下の回答ファイルを一度に50件まで選べます。');
-    return;
-  }
   try {
-    const existing = new Set((await projectStore.list()).map(item => item.id));
-    const candidates = new Map();
-    for (const file of files) {
-      let answer;
-      try { answer = JSON.parse(await file.text()); }
-      catch { throw new Error('依頼管理画面から保存したJSONファイルを選んでください。'); }
-      const project = convertRequest(answer);
-      if (!existing.has(project.id)) candidates.set(project.id, project);
-    }
+    const [projects, current] = await Promise.all([readProjects(), projectStore.list()]);
     if (reading !== readId || !requestDialog.open) return;
+    const existing = new Set(current.map(item => item.id));
+    const candidates = new Map(projects.filter(item => !existing.has(item.id)).map(item => [item.id, item]));
     requestRecords = [...candidates.values()];
     if (!requestRecords.length) {
       showRequestError('選んだ回答はすでに取り込まれています。');
@@ -387,11 +376,40 @@ requestPicker.addEventListener('change', async () => {
   } catch (error) {
     if (reading === readId && requestDialog.open) showRequestError(error.message);
   }
+}
+
+requestText.addEventListener('input', () => {
+  if (!requestText.value.trim()) {
+    reading += 1;
+    requestRecords = [];
+    requestPreview.hidden = true;
+    showRequestError();
+    return;
+  }
+  previewRequests(async () => [parseCopiedRequest(requestText.value)]);
+});
+
+requestPicker.addEventListener('change', () => {
+  const files = [...requestPicker.files];
+  requestPicker.value = '';
+  if (!files.length) return;
+  requestText.value = '';
+  previewRequests(async () => {
+    if (files.length > 50 || files.some(file => file.size > 1024 * 1024)) {
+      throw new Error('1MB以下の回答ファイルを一度に50件まで選べます。');
+    }
+    return Promise.all(files.map(async file => {
+      let answer;
+      try { answer = JSON.parse(await file.text()); }
+      catch { throw new Error('依頼管理画面から保存したJSONファイルを選んでください。'); }
+      return convertRequest(answer);
+    }));
+  });
 });
 
 requestConfirm.addEventListener('click', async () => {
   if (!requestRecords.length) return;
-  requestConfirm.disabled = requestPicker.disabled = true;
+  requestConfirm.disabled = requestPicker.disabled = requestText.disabled = true;
   $('#request-close').disabled = true;
   showRequestError();
   try {
@@ -405,7 +423,7 @@ requestConfirm.addEventListener('click', async () => {
   } catch (error) {
     showRequestError(error.message);
   } finally {
-    requestConfirm.disabled = requestPicker.disabled = false;
+    requestConfirm.disabled = requestPicker.disabled = requestText.disabled = false;
     $('#request-close').disabled = false;
   }
 });
