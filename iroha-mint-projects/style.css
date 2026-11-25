@@ -161,7 +161,7 @@ textarea { padding: 9px 10px; width: 100%; resize: vertical; }
 }
 
 .heading-actions { display:flex; gap:8px; flex-wrap:wrap; flex:none; }
-.import-steps { padding-left:1.4rem; line-height:1.7; margin:0 0 16px; }
+.import-steps { line-height: 1.55; margin: 0 0 12px; }
 #request-file { width:100%; }
 #request-preview { margin-top:16px; }
 #request-names { margin:8px 0 12px; padding-left:1.25rem; max-height:9rem; overflow:auto; overflow-wrap:anywhere; }
@@ -196,3 +196,8 @@ textarea { padding: 9px 10px; width: 100%; resize: vertical; }
 @media (max-width: 420px) {
   .fee-fields { grid-template-columns: 1fr; }
 }
+
+#request-dialog label { display: block; font-size: .875rem; font-weight: 700; margin-bottom: 5px; }
+.request-file-options { margin-top: 10px; }
+.request-file-options summary { cursor: pointer; font-size: .875rem; color: var(--green); }
+.request-file-options input { margin-top: 8px; }
