@@ -1,6 +1,6 @@
 import { convertRequest, parseCopiedRequest } from './request-import.js?v=request-copy';
 import { projectStore } from './storage.js';
-import { amountFields, fields, formatYen, plans, safeUrl, stages, totalRevenue } from './model.js';
+import { amountFields, fields, formatYen, paymentStatus, plans, safeUrl, stages, totalRevenue } from './model.js?v=project-status';
 
 const $ = selector => document.querySelector(selector);
 const form = $('#project-form');
@@ -111,11 +111,17 @@ function renderProject(project) {
   summary.title = project.plan;
   const label = create('span', undefined, 'project-summary-label');
   label.append(create('span', project.customer));
-  if (project.stage === 'live') {
-    const done = create('span', '済', 'project-done');
-    done.setAttribute('aria-label', '公開済み');
-    label.append(done);
-  }
+  const badges = create('span', undefined, 'project-statuses');
+  const [paymentLabel, paymentTone, paymentHint] = paymentStatus(project);
+  const payment = create('span', paymentLabel, 'project-status');
+  payment.dataset.tone = paymentTone;
+  if (paymentHint) payment.title = paymentHint;
+
+  const published = project.stage === 'live';
+  const publication = create('span', published ? '公開済' : '未公開', 'project-status');
+  publication.dataset.tone = published ? 'complete' : 'pending';
+  badges.append(payment, publication);
+  label.append(badges);
   summary.append(label);
   disclosure.append(summary);
 
