@@ -106,9 +106,17 @@ function renderProject(project) {
     if (disclosure.open) expandedProjects.add(project.id);
     else expandedProjects.delete(project.id);
   });
-  const summary = create('summary', project.customer, 'project-summary');
+  const summary = create('summary', undefined, 'project-summary');
   summary.dataset.plan = project.plan;
   summary.title = project.plan;
+  const label = create('span', undefined, 'project-summary-label');
+  label.append(create('span', project.customer));
+  if (project.stage === 'live') {
+    const done = create('span', '済', 'project-done');
+    done.setAttribute('aria-label', '公開済み');
+    label.append(done);
+  }
+  summary.append(label);
   disclosure.append(summary);
 
   const panel = create('div', undefined, 'project-detail');
