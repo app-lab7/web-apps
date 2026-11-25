@@ -8,8 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="color-scheme" content="light">
   <title>制作案件 | イロハミント</title>
-  <link rel="stylesheet" href="./style.css?v=8b84a855">
-  <script type="module" src="./app.js"></script>
+  <link rel="stylesheet" href="./style.css?v=request-copy">
+  <script type="module" src="./app.js?v=request-copy"></script>
 </head>
 <body>
   <header class="top">
@@ -98,12 +98,13 @@
   <dialog id="request-dialog" aria-labelledby="request-dialog-title">
     <div class="dialog-head"><h2 id="request-dialog-title">依頼を取り込む</h2><button id="request-close" class="close" type="button" aria-label="閉じる">×</button></div>
     <div class="backup-body">
-      <ol class="import-steps">
-        <li><a href="https://homepage-request-sheet.netlify.app/admin.html" target="_blank" rel="noopener noreferrer">依頼管理画面を開く</a></li>
-        <li>対象の回答を開き「JSONを保存」を押す</li>
-        <li>保存したファイルを選ぶ</li>
-      </ol>
-      <input id="request-file" type="file" accept=".json,application/json" multiple aria-label="依頼回答のJSONファイルを選ぶ">
+      <p class="import-steps"><a href="https://homepage-request-sheet.netlify.app/admin.html" target="_blank" rel="noopener noreferrer">依頼管理画面を開く</a> → 回答の「回答をコピー」 → 下に貼り付け</p>
+      <label for="request-text">コピーした回答</label>
+      <textarea id="request-text" rows="3" maxlength="120000" placeholder="ここに回答全文を貼り付け" spellcheck="false" autocomplete="off"></textarea>
+      <details class="request-file-options">
+        <summary>JSONファイルから取り込む</summary>
+        <input id="request-file" type="file" accept=".json,application/json" multiple aria-label="依頼回答のJSONファイルを選ぶ">
+      </details>
       <p id="request-error" class="error" role="alert" hidden></p>
       <div id="request-preview" hidden>
         <p id="request-summary" role="status"></p>
