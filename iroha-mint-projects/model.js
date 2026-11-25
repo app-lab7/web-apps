@@ -30,6 +30,18 @@ export const amountFields = {
   received: '入金額',
 };
 
+export function paymentStatus(project) {
+  const received = BigInt(project.received || '0');
+  if (!project.agreed) return received > 0n
+    ? ['入金あり', 'partial', '入金あり。確定額は未入力']
+    : ['金額未確定', 'pending'];
+  const agreed = BigInt(project.agreed);
+  if (agreed === 0n) return ['支払不要', 'pending'];
+  if (received >= agreed) return ['入金済', 'complete'];
+  if (received > 0n) return ['一部入金', 'partial'];
+  return ['未入金', 'unpaid'];
+}
+
 export function totalRevenue(projects) {
   const totals = { forecast: 0n, agreed: 0n, received: 0n, balance: 0n };
   for (const project of projects) {
