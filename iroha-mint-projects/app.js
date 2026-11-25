@@ -6,6 +6,7 @@ const $ = selector => document.querySelector(selector);
 const form = $('#project-form');
 const editor = $('#editor');
 const list = $('#list');
+const expandedProjects = new Set();
 const state = { data: [], view: 'all', loading: true, error: '', editing: null, busy: false };
 const stageInfo = new Map(stages.map(([key, label, tone]) => [key, { label, tone }]));
 const urlFields = [['preview', '確認用'], ['live', '公開'], ['materials', '資料']];
@@ -92,51 +93,67 @@ function render() {
     list.append(message);
     return;
   }
-  const table = create('table');
-  const header = table.createTHead().insertRow();
-  for (const label of ['案件・お客様', '制作段階', '公開予定', '次にやること', '料金・入金', 'URL', '操作']) {
-    const th = create('th', label);
-    th.scope = 'col';
-    header.append(th);
+  const rows = create('div', undefined, 'project-rows');
+  for (const project of projects) rows.append(renderProject(project));
+  list.append(rows);
+}
+
+function renderProject(project) {
+  const disclosure = create('details', undefined, 'project-disclosure');
+  disclosure.open = expandedProjects.has(project.id);
+  disclosure.addEventListener('toggle', () => {
+    if (disclosure.open) expandedProjects.add(project.id);
+    else expandedProjects.delete(project.id);
+  });
+  disclosure.append(create('summary', project.customer, 'project-summary'));
+
+  const panel = create('div', undefined, 'project-detail');
+  const heading = create('div', undefined, 'project-detail-heading');
+  const stage = stageInfo.get(project.stage);
+  const badge = create('span', stage.label, 'badge');
+  badge.dataset.tone = stage.tone;
+  const edit = makeButton('編集', 'button secondary edit');
+  edit.setAttribute('aria-label', project.title + 'を編集');
+  edit.addEventListener('click', () => openEditor(project));
+  heading.append(create('h3', project.title), badge, edit);
+  panel.append(heading);
+
+  const info = create('dl', undefined, 'project-facts');
+  function addFact(label, content) {
+    const item = create('div');
+    const value = create('dd');
+    value.append(content);
+    item.append(create('dt', label), value);
+    info.append(item);
+    return value;
   }
-  const body = table.createTBody();
-  for (const project of projects) {
-    const row = body.insertRow();
-    row.insertCell().append(create('strong', project.title), create('small', project.customer, 'customer'));
-    const stage = stageInfo.get(project.stage);
-    const badge = create('span', stage.label, 'badge');
-    badge.dataset.tone = stage.tone;
-    row.insertCell().append(badge);
-    const due = row.insertCell();
-    due.textContent = project.deadline ? dateLabel.format(new Date(project.deadline)) : '—';
-    if (project.deadline && project.deadline < dateKey.format(new Date()) && !['live', 'hold'].includes(project.stage)) {
-      due.className = 'overdue';
-      due.append(create('small', '予定日超過', 'customer'));
-    }
-    row.insertCell().textContent = project.next || '—';
-    const fees = row.insertCell();
-    const rate = project.agreed || project.quoted;
-    fees.textContent = rate ? (project.agreed ? '確定 ' : '見積 ') + formatYen(rate) : '—';
-    if (project.received) fees.append(create('small', '入金 ' + formatYen(project.received), 'customer'));
-    const links = create('div', undefined, 'links');
-    for (const [field, label] of urlFields) {
-      const href = safeUrl(project[field]);
-      if (!href) continue;
-      const link = create('a', label);
-      link.href = href;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.setAttribute('aria-label', project.title + 'の' + label + 'URLを開く');
-      links.append(link);
-    }
-    if (!links.childElementCount) links.textContent = '—';
-    row.insertCell().append(links);
-    const edit = makeButton('編集', 'button secondary edit');
-    edit.setAttribute('aria-label', project.title + 'を編集');
-    edit.addEventListener('click', () => openEditor(project));
-    row.insertCell().append(edit);
+
+  const deadline = project.deadline ? dateLabel.format(new Date(project.deadline)) : '—';
+  const due = addFact('公開予定', deadline);
+  if (project.deadline && project.deadline < dateKey.format(new Date()) && !['live', 'hold'].includes(project.stage)) {
+    due.className = 'overdue';
+    due.append(create('small', '予定日超過', 'customer'));
   }
-  list.append(table);
+  addFact('次にやること', project.next || '—');
+  const rate = project.agreed || project.quoted;
+  const fees = addFact('料金・入金', rate ? (project.agreed ? '確定 ' : '見積 ') + formatYen(rate) : '—');
+  if (project.received) fees.append(create('small', '入金 ' + formatYen(project.received), 'customer'));
+
+  const links = create('div', undefined, 'links');
+  for (const [field, label] of urlFields) {
+    const href = safeUrl(project[field]);
+    if (!href) continue;
+    const link = create('a', label);
+    link.href = href;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.setAttribute('aria-label', project.title + 'の' + label + 'URLを開く');
+    links.append(link);
+  }
+  addFact('URL', links.childElementCount ? links : '—');
+  panel.append(info);
+  disclosure.append(panel);
+  return disclosure;
 }
 
 async function load() {
@@ -231,6 +248,7 @@ $('#delete').addEventListener('click', async () => {
   formError();
   try {
     await projectStore.remove(project.id, project.updatedAt);
+    expandedProjects.delete(project.id);
     state.data = state.data.filter(item => item.id !== project.id);
     editor.close();
     render();
