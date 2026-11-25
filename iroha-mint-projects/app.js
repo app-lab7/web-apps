@@ -102,10 +102,14 @@ function renderProject(project) {
   const disclosure = create('details', undefined, 'project-disclosure');
   disclosure.open = expandedProjects.has(project.id);
   disclosure.addEventListener('toggle', () => {
+    if (!disclosure.isConnected) return;
     if (disclosure.open) expandedProjects.add(project.id);
     else expandedProjects.delete(project.id);
   });
-  disclosure.append(create('summary', project.customer, 'project-summary'));
+  const summary = create('summary', project.customer, 'project-summary');
+  summary.dataset.plan = project.plan;
+  summary.title = project.plan;
+  disclosure.append(summary);
 
   const panel = create('div', undefined, 'project-detail');
   const heading = create('div', undefined, 'project-detail-heading');
@@ -115,7 +119,7 @@ function renderProject(project) {
   const edit = makeButton('編集', 'button secondary edit');
   edit.setAttribute('aria-label', project.title + 'を編集');
   edit.addEventListener('click', () => openEditor(project));
-  heading.append(create('h3', project.title), badge, edit);
+  heading.append(create('h3', project.title), badge, create('span', project.plan, 'project-plan'), edit);
   panel.append(heading);
 
   const info = create('dl', undefined, 'project-facts');
