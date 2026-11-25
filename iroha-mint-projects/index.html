@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="color-scheme" content="light">
+  <title>制作案件 | イロハミント</title>
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./app.js"></script>
+</head>
+<body>
+  <header class="top">
+    <div class="wrap top-inner">
+      <a class="brand" href="./" aria-label="イロハミント 制作管理のトップ">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M6 17c0-5 2.8-8.2 9-9.4M9 18c5 .5 8.7-2.7 9-11-6-.7-12 2.2-12 7.2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span><strong>イロハミント</strong><small>制作管理</small></span>
+      </a>
+      <div class="header-actions"><button id="backup" class="button secondary" type="button">バックアップ</button><button id="export" class="button secondary icon-button" type="button" disabled><span aria-hidden="true">↓</span> CSV出力</button></div>
+    </div>
+  </header>
+  <main class="wrap">
+    <p class="storage-notice">案件データはこのブラウザに保存されます。別の端末に移すときはバックアップを使ってください。</p>
+    <section class="heading">
+      <div><h1>制作案件</h1><p>お客様ごとの進捗、公開予定、サイトURLをまとめて管理。</p></div>
+      <div class="heading-actions"><button id="request-import" class="button secondary" type="button">依頼を取り込む</button><button class="button primary add" type="button"><span aria-hidden="true">＋</span> 新規案件</button></div>
+    </section>
+    <nav class="stats" aria-label="案件の集計と絞り込み">
+      <button type="button" data-view="all" aria-pressed="true"><span class="stat-icon stack" aria-hidden="true">▤</span><span><small>すべて</small><strong id="count-all">–</strong></span></button>
+      <button type="button" data-view="active" aria-pressed="false"><span class="stat-icon progress" aria-hidden="true">◷</span><span><small>進行中</small><strong id="count-active">–</strong></span></button>
+      <button type="button" data-view="waiting" aria-pressed="false"><span class="stat-icon waiting" aria-hidden="true">◌</span><span><small>お客様対応待ち</small><strong id="count-waiting">–</strong></span></button>
+      <button type="button" data-view="live" aria-pressed="false"><span class="stat-icon live" aria-hidden="true">✓</span><span><small>公開済み</small><strong id="count-live">–</strong></span></button>
+    </nav>
+    <section class="revenue" aria-labelledby="revenue-title">
+      <h2 id="revenue-title">売上・入金 <small>全案件の集計</small></h2>
+      <dl class="revenue-grid">
+        <div><dt>売上見込み</dt><dd id="total-forecast">—</dd><small>確定額 ＋ 進行中の見積額</small></div>
+        <div><dt>累計確定額</dt><dd id="total-agreed">—</dd><small>金額が確定した案件の合計</small></div>
+        <div><dt>累計入金額</dt><dd id="total-received">—</dd><small>受け取った金額の合計</small></div>
+        <div><dt>未入金額</dt><dd id="total-balance">—</dd><small>確定分の入金残高</small></div>
+      </dl>
+    </section>
+    <section class="panel" aria-labelledby="list-title">
+      <div class="panel-head">
+        <h2 id="list-title">案件一覧 <span id="result-count" class="result-count"></span></h2>
+        <div class="filters">
+          <label class="search"><svg aria-hidden="true" viewBox="0 0 20 20" fill="none"><circle cx="8.6" cy="8.6" r="5.3"/><path d="m12.6 12.6 4 4"/></svg><input id="search" type="search" placeholder="お客様名・案件名で検索" aria-label="お客様名・案件名で検索"></label>
+          <select id="stage-filter" aria-label="制作段階"><option value="">すべての段階</option></select>
+          <select id="sort" aria-label="並び順"><option value="updated">更新が新しい順</option><option value="deadline">公開予定が近い順</option></select>
+        </div>
+      </div>
+      <div id="list" aria-live="polite"><p class="loading">案件を読み込み中…</p></div>
+    </section>
+  </main>
+  <div id="toast" role="status"></div>
+  <dialog id="editor" aria-labelledby="editor-title">
+    <form id="project-form">
+      <header class="dialog-head"><h2 id="editor-title">新規案件</h2><button type="button" class="close" data-close aria-label="閉じる">×</button></header>
+      <div class="form-body">
+        <fieldset><legend>案件情報</legend><div class="form-grid">
+          <label>お客様名 <span class="required">必須</span><input name="customer" required maxlength="100" placeholder="例　山田さま"></label>
+          <label>案件名 <span class="required">必須</span><input name="title" required maxlength="120" placeholder="例　店舗ホームページ"></label>
+          <label>制作段階<select name="stage" required></select></label>
+          <label>制作プラン<select name="plan"></select></label>
+          <label>公開予定日<input name="deadline" type="date" max="9999-12-31"></label>
+          <label>次にやること<input name="next" maxlength="200" placeholder="例　トップページの初稿を送る"></label>
+        </div></fieldset>
+        <fieldset><legend>料金・入金</legend>
+          <div class="form-grid fee-fields">
+            <label>見積額（円）<input name="quoted" inputmode="numeric" pattern="[0-9]{1,12}" maxlength="12" placeholder="例 10000"></label>
+            <label>確定額（円）<input name="agreed" inputmode="numeric" pattern="[0-9]{1,12}" maxlength="12" placeholder="例 10000"></label>
+            <label>入金額（円）<input name="received" inputmode="numeric" pattern="[0-9]{1,12}" maxlength="12" placeholder="例 5000"></label>
+          </div>
+          <p class="fee-help">分割払いの場合は、この案件で受け取った合計額を入力してください。</p>
+        </fieldset>
+        <fieldset><legend>URL</legend><div class="form-grid">
+          <label>確認用URL<input name="preview" type="url" maxlength="2000" placeholder="https://"></label>
+          <label>公開URL<input name="live" type="url" maxlength="2000" placeholder="https://"></label>
+          <label class="wide">素材・資料のURL<input name="materials" type="url" maxlength="2000" placeholder="https://"></label>
+        </div></fieldset>
+        <fieldset><legend>メモ</legend><textarea name="notes" aria-label="メモ" rows="3" maxlength="4000" placeholder="ご要望や修正内容など"></textarea></fieldset>
+        <p id="form-error" class="error" role="alert" hidden></p>
+      </div>
+      <footer class="dialog-foot"><button id="delete" type="button" class="button danger" hidden>削除</button><div><button type="button" class="button secondary" data-close>キャンセル</button><button id="save" type="submit" class="button primary">保存する</button></div></footer>
+    </form>
+  </dialog>
+  <dialog id="backup-dialog" aria-labelledby="backup-title">
+    <div class="dialog-head"><h2 id="backup-title">バックアップ</h2><button id="backup-close" class="close" type="button" aria-label="閉じる">×</button></div>
+    <div class="backup-body">
+      <p>すべての案件をJSONファイルに保存できます。読み込むと、現在の一覧にない案件が追加されます。</p>
+      <div class="backup-actions"><button id="backup-export" type="button" class="button primary">ファイルを保存</button><button id="backup-import" type="button" class="button secondary">ファイルを読み込む</button></div>
+      <input id="backup-file" type="file" accept=".json,application/json" hidden>
+      <p id="backup-error" class="error" role="alert" hidden></p>
+    </div>
+  </dialog>
+  <dialog id="request-dialog" aria-labelledby="request-dialog-title">
+    <div class="dialog-head"><h2 id="request-dialog-title">依頼を取り込む</h2><button id="request-close" class="close" type="button" aria-label="閉じる">×</button></div>
+    <div class="backup-body">
+      <ol class="import-steps">
+        <li><a href="https://homepage-request-sheet.netlify.app/admin.html" target="_blank" rel="noopener noreferrer">依頼管理画面を開く</a></li>
+        <li>対象の回答を開き「JSONを保存」を押す</li>
+        <li>保存したファイルを選ぶ</li>
+      </ol>
+      <input id="request-file" type="file" accept=".json,application/json" multiple aria-label="依頼回答のJSONファイルを選ぶ">
+      <p id="request-error" class="error" role="alert" hidden></p>
+      <div id="request-preview" hidden>
+        <p id="request-summary" role="status"></p>
+        <ul id="request-names"></ul>
+        <button id="request-confirm" type="button" class="button primary">案件に追加する</button>
+      </div>
+    </div>
+  </dialog>
+  <template id="empty">
+    <div class="empty"><div class="empty-icon" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><path d="M7 13a3 3 0 0 1 3-3h7l3 4h10a3 3 0 0 1 3 3v11a3 3 0 0 1-3 3H10a3 3 0 0 1-3-3z"/><path d="M16 22h8m-4-4v8"/></svg></div><h3>制作案件を登録しましょう</h3><p>お客様名と案件名を入力すれば、すぐに管理を始められます。</p><button type="button" class="button primary add"><span aria-hidden="true">＋</span> 新規案件</button></div>
+  </template>
+</body>
+</html>
