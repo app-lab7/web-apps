@@ -81,16 +81,20 @@ select { appearance: none; padding-right: 32px; background-image: url("data:imag
 }
 .project-summary-label { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; min-width: 0; }
 .project-summary-label > span:first-child { min-width: 0; }
-.project-done {
-  flex: none;
-  padding: 2px 7px;
-  border-radius: 4px;
-  background: #174a39;
-  color: #fff;
+.project-statuses { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.project-status {
+  padding: 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
   font-size: .75rem;
   font-weight: 750;
   line-height: 1.4;
+  white-space: nowrap;
 }
+.project-status[data-tone="complete"] { background: #174a39; color: #fff; }
+.project-status[data-tone="pending"] { background: #fff; border-color: #c5d0ca; color: #344b43; }
+.project-status[data-tone="partial"] { background: #fff3c8; border-color: #ad7a23; color: #643c0a; }
+.project-status[data-tone="unpaid"] { background: #fff0ee; border-color: #b95e55; color: #892f2a; }
 .project-summary::-webkit-details-marker { display: none; }
 .project-summary::after {
   content: '';
