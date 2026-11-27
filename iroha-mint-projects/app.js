@@ -7,6 +7,15 @@ const form = $('#project-form');
 const editor = $('#editor');
 const list = $('#list');
 const expandedProjects = new Set();
+const orderKey = 'iroha-mint-projects:manual-order';
+let savedOrder = [];
+try {
+  const value = JSON.parse(localStorage.getItem(orderKey) || '[]');
+  if (Array.isArray(value)) savedOrder = value.filter(id => typeof id === 'string');
+} catch {
+  // Keep the default sort if this browser's preferences are unavailable.
+}
+if (savedOrder.length) $('#sort').value = 'manual';
 const state = { data: [], view: 'all', loading: true, error: '', editing: null, busy: false };
 const stageInfo = new Map(stages.map(([key, label, tone]) => [key, { label, tone }]));
 const urlFields = [['preview', '確認用'], ['live', '公開'], ['materials', '資料']];
@@ -43,8 +52,17 @@ function shownProjects() {
   const projects = state.data.filter(project =>
     filters[state.view](project) && (!stage || project.stage === stage) &&
     [project.customer, project.title].some(value => value.normalize('NFKC').toLocaleLowerCase('ja').includes(query)));
-  return projects.sort((a, b) => {
-    if ($('#sort').value === 'deadline') {
+  return sortProjects(projects);
+}
+
+function sortProjects(projects, mode = $('#sort').value) {
+  const positions = new Map(savedOrder.map((id, index) => [id, index]));
+  return [...projects].sort((a, b) => {
+    if (mode === 'manual') {
+      const byPosition = (positions.get(a.id) ?? positions.size) - (positions.get(b.id) ?? positions.size);
+      if (byPosition) return byPosition;
+    }
+    if (mode === 'deadline') {
       const byDate = (a.deadline || '9999-12-31').localeCompare(b.deadline || '9999-12-31');
       if (byDate) return byDate;
     }
@@ -55,6 +73,7 @@ function shownProjects() {
 function render() {
   $('.heading .add').disabled = state.loading || Boolean(state.error);
   $('#export').disabled = !state.data.length || state.loading || Boolean(state.error);
+  $('#arrange').disabled = state.data.length < 2 || state.loading || Boolean(state.error);
   $('#result-count').textContent = '';
   for (const [key, amount] of Object.entries(totalRevenue(state.data))) {
     $('#total-' + key).textContent = state.loading || state.error ? '—' : formatYen(amount);
@@ -255,7 +274,7 @@ form.addEventListener('submit', async event => {
       state.view = 'all';
       $('#search').value = '';
       $('#stage-filter').value = '';
-      $('#sort').value = 'updated';
+      if ($('#sort').value !== 'manual') $('#sort').value = 'updated';
     }
     editor.close();
     render();
@@ -476,6 +495,61 @@ requestConfirm.addEventListener('click', async () => {
 });
 requestDialog.addEventListener('cancel', event => {
   if (requestConfirm.disabled) event.preventDefault();
+});
+
+const arrangeDialog = $('#arrange-dialog');
+const arrangeList = $('#arrange-list');
+let draftOrder = [];
+
+function renderOrder() {
+  arrangeList.replaceChildren();
+  draftOrder.forEach((project, index) => {
+    const row = create('li', undefined, 'order-row');
+    const name = create('div', undefined, 'order-name');
+    name.append(create('strong', project.customer), create('small', project.title, 'customer'));
+    const moves = create('div', undefined, 'order-moves');
+    for (const [step, label] of [[-1, '上へ'], [1, '下へ']]) {
+      const button = makeButton(label, 'button secondary');
+      button.disabled = index + step < 0 || index + step >= draftOrder.length;
+      button.setAttribute('aria-label', project.customer + '「' + project.title + '」を' + label);
+      button.addEventListener('click', () => {
+        const next = index + step;
+        [draftOrder[index], draftOrder[next]] = [draftOrder[next], draftOrder[index]];
+        renderOrder();
+        const controls = arrangeList.children[next].querySelectorAll('button');
+        const sameDirection = controls[step === -1 ? 0 : 1];
+        (sameDirection.disabled ? controls[step === -1 ? 1 : 0] : sameDirection).focus({ preventScroll: true });
+        arrangeList.children[next].scrollIntoView({ block: 'nearest' });
+        $('#order-status').textContent = project.customer + 'を' + (next + 1) + '番目に移動しました。';
+      });
+      moves.append(button);
+    }
+    row.append(name, moves);
+    arrangeList.append(row);
+  });
+}
+
+$('#arrange').addEventListener('click', () => {
+  draftOrder = sortProjects(state.data);
+  $('#order-status').textContent = '';
+  $('#order-error').hidden = true;
+  renderOrder();
+  arrangeDialog.showModal();
+});
+$('#order-cancel').addEventListener('click', () => arrangeDialog.close());
+$('#order-save').addEventListener('click', () => {
+  const ids = draftOrder.map(project => project.id);
+  try {
+    localStorage.setItem(orderKey, JSON.stringify(ids));
+  } catch {
+    $('#order-error').hidden = false;
+    return;
+  }
+  savedOrder = ids;
+  $('#sort').value = 'manual';
+  arrangeDialog.close();
+  render();
+  notify('お客様の表示順を保存しました');
 });
 
 load();
