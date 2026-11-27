@@ -91,6 +91,7 @@ select { appearance: none; padding-right: 32px; background-image: url("data:imag
   line-height: 1.4;
   white-space: nowrap;
 }
+.project-status[data-tone="prototype"] { background: #5a3682; color: #fff; }
 .project-status[data-tone="complete"] { background: #174a39; color: #fff; }
 .project-status[data-tone="pending"] { background: #fff; border-color: #c5d0ca; color: #344b43; }
 .project-status[data-tone="partial"] { background: #fff3c8; border-color: #ad7a23; color: #643c0a; }
@@ -149,6 +150,24 @@ legend { font-size: 1rem; font-weight: 700; padding: 0 0 10px; }
 .form-grid label { color: var(--muted); font-size: .875rem; font-weight: 600; min-width: 0; }
 .form-grid label > :is(input,select) { display: block; margin-top: 5px; width: 100%; font-size: 1rem; font-weight: 400; }
 .wide { grid-column: 1 / -1; }
+.form-grid .prototype-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.form-grid .prototype-check > input {
+  width: 18px;
+  height: 18px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  accent-color: #5a3682;
+}
 textarea { padding: 9px 10px; width: 100%; resize: vertical; }
 .required { color: #80520b; font-size: .75rem; margin-left: 3px; }
 .error { color: #a23835; padding-top: 10px; }
