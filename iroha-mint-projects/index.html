@@ -8,8 +8,8 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="color-scheme" content="light">
   <title>制作案件 | イロハミント</title>
-  <link rel="stylesheet" href="./style.css?v=project-status">
-  <script type="module" src="./app.js?v=project-status"></script>
+  <link rel="stylesheet" href="./style.css?v=prototype-ready">
+  <script type="module" src="./app.js?v=prototype-ready"></script>
 </head>
 <body>
   <header class="top">
@@ -64,6 +64,7 @@
           <label>案件名 <span class="required">必須</span><input name="title" required maxlength="120" placeholder="例　店舗ホームページ"></label>
           <label>制作段階<select name="stage" required></select></label>
           <label>制作プラン<select name="plan"></select></label>
+          <label class="prototype-check wide"><input name="prototypeReady" type="checkbox"> 試作済み</label>
           <label>公開予定日<input name="deadline" type="date" max="9999-12-31"></label>
           <label>次にやること<input name="next" maxlength="200" placeholder="例　トップページの初稿を送る"></label>
         </div></fieldset>
