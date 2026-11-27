@@ -1,5 +1,5 @@
 import { convertRequest, parseCopiedRequest } from './request-import.js?v=request-copy';
-import { projectStore } from './storage.js';
+import { projectStore } from './storage.js?v=prototype-ready';
 import { amountFields, fields, formatYen, paymentStatus, plans, safeUrl, stages, totalRevenue } from './model.js?v=project-status';
 
 const $ = selector => document.querySelector(selector);
@@ -120,6 +120,11 @@ function renderProject(project) {
   const published = project.stage === 'live';
   const publication = create('span', published ? '公開済' : '未公開', 'project-status');
   publication.dataset.tone = published ? 'complete' : 'pending';
+  if (project.prototypeReady === true) {
+    const prototype = create('span', '試作済', 'project-status');
+    prototype.dataset.tone = 'prototype';
+    badges.append(prototype);
+  }
   badges.append(payment, publication);
   label.append(badges);
   summary.append(label);
@@ -211,6 +216,7 @@ function openEditor(project = null) {
     for (const field of [...Object.keys(fields), ...Object.keys(amountFields)]) form.elements[field].value = project[field] ?? '';
   }
   editor.showModal();
+  form.elements.prototypeReady.checked = project?.prototypeReady === true;
   form.elements.customer.focus();
 }
 function setBusy(busy) {
@@ -228,6 +234,7 @@ form.addEventListener('submit', async event => {
   if (state.busy) return;
   formError();
   const payload = Object.fromEntries(new FormData(form));
+  payload.prototypeReady = form.elements.prototypeReady.checked;
   if (!payload.customer.trim() || !payload.title.trim()) {
     formError('お客様名と案件名を入力してください。');
     return;
@@ -297,7 +304,7 @@ $('#sort').addEventListener('change', render);
 $('#export').addEventListener('click', () => {
   const columns = [
     ['customer', 'お客様名'], ['title', '案件名'], ['stage', '制作段階'], ['plan', 'プラン'],
-    ['deadline', '公開予定日'], ['next', '次にやること'],
+    ['deadline', '公開予定日'], ['next', '次にやること'], ['prototypeReady', '試作状況'],
     ...Object.entries(amountFields).map(([key, label]) => [key, label + '（円）']), ['preview', '確認用URL'],
     ['live', '公開URL'], ['materials', '素材・資料URL'], ['notes', 'メモ'], ['updatedAt', '更新日時'],
   ];
@@ -307,7 +314,11 @@ $('#export').addEventListener('click', () => {
     return '"' + cell.replaceAll('"', '""') + '"';
   };
   const rows = [columns.map(([, label]) => label), ...state.data.map(project =>
-    columns.map(([key]) => key === 'stage' ? stageInfo.get(project.stage).label : project[key]))];
+    columns.map(([key]) => {
+      if (key === 'stage') return stageInfo.get(project.stage).label;
+      if (key === 'prototypeReady') return project.prototypeReady === true ? '試作済' : '';
+      return project[key];
+    }))];
   const csv = new Blob(['\uFEFF', rows.map(row => row.map(quote).join(',')).join('\r\n')], { type: 'text/csv;charset=utf-8' });
   download(csv, 'iroha-mint-projects-' + dateKey.format(new Date()) + '.csv');
 });
