@@ -253,3 +253,20 @@ textarea { padding: 9px 10px; width: 100%; resize: vertical; }
 .request-file-options { margin-top: 10px; }
 .request-file-options summary { cursor: pointer; font-size: .875rem; color: var(--green); }
 .request-file-options input { margin-top: 8px; }
+
+.list-heading { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#arrange { min-height: 44px; padding-inline: 10px; }
+#arrange-dialog[open] { display: flex; flex-direction: column; }
+.order-body { min-height: 0; overflow: auto; padding: 4px 18px 12px; }
+#arrange-list { margin: 0; padding-inline-start: 24px; }
+#arrange-list li { padding: 8px 0 8px 4px; }
+#arrange-list li + li { border-top: 1px solid var(--line); }
+.order-row > * { vertical-align: middle; }
+.order-row::marker { color: var(--muted); }
+.order-name { display: inline-block; width: calc(100% - 108px); overflow-wrap: anywhere; }
+.order-moves { display: inline-flex; gap: 4px; margin-left: 4px; }
+.order-moves .button { min-width: 48px; min-height: 44px; padding-inline: 4px; }
+.order-status { margin-top: 8px; color: var(--muted); font-size: .875rem; }
+@media (max-width: 670px) {
+  .list-heading { width: 100%; justify-content: space-between; }
+}
