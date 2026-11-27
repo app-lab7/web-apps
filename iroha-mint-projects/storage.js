@@ -12,7 +12,7 @@ const staleText = '別の画面で案件が更新されました。再読み込�
 
 function normalize(input) {
   if (!input || typeof input !== 'object') throw new Error('案件の形式を確認してください。');
-  const record = {};
+  const record = { prototypeReady: input.prototypeReady === true };
   for (const [key, limit] of Object.entries(fields)) {
     const raw = input[key] ?? '';
     if (typeof raw !== 'string' || raw.length > limit) throw new Error('案件の入力内容を確認してください。');
